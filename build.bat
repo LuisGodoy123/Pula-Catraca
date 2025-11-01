@@ -1,5 +1,9 @@
 @echo off
 set PATH=C:\raylib\w64devkit\bin;%PATH%
+
+REM Criar pasta build se nao existir
+if not exist build mkdir build
+
 gcc src\main.c -o build\pula-catraca.exe -O1 -Wall -std=c99 -Wno-missing-braces -I C:\raylib\raylib\src -L C:\raylib\raylib\src -lraylib -lopengl32 -lgdi32 -lwinmm
 if %errorlevel% equ 0 (
     echo.
@@ -8,5 +12,6 @@ if %errorlevel% equ 0 (
 ) else (
     echo.
     echo Erro na compilacao!
+    pause
+    exit /b 1
 )
-pause
