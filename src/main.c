@@ -1,4 +1,4 @@
-.#include "raylib.h"
+#include "raylib.h"
 #include <math.h>
 #include <stdlib.h>
 #include <time.h>
@@ -28,7 +28,6 @@ void DrawBusBack(Vector2 position, float scale, Color color, int type) {
     // Cores de detalhes baseado no tipo
     Color detailColor = type == 0 ? (Color){100, 220, 255, 255} : (Color){100, 255, 150, 255};
     Color darkDetail = type == 0 ? (Color){50, 150, 200, 255} : (Color){50, 180, 100, 255};
-    Color darkColor = (Color){200, 50, 120, 255};
     
     // Traseira do ônibus (vista de trás)
     // Parte principal rosa
