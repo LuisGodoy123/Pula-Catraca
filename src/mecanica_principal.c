@@ -178,7 +178,7 @@ void atualizarObstaculos(Obstaculo obstaculos[], int tamanho, float velocidade) 
     }
 }
 
-int verificarColisao(Jogador *j, Obstaculo *obs, float lane_width) {
+int verificarColisao(Jogador *j, Obstaculo *obs, float lane_width, float lane_offset) {
     if (!obs->ativo) return 0;
     
     // Se é um obstáculo baixo e o jogador está pulando, não colide
@@ -191,8 +191,8 @@ int verificarColisao(Jogador *j, Obstaculo *obs, float lane_width) {
         return 0;
     }
     
-    // Calcula posição do obstáculo baseado na lane
-    float obs_x = lane_width * obs->lane + lane_width / 2;
+    // Calcula posição do obstáculo baseado na lane (com offset para centralização)
+    float obs_x = lane_offset + lane_width * obs->lane + lane_width / 2;
     
     // Hitbox do jogador
     float player_left = j->pos_x_real - 20;
@@ -215,4 +215,116 @@ int verificarColisao(Jogador *j, Obstaculo *obs, float lane_width) {
     }
     
     return 0; // Não colidiu
+}
+
+// ============= FUNÇÕES DE ITENS COLECIONÁVEIS =============
+
+void inicializarItens(ItemColetavel itens[], int tamanho) {
+    for (int i = 0; i < tamanho; i++) {
+        itens[i].ativo = 0;
+        itens[i].coletado = 0;
+        itens[i].pos_x = 0;
+        itens[i].pos_y = 0;
+        itens[i].lane = 0;
+        itens[i].tipo = 0;
+        itens[i].largura = 30;
+        itens[i].altura = 30;
+    }
+}
+
+void criarItem(ItemColetavel itens[], int tamanho, float screenHeight, Obstaculo obstaculos[], int tamanhoObstaculos) {
+    // Procura um slot vazio
+    for (int i = 0; i < tamanho; i++) {
+        if (!itens[i].ativo) {
+            // Tenta criar o item em uma lane válida (sem obstáculos laranja tipo 0)
+            int tentativas = 0;
+            int lane_escolhida;
+            int lane_valida = 0;
+            
+            // Tenta até 10 vezes encontrar uma lane sem obstáculo laranja (tipo 0)
+            while (tentativas < 10 && !lane_valida) {
+                lane_escolhida = rand() % 3;
+                lane_valida = 1; // Assume que é válida
+                
+                // Verifica se há obstáculo laranja (tipo 0) nesta lane
+                for (int j = 0; j < tamanhoObstaculos; j++) {
+                    if (obstaculos[j].ativo && 
+                        obstaculos[j].tipo == 0 && 
+                        obstaculos[j].lane == lane_escolhida &&
+                        obstaculos[j].pos_y >= -100 && obstaculos[j].pos_y <= 100) {
+                        // Há um obstáculo laranja recente nesta lane
+                        lane_valida = 0;
+                        break;
+                    }
+                }
+                tentativas++;
+            }
+            
+            // Se não encontrou lane válida após tentativas, não cria o item
+            if (!lane_valida) {
+                return;
+            }
+            
+            itens[i].ativo = 1;
+            itens[i].coletado = 0;
+            itens[i].pos_y = -100; // Começa acima da tela (igual aos obstáculos)
+            itens[i].lane = lane_escolhida;
+            itens[i].tipo = rand() % TIPOS_ITENS; // Tipo aleatório (0 a 4)
+            
+            itens[i].largura = 30;
+            itens[i].altura = 30;
+            break;
+        }
+    }
+}
+
+void atualizarItens(ItemColetavel itens[], int tamanho, float velocidade) {
+    for (int i = 0; i < tamanho; i++) {
+        if (itens[i].ativo && !itens[i].coletado) {
+            itens[i].pos_y += velocidade; // Move para baixo (igual aos obstáculos)
+            
+            // Desativa item se saiu da tela (passou do fundo)
+            if (itens[i].pos_y > 700) { // Ajuste conforme a altura da tela
+                itens[i].ativo = 0;
+            }
+        }
+    }
+}
+
+int verificarColeta(Jogador *j, ItemColetavel *item, float lane_width, float lane_offset) {
+    // Se item já foi coletado ou não está ativo, ignora
+    if (item->coletado || !item->ativo) {
+        return 0;
+    }
+    
+    // Verifica se estão na mesma lane
+    if (j->lane != item->lane) {
+        return 0;
+    }
+    
+    // Hitbox do jogador (posição real)
+    float player_left = j->pos_x_real - 20;
+    float player_right = j->pos_x_real + 20;
+    float player_top = j->abaixado ? j->pos_y_real + 20 : j->pos_y_real;
+    float player_bottom = j->abaixado ? j->pos_y_real + 40 : j->pos_y_real + 40;
+    
+    // Calcula posição X do item na lane (com offset para centralização)
+    float item_x = lane_offset + lane_width * item->lane + lane_width / 2;
+    
+    // Hitbox do item (mais generosa para coleta)
+    float item_left = item_x - item->largura / 2;
+    float item_right = item_x + item->largura / 2;
+    float item_top = item->pos_y;
+    float item_bottom = item->pos_y + item->altura;
+    
+    // Verifica colisão (AABB)
+    if (player_right > item_left && 
+        player_left < item_right && 
+        player_bottom > item_top && 
+        player_top < item_bottom) {
+        item->coletado = 1;
+        return 1; // Coletou!
+    }
+    
+    return 0; // Não coletou
 }
