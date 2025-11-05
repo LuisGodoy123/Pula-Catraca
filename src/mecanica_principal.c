@@ -29,14 +29,14 @@ void moverDireita(Jogador *j) {
 void pular(Jogador *j) {
     if (!j->pulando && !j->abaixado) {
         j->pulando = 1;
-        j->velocidade_pulo = 20; // velocidade inicial do pulo aumentada
+        j->velocidade_pulo = 15; // Reduzido de 17 para 15 (mais 10% de redução)
     }
 }
 
 void abaixar(Jogador *j) {
     if (!j->pulando && !j->abaixado) {
         j->abaixado = 1;
-        j->tempo_abaixado = 60; // duração do abaixamento (60 frames = 1 segundo)
+        j->tempo_abaixado = 46; // Reduzido de 51 para 46 frames (mais 10% de redução = ~0.77 segundos)
     }
 }
 
@@ -121,7 +121,13 @@ void criarMultiplosObstaculos(Obstaculo obstaculos[], int tamanho, float screenH
             do {
                 lane_tentativa = rand() % 3;
                 tentativas++;
-            } while (lanes_usadas[lane_tentativa] && tentativas < 10);
+                if (tentativas >= 20) break; // Evita loop infinito
+            } while (lanes_usadas[lane_tentativa] && tentativas < 20);
+            
+            // Se não conseguiu achar lane livre, pula este obstáculo
+            if (lanes_usadas[lane_tentativa]) {
+                continue;
+            }
             
             obstaculos[i].ativo = 1;
             obstaculos[i].lane = lane_tentativa;
@@ -153,7 +159,7 @@ void criarMultiplosObstaculos(Obstaculo obstaculos[], int tamanho, float screenH
                 obstaculos[i].altura = 50;
             }
             
-            lanes_usadas[lane_tentativa] = 1;
+            lanes_usadas[lane_tentativa] = 1; // Marca a lane como usada
             criados++;
         }
     }
