@@ -8,22 +8,19 @@ void TelaMenu(int *estadoJogo, int screenWidth, int screenHeight, Texture2D back
 void TelaJogo(int *estadoJogo, int screenWidth, int screenHeight);
 
 int main(void) {
-    // Inicializa janela com tamanho padrão primeiro
+    // Valores padrão
     int screenWidth = 800;
     int screenHeight = 600;
     
+    // Cria a janela primeiro
     InitWindow(screenWidth, screenHeight, "Pula-Catraca");
     SetTargetFPS(60);
 
-    // Tenta carregar a imagem de fundo
+    // Agora carrega a imagem de fundo
     Texture2D background = {0};
     Image bgImage = LoadImage("assets/images/fundo_menu.png");
     
     if (bgImage.data != NULL) {
-        // Se carregou a imagem, ajusta o tamanho da janela
-        screenWidth = bgImage.width;
-        screenHeight = bgImage.height;
-        SetWindowSize(screenWidth, screenHeight);
         background = LoadTextureFromImage(bgImage);
         UnloadImage(bgImage);
     } else {
@@ -90,8 +87,12 @@ void TelaMenu(int *estadoJogo, int screenWidth, int screenHeight, Texture2D back
     BeginDrawing();
     ClearBackground(RAYWHITE);
 
-    // Desenha o fundo (seja a imagem carregada ou a cor padrão)
-    DrawTexture(background, 0, 0, WHITE);
+    // Desenha o fundo redimensionado para caber na janela
+    if (background.id > 0) {
+        Rectangle source = {0, 0, (float)background.width, (float)background.height};
+        Rectangle dest = {0, 0, (float)screenWidth, (float)screenHeight};
+        DrawTexturePro(background, source, dest, (Vector2){0, 0}, 0.0f, WHITE);
+    }
 
     float fontSize = screenWidth * 0.07f;
 
