@@ -240,16 +240,23 @@ void TelaJogo(int *estadoJogo, int screenWidth, int screenHeight) {
             }
         }
     } else {
-        // "Game Over" ou "Vitória" - R p reiniciar
+        // "Game Over" ou "Vitória" - R p reiniciar (mantém tempo e itens coletados)
         if (IsKeyPressed(KEY_R)) {
-            inicializado = false;
+            // Reinicia apenas o jogador, obstáculos e velocidade
+            float pos_x = screenWidth / 2;
+            float pos_y = screenHeight - 100;
+            inicializarJogador(&jogador, pos_x, pos_y);
+            inicializarObstaculos(obstaculos, MAX_OBSTACULOS);
+            velocidadeJogo = 4.5f;
             gameOver = false;
+            vitoria = false;
+            // NÃO reseta tempoDecorrido e itensColetados
         }
     }
 
     if (IsKeyPressed(KEY_ESCAPE)) {
         *estadoJogo = 0; // de volta ao menu
-        inicializado = false;
+        inicializado = false; // Força reinicialização completa (reseta tempo e itens)
     }
 
     // Cores dos itens (declarado aqui para uso em toda a função)
