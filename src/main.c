@@ -117,11 +117,15 @@ void TelaMenu(int *estadoJogo, int screenWidth, int screenHeight, Texture2D back
 void TelaJogo(int *estadoJogo, int screenWidth, int screenHeight) {
     static Jogador jogador;
     static Obstaculo obstaculos[MAX_OBSTACULOS];
+    static ItemColetavel itens[MAX_ITENS];
+    static int itensColetados[TIPOS_ITENS]; // contador de cada tipo coletado
     static bool inicializado = false;
     static int frameCount = 0;
+    static int frameCountItens = 0;
     static float velocidadeJogo = 4.5f;
     static int pontuacao = 0;
     static bool gameOver = false;
+    static bool vitoria = false;
     
     // inicializa jogador 1 vez
     if (!inicializado) {
@@ -129,10 +133,19 @@ void TelaJogo(int *estadoJogo, int screenWidth, int screenHeight) {
         float pos_y = screenHeight - 100;
         inicializarJogador(&jogador, pos_x, pos_y);
         inicializarObstaculos(obstaculos, MAX_OBSTACULOS);
+        inicializarItens(itens, MAX_ITENS);
+        
+        // Zera contador de itens coletados
+        for (int i = 0; i < TIPOS_ITENS; i++) {
+            itensColetados[i] = 0;
+        }
+        
         frameCount = 0;
+        frameCountItens = 0;
         velocidadeJogo = 4.5f;
         pontuacao = 0;
         gameOver = false;
+        vitoria = false;
         inicializado = true;
     }
 
@@ -172,6 +185,16 @@ void TelaJogo(int *estadoJogo, int screenWidth, int screenHeight) {
         // atualiza obstáculos
         atualizarObstaculos(obstaculos, MAX_OBSTACULOS, velocidadeJogo);
 
+        // Criar itens colecionáveis periodicamente (a cada 90 frames = 1.5 segundos)
+        frameCountItens++;
+        if (frameCountItens >= 90) {
+            criarItem(itens, MAX_ITENS, screenHeight, obstaculos, MAX_OBSTACULOS);
+            frameCountItens = 0;
+        }
+
+        // Atualiza itens
+        atualizarItens(itens, MAX_ITENS, velocidadeJogo);
+
         // posição X baseada na lane com perspectiva
         float lane_width = screenWidth / 3.0f;
         float target_x = lane_width * jogador.lane + lane_width / 2;
@@ -185,6 +208,28 @@ void TelaJogo(int *estadoJogo, int screenWidth, int screenHeight) {
             if (jogador.pos_x_real < target_x) jogador.pos_x_real = target_x;
         }
 
+        // Verifica coleta de itens
+        for (int i = 0; i < MAX_ITENS; i++) {
+            if (verificarColeta(&jogador, &itens[i], lane_width)) {
+                // Incrementa apenas se ainda não atingiu o limite de 5
+                if (itensColetados[itens[i].tipo] < 5) {
+                    itensColetados[itens[i].tipo]++;
+                }
+            }
+        }
+
+        // Verifica se ganhou o jogo (pelo menos 1 de cada tipo)
+        if (!vitoria) {
+            bool ganhou = true;
+            for (int i = 0; i < TIPOS_ITENS; i++) {
+                if (itensColetados[i] == 0) {
+                    ganhou = false;
+                    break;
+                }
+            }
+            vitoria = ganhou;
+        }
+
         // colisões (posição sem perspectiva p cálculo)
         for (int i = 0; i < MAX_OBSTACULOS; i++) {
             if (verificarColisao(&jogador, &obstaculos[i], lane_width)) {
@@ -193,7 +238,7 @@ void TelaJogo(int *estadoJogo, int screenWidth, int screenHeight) {
             }
         }
     } else {
-        // "Game Over" - R p reiniciar
+        // "Game Over" ou "Vitória" - R p reiniciar
         if (IsKeyPressed(KEY_R)) {
             inicializado = false;
             gameOver = false;
@@ -204,6 +249,15 @@ void TelaJogo(int *estadoJogo, int screenWidth, int screenHeight) {
         *estadoJogo = 0; // de volta ao menu
         inicializado = false;
     }
+
+    // Cores dos itens (declarado aqui para uso em toda a função)
+    Color coresItens[TIPOS_ITENS] = {
+        YELLOW,    // Tipo 0
+        SKYBLUE,   // Tipo 1
+        PINK,      // Tipo 2
+        GOLD,      // Tipo 3
+        GREEN      // Tipo 4
+    };
 
     BeginDrawing();
     ClearBackground(SKYBLUE);
@@ -335,6 +389,32 @@ void TelaJogo(int *estadoJogo, int screenWidth, int screenHeight) {
         }
     }
 
+    // Desenha itens colecionáveis com perspectiva
+    for (int i = 0; i < MAX_ITENS; i++) {
+        if (itens[i].ativo && !itens[i].coletado) {
+            float progress = (itens[i].pos_y + 100) / (screenHeight + 100);
+            if (progress < 0) progress = 0;
+            if (progress > 1) progress = 1;
+            
+            // Escala com perspectiva
+            float scale = 0.3f + (progress * 0.7f);
+            float tamanho_scaled = 30 * scale;
+            
+            // Posição X com perspectiva
+            float lane_width_top = screenWidth / 5.0f;
+            float lane_offset_top = (screenWidth - lane_width_top * 3) / 2.0f;
+            float lane_width_bottom = screenWidth / 3.0f;
+            
+            float x_top = lane_offset_top + (itens[i].lane * lane_width_top) + lane_width_top / 2;
+            float x_bottom = (itens[i].lane * lane_width_bottom) + lane_width_bottom / 2;
+            float item_x = x_top + (x_bottom - x_top) * progress;
+            
+            // Desenha item como círculo
+            DrawCircle(item_x, itens[i].pos_y + tamanho_scaled / 2, tamanho_scaled / 2, coresItens[itens[i].tipo]);
+            DrawCircleLines(item_x, itens[i].pos_y + tamanho_scaled / 2, tamanho_scaled / 2, BLACK);
+        }
+    }
+
     // desenha o jogador
     Color playerColor = gameOver ? GRAY : RED;
     if (jogador.abaixado) {
@@ -348,15 +428,38 @@ void TelaJogo(int *estadoJogo, int screenWidth, int screenHeight) {
     if (gameOver) {
         // game over
         DrawRectangle(0, 0, screenWidth, screenHeight, (Color){0, 0, 0, 150});
-        DrawText("GAME OVER!", screenWidth/2 - 150, screenHeight/2 - 50, 50, RED);
-        DrawText(TextFormat("Pontuacao: %d", pontuacao), screenWidth/2 - 120, screenHeight/2 + 20, 30, WHITE);
-        DrawText("Pressione R para reiniciar", screenWidth/2 - 150, screenHeight/2 + 70, 20, WHITE);
-        DrawText("Pressione ESC para o menu", screenWidth/2 - 150, screenHeight/2 + 100, 20, WHITE);
+        
+        if (vitoria) {
+            DrawText("VOCE VENCEU!", screenWidth/2 - 150, screenHeight/2 - 80, 50, GREEN);
+            DrawText("Coletou todos os tipos de itens!", screenWidth/2 - 180, screenHeight/2 - 30, 20, WHITE);
+        } else {
+            DrawText("GAME OVER!", screenWidth/2 - 150, screenHeight/2 - 80, 50, RED);
+        }
+        
+        DrawText(TextFormat("Pontuacao: %d", pontuacao), screenWidth/2 - 120, screenHeight/2 + 10, 30, WHITE);
+        
+        // Mostra contagem de itens coletados
+        DrawText("Itens coletados:", screenWidth/2 - 100, screenHeight/2 + 50, 20, WHITE);
+        for (int i = 0; i < TIPOS_ITENS; i++) {
+            DrawCircle(screenWidth/2 - 100 + (i * 40), screenHeight/2 + 85, 12, coresItens[i]);
+            DrawText(TextFormat("%d", itensColetados[i]), screenWidth/2 - 95 + (i * 40), screenHeight/2 + 95, 15, WHITE);
+        }
+        
+        DrawText("Pressione R para reiniciar", screenWidth/2 - 150, screenHeight/2 + 125, 20, WHITE);
+        DrawText("Pressione ESC para o menu", screenWidth/2 - 150, screenHeight/2 + 155, 20, WHITE);
     } else {
         // debug e HUD
         DrawText(TextFormat("Pontos: %d", pontuacao), 10, 10, 30, BLACK);
         DrawText(TextFormat("Velocidade: %.1f", velocidadeJogo), 10, 45, 20, BLACK);
         DrawText(TextFormat("Lane: %d", jogador.lane), 10, 70, 20, BLACK);
+        
+        // Mostra itens coletados durante o jogo
+        DrawText("Itens:", 10, 100, 20, BLACK);
+        for (int i = 0; i < TIPOS_ITENS; i++) {
+            DrawCircle(20 + (i * 35), 130, 12, coresItens[i]);
+            DrawText(TextFormat("%d", itensColetados[i]), 15 + (i * 35), 145, 15, itensColetados[i] > 0 ? GREEN : RED);
+        }
+        
         DrawText("W=Pular | A=Esq | D=Dir | S=Abaixar | ESC=Menu", 10, screenHeight - 30, 20, BLACK);
     }
 

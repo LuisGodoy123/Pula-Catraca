@@ -2,6 +2,19 @@
 #define MECANICA_PRINCIPAL_H
 
 #define MAX_OBSTACULOS 10
+#define MAX_ITENS 25
+#define TIPOS_ITENS 5
+
+typedef struct {
+    float pos_x;
+    float pos_y;
+    int lane; // 0 = esquerda, 1 = centro, 2 = direita
+    int ativo; // 1 = ativo, 0 = inativo
+    int tipo; // 0 a 4 (5 tipos diferentes)
+    float largura;
+    float altura;
+    int coletado; // 1 = já coletado, 0 = ainda disponível
+} ItemColetavel;
 
 typedef struct {
     int x;
@@ -38,5 +51,11 @@ void criarObstaculo(Obstaculo obstaculos[], int tamanho, float screenHeight);
 void criarMultiplosObstaculos(Obstaculo obstaculos[], int tamanho, float screenHeight, int quantidade);
 void atualizarObstaculos(Obstaculo obstaculos[], int tamanho, float velocidade);
 int verificarColisao(Jogador *j, Obstaculo *obs, float lane_width);
+
+// Funções para itens colecionáveis
+void inicializarItens(ItemColetavel itens[], int tamanho);
+void criarItem(ItemColetavel itens[], int tamanho, float screenHeight, Obstaculo obstaculos[], int tamanhoObstaculos);
+void atualizarItens(ItemColetavel itens[], int tamanho, float velocidade);
+int verificarColeta(Jogador *j, ItemColetavel *item, float lane_width);
 
 #endif
