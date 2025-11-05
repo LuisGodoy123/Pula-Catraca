@@ -178,7 +178,7 @@ void atualizarObstaculos(Obstaculo obstaculos[], int tamanho, float velocidade) 
     }
 }
 
-int verificarColisao(Jogador *j, Obstaculo *obs, float lane_width) {
+int verificarColisao(Jogador *j, Obstaculo *obs, float lane_width, float lane_offset) {
     if (!obs->ativo) return 0;
     
     // Se é um obstáculo baixo e o jogador está pulando, não colide
@@ -191,8 +191,8 @@ int verificarColisao(Jogador *j, Obstaculo *obs, float lane_width) {
         return 0;
     }
     
-    // Calcula posição do obstáculo baseado na lane
-    float obs_x = lane_width * obs->lane + lane_width / 2;
+    // Calcula posição do obstáculo baseado na lane (com offset para centralização)
+    float obs_x = lane_offset + lane_width * obs->lane + lane_width / 2;
     
     // Hitbox do jogador
     float player_left = j->pos_x_real - 20;
@@ -291,7 +291,7 @@ void atualizarItens(ItemColetavel itens[], int tamanho, float velocidade) {
     }
 }
 
-int verificarColeta(Jogador *j, ItemColetavel *item, float lane_width) {
+int verificarColeta(Jogador *j, ItemColetavel *item, float lane_width, float lane_offset) {
     // Se item já foi coletado ou não está ativo, ignora
     if (item->coletado || !item->ativo) {
         return 0;
@@ -308,8 +308,8 @@ int verificarColeta(Jogador *j, ItemColetavel *item, float lane_width) {
     float player_top = j->abaixado ? j->pos_y_real + 20 : j->pos_y_real;
     float player_bottom = j->abaixado ? j->pos_y_real + 40 : j->pos_y_real + 40;
     
-    // Calcula posição X do item na lane (sem perspectiva para colisão)
-    float item_x = lane_width * item->lane + lane_width / 2;
+    // Calcula posição X do item na lane (com offset para centralização)
+    float item_x = lane_offset + lane_width * item->lane + lane_width / 2;
     
     // Hitbox do item (mais generosa para coleta)
     float item_left = item_x - item->largura / 2;
