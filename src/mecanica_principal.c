@@ -29,14 +29,14 @@ void moverDireita(Jogador *j) {
 void pular(Jogador *j) {
     if (!j->pulando && !j->abaixado) {
         j->pulando = 1;
-        j->velocidade_pulo = 15; // velocidade inicial do pulo
+        j->velocidade_pulo = 20; // velocidade inicial do pulo aumentada
     }
 }
 
 void abaixar(Jogador *j) {
     if (!j->pulando && !j->abaixado) {
         j->abaixado = 1;
-        j->tempo_abaixado = 10; // duração do abaixamento (10 frames)
+        j->tempo_abaixado = 60; // duração do abaixamento (60 frames = 1 segundo)
     }
 }
 
@@ -86,11 +86,21 @@ void criarObstaculo(Obstaculo obstaculos[], int tamanho, float screenHeight) {
             obstaculos[i].ativo = 1;
             obstaculos[i].lane = rand() % 3; // Lane aleatória (0, 1 ou 2)
             obstaculos[i].pos_y = -100; // Começa acima da tela
-            obstaculos[i].tipo = rand() % 3; // Tipo aleatório
+            obstaculos[i].tipo = rand() % 3; // 0 = ônibus alto, 1 = baixo, 2 = alto vazado
             
-            // TODOS os obstáculos têm o mesmo tamanho agora
-            obstaculos[i].largura = 60;
-            obstaculos[i].altura = 80;
+            if (obstaculos[i].tipo == 0) {
+                // Ônibus alto (precisa desviar ou abaixar)
+                obstaculos[i].largura = 60;
+                obstaculos[i].altura = 80;
+            } else if (obstaculos[i].tipo == 1) {
+                // Obstáculo baixo no chão (precisa pular)
+                obstaculos[i].largura = 60;
+                obstaculos[i].altura = 30;
+            } else {
+                // Obstáculo alto vazado (precisa abaixar para passar por baixo)
+                obstaculos[i].largura = 60;
+                obstaculos[i].altura = 50; // Alto, mas deixa espaço embaixo
+            }
             
             break;
         }
@@ -115,11 +125,21 @@ void criarMultiplosObstaculos(Obstaculo obstaculos[], int tamanho, float screenH
             obstaculos[i].ativo = 1;
             obstaculos[i].lane = lane_tentativa;
             obstaculos[i].pos_y = -100; // Começa acima da tela
-            obstaculos[i].tipo = rand() % 3; // Tipo aleatório
+            obstaculos[i].tipo = rand() % 3; // 0 = ônibus alto, 1 = baixo, 2 = alto vazado
             
-            // TODOS os obstáculos têm o mesmo tamanho
-            obstaculos[i].largura = 60;
-            obstaculos[i].altura = 80;
+            if (obstaculos[i].tipo == 0) {
+                // Ônibus alto (precisa desviar ou abaixar)
+                obstaculos[i].largura = 60;
+                obstaculos[i].altura = 80;
+            } else if (obstaculos[i].tipo == 1) {
+                // Obstáculo baixo no chão (precisa pular)
+                obstaculos[i].largura = 60;
+                obstaculos[i].altura = 30;
+            } else {
+                // Obstáculo alto vazado (precisa abaixar para passar por baixo)
+                obstaculos[i].largura = 60;
+                obstaculos[i].altura = 50;
+            }
             
             lanes_usadas[lane_tentativa] = 1;
             criados++;
@@ -142,6 +162,16 @@ void atualizarObstaculos(Obstaculo obstaculos[], int tamanho, float velocidade) 
 
 int verificarColisao(Jogador *j, Obstaculo *obs, float lane_width) {
     if (!obs->ativo) return 0;
+    
+    // Se é um obstáculo baixo e o jogador está pulando, não colide
+    if (obs->tipo == 1 && j->pulando) {
+        return 0;
+    }
+    
+    // Se é um obstáculo alto vazado e o jogador está abaixado, não colide
+    if (obs->tipo == 2 && j->abaixado) {
+        return 0;
+    }
     
     // Calcula posição do obstáculo baseado na lane
     float obs_x = lane_width * obs->lane + lane_width / 2;

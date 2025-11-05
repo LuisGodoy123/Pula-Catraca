@@ -223,20 +223,54 @@ void TelaJogo(int *estadoJogo, int screenWidth, int screenHeight) {
             
             // Cor baseada no tipo
             Color cor;
-            switch (obstaculos[i].tipo) {
-                case 0: cor = ORANGE; break;  // Ônibus
-                case 1: cor = BROWN; break;   // Obstáculo baixo
-                case 2: cor = PURPLE; break;  // Obstáculo alto
-                default: cor = GRAY; break;
-            }
             
-            DrawRectangle(
-                obs_x - obstaculos[i].largura / 2, 
-                obstaculos[i].pos_y, 
-                obstaculos[i].largura, 
-                obstaculos[i].altura, 
-                cor
-            );
+            if (obstaculos[i].tipo == 0) {
+                // Ônibus alto cheio (laranja)
+                cor = ORANGE;
+                DrawRectangle(
+                    obs_x - obstaculos[i].largura / 2, 
+                    obstaculos[i].pos_y, 
+                    obstaculos[i].largura, 
+                    obstaculos[i].altura, 
+                    cor
+                );
+            } else if (obstaculos[i].tipo == 1) {
+                // Obstáculo baixo (verde)
+                cor = GREEN;
+                DrawRectangle(
+                    obs_x - obstaculos[i].largura / 2, 
+                    obstaculos[i].pos_y, 
+                    obstaculos[i].largura, 
+                    obstaculos[i].altura, 
+                    cor
+                );
+            } else {
+                // Obstáculo alto vazado (roxo) - desenha só as bordas
+                cor = PURPLE;
+                // Borda superior
+                DrawRectangle(
+                    obs_x - obstaculos[i].largura / 2, 
+                    obstaculos[i].pos_y, 
+                    obstaculos[i].largura, 
+                    10, 
+                    cor
+                );
+                // Bordas laterais
+                DrawRectangle(
+                    obs_x - obstaculos[i].largura / 2, 
+                    obstaculos[i].pos_y, 
+                    8, 
+                    obstaculos[i].altura, 
+                    cor
+                );
+                DrawRectangle(
+                    obs_x + obstaculos[i].largura / 2 - 8, 
+                    obstaculos[i].pos_y, 
+                    8, 
+                    obstaculos[i].altura, 
+                    cor
+                );
+            }
         }
     }
 

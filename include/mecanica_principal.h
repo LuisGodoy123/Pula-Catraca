@@ -21,7 +21,7 @@ typedef struct {
     float pos_y;
     int lane; // 0 = esquerda, 1 = centro, 2 = direita
     int ativo; // 1 = ativo, 0 = inativo
-    int tipo; // 0 = ônibus, 1 = obstáculo baixo (para abaixar), 2 = obstáculo alto (para pular)
+    int tipo; // 0 = ônibus alto, 1 = obstáculo baixo (chão), 2 = obstáculo alto vazado
     float largura;
     float altura;
 } Obstaculo;
