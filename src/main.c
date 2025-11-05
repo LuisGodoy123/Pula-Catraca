@@ -1,4 +1,5 @@
 #include <stddef.h>
+#include <stdlib.h>
 #include "raylib.h"
 #include "../include/mecanica_principal.h"
 
@@ -117,48 +118,93 @@ void TelaMenu(int *estadoJogo, int screenWidth, int screenHeight, Texture2D back
 
 void TelaJogo(int *estadoJogo, int screenWidth, int screenHeight) {
     static Jogador jogador;
+    static Obstaculo obstaculos[MAX_OBSTACULOS];
     static bool inicializado = false;
+    static int frameCount = 0;
+    static float velocidadeJogo = 5.0f;
+    static int pontuacao = 0;
+    static bool gameOver = false;
     
     // Inicializa o jogador apenas uma vez
     if (!inicializado) {
         float pos_x = screenWidth / 2;
         float pos_y = screenHeight - 100;
         inicializarJogador(&jogador, pos_x, pos_y);
+        inicializarObstaculos(obstaculos, MAX_OBSTACULOS);
+        frameCount = 0;
+        velocidadeJogo = 5.0f;
+        pontuacao = 0;
+        gameOver = false;
         inicializado = true;
     }
 
-    // Entrada do jogador
-    if (IsKeyPressed(KEY_W)) {
-        pular(&jogador);
+    if (!gameOver) {
+        // Entrada do jogador
+        if (IsKeyPressed(KEY_W)) {
+            pular(&jogador);
+        }
+        if (IsKeyPressed(KEY_A)) {
+            moverEsquerda(&jogador);
+        }
+        if (IsKeyPressed(KEY_D)) {
+            moverDireita(&jogador);
+        }
+        if (IsKeyPressed(KEY_S)) {
+            abaixar(&jogador);
+        }
+
+        // Atualiza física
+        atualizarFisica(&jogador);
+
+        // Cria novos obstáculos a cada 60 frames (1 segundo)
+        frameCount++;
+        if (frameCount >= 60) {
+            // 50% de chance de criar 2 obstáculos, 50% de criar 1
+            int quantidade = (rand() % 2 == 0) ? 2 : 1;
+            criarMultiplosObstaculos(obstaculos, MAX_OBSTACULOS, screenHeight, quantidade);
+            frameCount = 0;
+            pontuacao += 10; // Aumenta pontuação
+            
+            // Aumenta dificuldade gradualmente
+            if (velocidadeJogo < 12.0f) {
+                velocidadeJogo += 0.2f;
+            }
+        }
+
+        // Atualiza obstáculos
+        atualizarObstaculos(obstaculos, MAX_OBSTACULOS, velocidadeJogo);
+
+        // Calcula posição X baseada na lane
+        float lane_width = screenWidth / 3.0f;
+        float target_x = lane_width * jogador.lane + lane_width / 2;
+        
+        // Transição suave entre lanes
+        if (jogador.pos_x_real < target_x) {
+            jogador.pos_x_real += 10;
+            if (jogador.pos_x_real > target_x) jogador.pos_x_real = target_x;
+        } else if (jogador.pos_x_real > target_x) {
+            jogador.pos_x_real -= 10;
+            if (jogador.pos_x_real < target_x) jogador.pos_x_real = target_x;
+        }
+
+        // Verifica colisões
+        for (int i = 0; i < MAX_OBSTACULOS; i++) {
+            if (verificarColisao(&jogador, &obstaculos[i], lane_width)) {
+                gameOver = true;
+                break;
+            }
+        }
+    } else {
+        // Game Over - reinicia ao pressionar R
+        if (IsKeyPressed(KEY_R)) {
+            inicializado = false;
+            gameOver = false;
+        }
     }
-    if (IsKeyPressed(KEY_A)) {
-        moverEsquerda(&jogador);
-    }
-    if (IsKeyPressed(KEY_D)) {
-        moverDireita(&jogador);
-    }
-    if (IsKeyPressed(KEY_S)) {
-        abaixar(&jogador);
-    }
+
     if (IsKeyPressed(KEY_ESCAPE)) {
         *estadoJogo = 0; // Volta ao menu
         inicializado = false;
-    }
-
-    // Atualiza física
-    atualizarFisica(&jogador);
-
-    // Calcula posição X baseada na lane
-    float lane_width = screenWidth / 3.0f;
-    float target_x = lane_width * jogador.lane + lane_width / 2;
-    
-    // Transição suave entre lanes
-    if (jogador.pos_x_real < target_x) {
-        jogador.pos_x_real += 10;
-        if (jogador.pos_x_real > target_x) jogador.pos_x_real = target_x;
-    } else if (jogador.pos_x_real > target_x) {
-        jogador.pos_x_real -= 10;
-        if (jogador.pos_x_real < target_x) jogador.pos_x_real = target_x;
     }
 
     // Desenha tudo
@@ -166,11 +212,36 @@ void TelaJogo(int *estadoJogo, int screenWidth, int screenHeight) {
     ClearBackground(SKYBLUE);
 
     // Desenha as lanes
+    float lane_width = screenWidth / 3.0f;
     DrawLine(lane_width, 0, lane_width, screenHeight, DARKGRAY);
     DrawLine(lane_width * 2, 0, lane_width * 2, screenHeight, DARKGRAY);
 
+    // Desenha obstáculos
+    for (int i = 0; i < MAX_OBSTACULOS; i++) {
+        if (obstaculos[i].ativo) {
+            float obs_x = lane_width * obstaculos[i].lane + lane_width / 2;
+            
+            // Cor baseada no tipo
+            Color cor;
+            switch (obstaculos[i].tipo) {
+                case 0: cor = ORANGE; break;  // Ônibus
+                case 1: cor = BROWN; break;   // Obstáculo baixo
+                case 2: cor = PURPLE; break;  // Obstáculo alto
+                default: cor = GRAY; break;
+            }
+            
+            DrawRectangle(
+                obs_x - obstaculos[i].largura / 2, 
+                obstaculos[i].pos_y, 
+                obstaculos[i].largura, 
+                obstaculos[i].altura, 
+                cor
+            );
+        }
+    }
+
     // Desenha o jogador
-    Color playerColor = RED;
+    Color playerColor = gameOver ? GRAY : RED;
     if (jogador.abaixado) {
         // Desenha abaixado (retângulo mais baixo)
         DrawRectangle(jogador.pos_x_real - 20, jogador.pos_y_real + 20, 40, 20, playerColor);
@@ -179,11 +250,20 @@ void TelaJogo(int *estadoJogo, int screenWidth, int screenHeight) {
         DrawRectangle(jogador.pos_x_real - 20, jogador.pos_y_real, 40, 40, playerColor);
     }
 
-    // Informações de debug
-    DrawText(TextFormat("Lane: %d", jogador.lane), 10, 10, 20, BLACK);
-    DrawText(TextFormat("Pulando: %s", jogador.pulando ? "SIM" : "NAO"), 10, 35, 20, BLACK);
-    DrawText(TextFormat("Abaixado: %s", jogador.abaixado ? "SIM" : "NAO"), 10, 60, 20, BLACK);
-    DrawText("W=Pular | A=Esq | D=Dir | S=Abaixar | ESC=Menu", 10, screenHeight - 30, 20, BLACK);
+    if (gameOver) {
+        // Tela de Game Over
+        DrawRectangle(0, 0, screenWidth, screenHeight, (Color){0, 0, 0, 150});
+        DrawText("GAME OVER!", screenWidth/2 - 150, screenHeight/2 - 50, 50, RED);
+        DrawText(TextFormat("Pontuacao: %d", pontuacao), screenWidth/2 - 120, screenHeight/2 + 20, 30, WHITE);
+        DrawText("Pressione R para reiniciar", screenWidth/2 - 150, screenHeight/2 + 70, 20, WHITE);
+        DrawText("Pressione ESC para o menu", screenWidth/2 - 150, screenHeight/2 + 100, 20, WHITE);
+    } else {
+        // Informações de debug e HUD
+        DrawText(TextFormat("Pontos: %d", pontuacao), 10, 10, 30, BLACK);
+        DrawText(TextFormat("Velocidade: %.1f", velocidadeJogo), 10, 45, 20, BLACK);
+        DrawText(TextFormat("Lane: %d", jogador.lane), 10, 70, 20, BLACK);
+        DrawText("W=Pular | A=Esq | D=Dir | S=Abaixar | ESC=Menu", 10, screenHeight - 30, 20, BLACK);
+    }
 
     EndDrawing();
 }
