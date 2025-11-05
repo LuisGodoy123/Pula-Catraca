@@ -123,7 +123,7 @@ void TelaJogo(int *estadoJogo, int screenWidth, int screenHeight) {
     static int frameCount = 0;
     static int frameCountItens = 0;
     static float velocidadeJogo = 4.5f;
-    static int pontuacao = 0;
+    static float tempoDecorrido = 0.0f; // Tempo em segundos
     static bool gameOver = false;
     static bool vitoria = false;
     
@@ -143,7 +143,7 @@ void TelaJogo(int *estadoJogo, int screenWidth, int screenHeight) {
         frameCount = 0;
         frameCountItens = 0;
         velocidadeJogo = 4.5f;
-        pontuacao = 0;
+        tempoDecorrido = 0.0f;
         gameOver = false;
         vitoria = false;
         inicializado = true;
@@ -167,6 +167,9 @@ void TelaJogo(int *estadoJogo, int screenWidth, int screenHeight) {
         // atualiza fisica
         atualizarFisica(&jogador);
 
+        // Incrementa o tempo (60 FPS = 1/60 segundo por frame)
+        tempoDecorrido += 1.0f / 60.0f;
+
         // novos obstaculos a 60fps
         frameCount++;
         if (frameCount >= 60) {
@@ -174,7 +177,6 @@ void TelaJogo(int *estadoJogo, int screenWidth, int screenHeight) {
             int quantidade = (rand() % 3) + 1; // 1, 2 ou 3
             criarMultiplosObstaculos(obstaculos, MAX_OBSTACULOS, screenHeight, quantidade);
             frameCount = 0;
-            pontuacao += 10;
             
             // dificuldade aumentando gradualmente
             if (velocidadeJogo < 10.8f) {
@@ -436,7 +438,10 @@ void TelaJogo(int *estadoJogo, int screenWidth, int screenHeight) {
             DrawText("GAME OVER!", screenWidth/2 - 150, screenHeight/2 - 80, 50, RED);
         }
         
-        DrawText(TextFormat("Pontuacao: %d", pontuacao), screenWidth/2 - 120, screenHeight/2 + 10, 30, WHITE);
+        // Mostra tempo em minutos:segundos
+        int minutos = (int)tempoDecorrido / 60;
+        int segundos = (int)tempoDecorrido % 60;
+        DrawText(TextFormat("Tempo: %02d:%02d", minutos, segundos), screenWidth/2 - 100, screenHeight/2 + 10, 30, WHITE);
         
         // Mostra contagem de itens coletados
         DrawText("Itens coletados:", screenWidth/2 - 100, screenHeight/2 + 50, 20, WHITE);
@@ -449,7 +454,10 @@ void TelaJogo(int *estadoJogo, int screenWidth, int screenHeight) {
         DrawText("Pressione ESC para o menu", screenWidth/2 - 150, screenHeight/2 + 155, 20, WHITE);
     } else {
         // debug e HUD
-        DrawText(TextFormat("Pontos: %d", pontuacao), 10, 10, 30, BLACK);
+        // Mostra tempo em minutos:segundos
+        int minutos = (int)tempoDecorrido / 60;
+        int segundos = (int)tempoDecorrido % 60;
+        DrawText(TextFormat("Tempo: %02d:%02d", minutos, segundos), 10, 10, 30, BLACK);
         DrawText(TextFormat("Velocidade: %.1f", velocidadeJogo), 10, 45, 20, BLACK);
         DrawText(TextFormat("Lane: %d", jogador.lane), 10, 70, 20, BLACK);
         
