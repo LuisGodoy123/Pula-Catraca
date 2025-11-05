@@ -110,6 +110,7 @@ void criarObstaculo(Obstaculo obstaculos[], int tamanho, float screenHeight) {
 void criarMultiplosObstaculos(Obstaculo obstaculos[], int tamanho, float screenHeight, int quantidade) {
     int criados = 0;
     int lanes_usadas[3] = {0, 0, 0}; // Controla quais lanes já têm obstáculo
+    int tipos_criados[3] = {0, 0, 0}; // Conta quantos de cada tipo: [laranja, verde, roxo]
     
     for (int i = 0; i < tamanho && criados < quantidade; i++) {
         if (!obstaculos[i].ativo) {
@@ -125,7 +126,18 @@ void criarMultiplosObstaculos(Obstaculo obstaculos[], int tamanho, float screenH
             obstaculos[i].ativo = 1;
             obstaculos[i].lane = lane_tentativa;
             obstaculos[i].pos_y = -100; // Começa acima da tela
-            obstaculos[i].tipo = rand() % 3; // 0 = ônibus alto, 1 = baixo, 2 = alto vazado
+            
+            // Define o tipo, mas evita 3 laranjas
+            int tipo_tentativa;
+            if (quantidade == 3 && criados == 2 && tipos_criados[0] == 2) {
+                // Se já tem 2 laranjas e está criando o terceiro, força outro tipo
+                tipo_tentativa = (rand() % 2) + 1; // 1 (verde) ou 2 (roxo)
+            } else {
+                tipo_tentativa = rand() % 3; // 0, 1 ou 2
+            }
+            
+            obstaculos[i].tipo = tipo_tentativa;
+            tipos_criados[tipo_tentativa]++;
             
             if (obstaculos[i].tipo == 0) {
                 // Ônibus alto (precisa desviar ou abaixar)

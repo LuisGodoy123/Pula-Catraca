@@ -159,8 +159,8 @@ void TelaJogo(int *estadoJogo, int screenWidth, int screenHeight) {
         // Cria novos obstáculos a cada 60 frames (1 segundo)
         frameCount++;
         if (frameCount >= 60) {
-            // 50% de chance de criar 2 obstáculos, 50% de criar 1
-            int quantidade = (rand() % 2 == 0) ? 2 : 1;
+            // Escolhe aleatoriamente: 1, 2 ou 3 obstáculos
+            int quantidade = (rand() % 3) + 1; // 1, 2 ou 3
             criarMultiplosObstaculos(obstaculos, MAX_OBSTACULOS, screenHeight, quantidade);
             frameCount = 0;
             pontuacao += 10; // Aumenta pontuação
