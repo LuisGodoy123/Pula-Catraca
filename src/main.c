@@ -17,7 +17,7 @@ int main(void) {
 
     // Tenta carregar a imagem de fundo
     Texture2D background = {0};
-    Image bgImage = LoadImage("assets/fundo_menu.png");
+    Image bgImage = LoadImage("assets/images/fundo_menu.png");
     
     if (bgImage.data != NULL) {
         // Se carregou a imagem, ajusta o tamanho da janela
