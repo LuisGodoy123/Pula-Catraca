@@ -137,6 +137,9 @@ void TelaJogo(int *estadoJogo, int screenWidth, int screenHeight, Texture2D back
     static float tempoDecorrido = 0.0f; // Tempo em segundos
     static bool gameOver = false;
     static bool vitoria = false;
+    
+    // Constantes de perspectiva
+    const float horizon_y = 200.0f;
 
     BeginDrawing();
     ClearBackground(RAYWHITE);
@@ -196,7 +199,7 @@ void TelaJogo(int *estadoJogo, int screenWidth, int screenHeight, Texture2D back
         if (frameCount >= 60) {
             // Escolhe aleatoriamente: 1, 2 ou 3 obstáculos
             int quantidade = (rand() % 3) + 1; // 1, 2 ou 3
-            criarMultiplosObstaculos(obstaculos, MAX_OBSTACULOS, screenHeight, quantidade);
+            criarMultiplosObstaculos(obstaculos, MAX_OBSTACULOS, screenHeight, quantidade, horizon_y);
             frameCount = 0;
             
             // dificuldade aumentando gradualmente
@@ -211,7 +214,7 @@ void TelaJogo(int *estadoJogo, int screenWidth, int screenHeight, Texture2D back
         // gerar itens colecionáveis a cada 60 frames (1 seg)
         frameCountItens++;
         if (frameCountItens >= 60) {
-            criarItem(itens, MAX_ITENS, screenHeight, obstaculos, MAX_OBSTACULOS);
+            criarItem(itens, MAX_ITENS, screenHeight, obstaculos, MAX_OBSTACULOS, horizon_y);
             frameCountItens = 0;
         }
 
@@ -224,10 +227,9 @@ void TelaJogo(int *estadoJogo, int screenWidth, int screenHeight, Texture2D back
         float lane_offset_top = (screenWidth - lane_width_top * 3) / 2.0f;
         float lane_width_bottom = screenWidth / 2.5f;
         float lane_offset_bottom = (screenWidth - lane_width_bottom * 3) / 2.0f;
-        float horizon_y = 200.0f;
         
         // Calcula progress baseado na posição Y do jogador (mesma lógica dos obstáculos)
-        float player_progress = (jogador.pos_y_real + 100) / (screenHeight + 100);
+        float player_progress = (jogador.pos_y_real - horizon_y) / (screenHeight - horizon_y);
         if (player_progress < 0) player_progress = 0;
         if (player_progress > 1) player_progress = 1;
         
@@ -318,7 +320,6 @@ void TelaJogo(int *estadoJogo, int screenWidth, int screenHeight, Texture2D back
     float lane_width_top = screenWidth / 10.0f; // mais estreito em cima
     float lane_offset_top = (screenWidth - lane_width_top * 3) / 2.0f;
     float lane_offset_bottom = (screenWidth - lane_width_bottom * 3) / 2.0f; // Centraliza as lanes na base
-    float horizon_y = 200.0f; // topo das lanes começa 200 pixels abaixo
     
     // lane esq
     DrawTriangle(
@@ -369,7 +370,8 @@ void TelaJogo(int *estadoJogo, int screenWidth, int screenHeight, Texture2D back
     // obstáculos com perspectiva
     for (int i = 0; i < MAX_OBSTACULOS; i++) {
         if (obstaculos[i].ativo) {
-            float progress = (obstaculos[i].pos_y + 100) / (screenHeight + 100);
+            // Progress baseado na distância entre horizonte e fundo da tela
+            float progress = (obstaculos[i].pos_y - horizon_y) / (screenHeight - horizon_y);
             if (progress < 0) progress = 0;
             if (progress > 1) progress = 1;
             
@@ -446,7 +448,8 @@ void TelaJogo(int *estadoJogo, int screenWidth, int screenHeight, Texture2D back
     // itens colecionáveis com perspectiva
     for (int i = 0; i < MAX_ITENS; i++) {
         if (itens[i].ativo && !itens[i].coletado) {
-            float progress = (itens[i].pos_y + 100) / (screenHeight + 100);
+            // Progress baseado na distância entre horizonte e fundo da tela
+            float progress = (itens[i].pos_y - horizon_y) / (screenHeight - horizon_y);
             if (progress < 0) progress = 0;
             if (progress > 1) progress = 1;
             
