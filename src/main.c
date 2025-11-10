@@ -548,35 +548,62 @@ void TelaJogo(int *estadoJogo, int screenWidth, int screenHeight, Texture2D back
         // game over
         DrawRectangle(0, 0, screenWidth, screenHeight, (Color){0, 0, 0, 150});
         
+        // Título centralizado
         if (vitoria) {
-            DrawText("VOCÊ VENCEU!", screenWidth/2 - 150, screenHeight/2 - 80, 50, GREEN);
-            DrawText("Coletou todos os tipos de itens!", screenWidth/2 - 180, screenHeight/2 - 30, 20, WHITE);
+            const char* titulo = "VOCÊ VENCEU!";
+            int tituloWidth = MeasureText(titulo, 50);
+            DrawText(titulo, screenWidth/2 - tituloWidth/2, screenHeight/2 - 80, 50, GREEN);
+            
+            const char* subtitulo = "Coletou todos os tipos de itens!";
+            int subtituloWidth = MeasureText(subtitulo, 20);
+            DrawText(subtitulo, screenWidth/2 - subtituloWidth/2, screenHeight/2 - 30, 20, WHITE);
         } else {
-            DrawText("GAME OVER!", screenWidth/2 - 150, screenHeight/2 - 80, 50, RED);
+            const char* titulo = "GAME OVER!";
+            int tituloWidth = MeasureText(titulo, 50);
+            DrawText(titulo, screenWidth/2 - tituloWidth/2, screenHeight/2 - 80, 50, RED);
         }
         
-        // Mostra tempo em minutos:segundos
+        // Tempo centralizado
         int minutos = (int)tempoDecorrido / 60;
         int segundos = (int)tempoDecorrido % 60;
-        DrawText(TextFormat("Tempo: %02d:%02d", minutos, segundos), screenWidth/2 - 100, screenHeight/2 + 10, 30, WHITE);
+        const char* textoTempo = TextFormat("Tempo: %02d:%02d", minutos, segundos);
+        int tempoWidth = MeasureText(textoTempo, 30);
+        DrawText(textoTempo, screenWidth/2 - tempoWidth/2, screenHeight/2 + 10, 30, WHITE);
         
-        // Mostra contagem de itens coletados
-        DrawText("Itens coletados:", screenWidth/2 - 100, screenHeight/2 + 50, 20, WHITE);
+        // Label "Itens coletados" centralizado
+        const char* labelItens = "Itens coletados:";
+        int labelWidth = MeasureText(labelItens, 20);
+        DrawText(labelItens, screenWidth/2 - labelWidth/2, screenHeight/2 + 50, 20, WHITE);
+        
+        // Ícones dos itens centralizados
+        // Cada ícone: 48px de largura, espaçamento de 60px entre centros
+        // Total: 5 ícones com 4 espaços de 60px = 240px de espaçamento + 48px/2 em cada ponta
+        int totalWidth = (TIPOS_ITENS - 1) * 60 + 48; // Largura total: 4*60 + 48 = 288px
+        int startX = screenWidth/2 - totalWidth/2 + 24; // +24 para começar no centro do primeiro ícone
         for (int i = 0; i < TIPOS_ITENS; i++) {
-            int icon_x = screenWidth/2 - 100 + (i * 40);
+            int icon_x = startX + (i * 60);
             int icon_y = screenHeight/2 + 75;
             if (texturasItens[i].id > 0) {
                 Rectangle source = {0, 0, (float)texturasItens[i].width, (float)texturasItens[i].height};
-                Rectangle dest = {icon_x - 24, icon_y, 48, 48}; // Aumentado de 24x24 para 48x48
+                Rectangle dest = {icon_x - 24, icon_y, 48, 48};
                 DrawTexturePro(texturasItens[i], source, dest, (Vector2){0, 0}, 0.0f, WHITE);
             } else {
-                DrawCircle(icon_x, icon_y + 10, 12, coresItens[i]);
+                DrawCircle(icon_x, icon_y + 24, 12, coresItens[i]);
             }
-            DrawText(TextFormat("%d", itensColetados[i]), screenWidth/2 - 95 + (i * 40), screenHeight/2 + 95, 15, WHITE);
+            // Quantidade centralizada abaixo da imagem
+            const char* texto = TextFormat("%d", itensColetados[i]);
+            int textWidth = MeasureText(texto, 25);
+            DrawText(texto, icon_x - textWidth/2, icon_y + 55, 25, WHITE);
         }
         
-        DrawText("Pressione R para reiniciar", screenWidth/2 - 150, screenHeight/2 + 125, 20, WHITE);
-        DrawText("P=Pausar | X=Resetar | ESC=Fechar jogo", screenWidth/2 - 180, screenHeight/2 + 155, 20, WHITE);
+        // Instruções centralizadas
+        const char* instrucao1 = "Pressione R para reiniciar";
+        int instr1Width = MeasureText(instrucao1, 20);
+        DrawText(instrucao1, screenWidth/2 - instr1Width/2, screenHeight/2 + 165, 20, WHITE);
+        
+        const char* instrucao2 = "P=Pausar | X=Resetar | ESC=Fechar jogo";
+        int instr2Width = MeasureText(instrucao2, 20);
+        DrawText(instrucao2, screenWidth/2 - instr2Width/2, screenHeight/2 + 195, 20, WHITE);
     } else {
         // debug e HUD
         // Mostra tempo em minutos:segundos
