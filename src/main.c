@@ -133,10 +133,16 @@ void TelaJogo(int *estadoJogo, int screenWidth, int screenHeight, Texture2D back
     static bool inicializado = false;
     static int frameCount = 0;
     static int frameCountItens = 0;
-    static float velocidadeJogo = 4.5f;
+    static float velocidadeJogo = 3.5f; // Velocidade inicial: 3.5 m/s (bem mais lento)
+    static float velocidadeMaxima = 45.0f; // Velocidade máxima: 45 m/s (rápido)
+    static float intervaloAceleracao = 30.0f; // Acelera a cada 30 segundos
+    static float tempoUltimaAceleracao = 0.0f; // Controla quando acelerar
+    static float incrementoVelocidade = 4.0f; // Aumenta 4 m/s a cada intervalo
     static float tempoDecorrido = 0.0f; // Tempo em segundos
     static bool gameOver = false;
     static bool vitoria = false;
+    static float tempoMensagemAceleracao = 0.0f; // Para mostrar mensagem de aceleração
+    static bool mostrarMensagemAceleracao = false;
     
     // Constantes de perspectiva
     const float horizon_y = 200.0f;
@@ -166,10 +172,16 @@ void TelaJogo(int *estadoJogo, int screenWidth, int screenHeight, Texture2D back
         
         frameCount = 0;
         frameCountItens = 0;
-        velocidadeJogo = 4.5f;
+        velocidadeJogo = 3.5f; // Velocidade inicial (lenta)
+        velocidadeMaxima = 45.0f;
+        intervaloAceleracao = 30.0f;
+        tempoUltimaAceleracao = 0.0f;
+        incrementoVelocidade = 4.0f;
         tempoDecorrido = 0.0f;
         gameOver = false;
         vitoria = false;
+        tempoMensagemAceleracao = 0.0f;
+        mostrarMensagemAceleracao = false;
         inicializado = true;
     }
 
@@ -194,6 +206,30 @@ void TelaJogo(int *estadoJogo, int screenWidth, int screenHeight, Texture2D back
         // incrementa o tempo (60 FPS = 1/60 segundo por frame)
         tempoDecorrido += 1.0f / 60.0f;
 
+        // Sistema de aceleração progressiva
+        // Verifica se deve acelerar baseado no tempo decorrido
+        if (velocidadeJogo < velocidadeMaxima) {
+            if (tempoDecorrido - tempoUltimaAceleracao >= intervaloAceleracao) {
+                velocidadeJogo += incrementoVelocidade;
+                // Garante que não ultrapasse a velocidade máxima
+                if (velocidadeJogo > velocidadeMaxima) {
+                    velocidadeJogo = velocidadeMaxima;
+                }
+                tempoUltimaAceleracao = tempoDecorrido;
+                // Ativa mensagem de aceleração
+                mostrarMensagemAceleracao = true;
+                tempoMensagemAceleracao = 0.0f;
+            }
+        }
+
+        // Atualiza temporizador da mensagem de aceleração
+        if (mostrarMensagemAceleracao) {
+            tempoMensagemAceleracao += 1.0f / 60.0f;
+            if (tempoMensagemAceleracao >= 2.0f) { // Mostra por 2 segundos
+                mostrarMensagemAceleracao = false;
+            }
+        }
+
         // novos obstaculos a 60fps
         frameCount++;
         if (frameCount >= 60) {
@@ -201,11 +237,6 @@ void TelaJogo(int *estadoJogo, int screenWidth, int screenHeight, Texture2D back
             int quantidade = (rand() % 3) + 1; // 1, 2 ou 3
             criarMultiplosObstaculos(obstaculos, MAX_OBSTACULOS, screenHeight, quantidade, horizon_y);
             frameCount = 0;
-            
-            // dificuldade aumentando gradualmente
-            if (velocidadeJogo < 10.8f) {
-                velocidadeJogo += 0.18f;
-            }
         }
 
         // atualiza obstáculos
@@ -284,7 +315,8 @@ void TelaJogo(int *estadoJogo, int screenWidth, int screenHeight, Texture2D back
             float pos_y = screenHeight - 100;
             inicializarJogador(&jogador, pos_x, pos_y);
             inicializarObstaculos(obstaculos, MAX_OBSTACULOS);
-            velocidadeJogo = 4.5f;
+            velocidadeJogo = 3.5f; // Reinicia na velocidade inicial (lenta)
+            tempoUltimaAceleracao = tempoDecorrido; // Mantém tempo acumulado
             gameOver = false;
             vitoria = false;
             // NÃO reseta tempoDecorrido e itensColetados
@@ -516,14 +548,61 @@ void TelaJogo(int *estadoJogo, int screenWidth, int screenHeight, Texture2D back
         int minutos = (int)tempoDecorrido / 60;
         int segundos = (int)tempoDecorrido % 60;
         DrawText(TextFormat("Tempo: %02d:%02d", minutos, segundos), 10, 10, 30, BLACK);
-        DrawText(TextFormat("Velocidade: %.1f", velocidadeJogo), 10, 45, 20, BLACK);
-        DrawText(TextFormat("Lane: %d", jogador.lane), 10, 70, 20, BLACK);
+        DrawText(TextFormat("Velocidade: %.1f m/s", velocidadeJogo), 10, 45, 20, BLACK);
+        
+        // Barra de progresso para próxima aceleração
+        if (velocidadeJogo < velocidadeMaxima) {
+            float tempoDesdeUltimaAceleracao = tempoDecorrido - tempoUltimaAceleracao;
+            float progressoAceleracao = tempoDesdeUltimaAceleracao / intervaloAceleracao;
+            if (progressoAceleracao > 1.0f) progressoAceleracao = 1.0f;
+            
+            int barWidth = 200;
+            int barHeight = 15;
+            int barX = 10;
+            int barY = 72;
+            
+            // Fundo da barra
+            DrawRectangle(barX, barY, barWidth, barHeight, (Color){50, 50, 50, 200});
+            // Progresso
+            DrawRectangle(barX, barY, (int)(barWidth * progressoAceleracao), barHeight, (Color){255, 200, 0, 255});
+            // Borda
+            DrawRectangleLines(barX, barY, barWidth, barHeight, BLACK);
+            
+            // Tempo restante
+            int tempoRestante = (int)(intervaloAceleracao - tempoDesdeUltimaAceleracao);
+            DrawText(TextFormat("Próxima aceleração: %ds", tempoRestante), barX + barWidth + 10, barY, 15, BLACK);
+        } else {
+            DrawText("VELOCIDADE MÁXIMA ATINGIDA!", 10, 72, 15, RED);
+        }
+        
+        DrawText(TextFormat("Lane: %d", jogador.lane), 10, 95, 20, BLACK);
         
         // Mostra itens coletados durante o jogo
-        DrawText("Itens:", 10, 100, 20, BLACK);
+        DrawText("Itens:", 10, 120, 20, BLACK);
         for (int i = 0; i < TIPOS_ITENS; i++) {
-            DrawCircle(20 + (i * 35), 130, 12, coresItens[i]);
-            DrawText(TextFormat("%d", itensColetados[i]), 15 + (i * 35), 145, 15, itensColetados[i] > 0 ? GREEN : RED);
+            DrawCircle(20 + (i * 35), 150, 12, coresItens[i]);
+            DrawText(TextFormat("%d", itensColetados[i]), 15 + (i * 35), 165, 15, itensColetados[i] > 0 ? GREEN : RED);
+        }
+        
+        // Mensagem de aceleração
+        if (mostrarMensagemAceleracao) {
+            int msgX = screenWidth / 2 - 150;
+            int msgY = screenHeight / 2 - 50;
+            
+            // Fundo semi-transparente
+            DrawRectangle(msgX - 20, msgY - 10, 320, 80, (Color){0, 0, 0, 150});
+            
+            // Texto de aceleração com efeito pulsante
+            float alpha = 1.0f - (tempoMensagemAceleracao / 2.0f); // Fade out gradual
+            Color textColor = (Color){255, 200, 0, (unsigned char)(255 * alpha)};
+            
+            if (velocidadeJogo >= velocidadeMaxima) {
+                DrawText("VELOCIDADE MÁXIMA!", msgX, msgY, 30, textColor);
+                DrawText(TextFormat("%.0f m/s", velocidadeJogo), msgX + 60, msgY + 40, 25, (Color){255, 255, 255, (unsigned char)(255 * alpha)});
+            } else {
+                DrawText("ACELERANDO!", msgX + 30, msgY, 35, textColor);
+                DrawText(TextFormat("Nova velocidade: %.0f m/s", velocidadeJogo), msgX + 10, msgY + 40, 20, (Color){255, 255, 255, (unsigned char)(255 * alpha)});
+            }
         }
         
         DrawText("W=Pular | A=Esq | D=Dir | S=Abaixar", 10, screenHeight - 50, 18, BLACK);
