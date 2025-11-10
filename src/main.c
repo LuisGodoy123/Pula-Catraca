@@ -144,6 +144,10 @@ void TelaJogo(int *estadoJogo, int screenWidth, int screenHeight, Texture2D back
     static float tempoMensagemAceleracao = 0.0f; // Para mostrar mensagem de aceleração
     static bool mostrarMensagemAceleracao = false;
     
+    // Texturas dos itens colecionáveis (carregadas uma vez)
+    static Texture2D texturasItens[TIPOS_ITENS] = {0};
+    static bool texturasCarregadas = false;
+    
     // Constantes de perspectiva
     const float horizon_y = 200.0f;
 
@@ -183,6 +187,16 @@ void TelaJogo(int *estadoJogo, int screenWidth, int screenHeight, Texture2D back
         tempoMensagemAceleracao = 0.0f;
         mostrarMensagemAceleracao = false;
         inicializado = true;
+    }
+    
+    // Carrega texturas dos itens (apenas uma vez)
+    if (!texturasCarregadas) {
+        texturasItens[0] = LoadTexture("assets/images/pipoca.png");      // Tipo 0: YELLOW
+        texturasItens[1] = LoadTexture("assets/images/moeda.png");       // Tipo 1: SKYBLUE
+        texturasItens[2] = LoadTexture("assets/images/VEM.png");         // Tipo 2: PINK
+        texturasItens[3] = LoadTexture("assets/images/botao_parada.png"); // Tipo 3: GOLD
+        texturasItens[4] = LoadTexture("assets/images/fone.png");        // Tipo 4: GREEN
+        texturasCarregadas = true;
     }
 
     if (!gameOver) {
@@ -487,7 +501,7 @@ void TelaJogo(int *estadoJogo, int screenWidth, int screenHeight, Texture2D back
             
             // escala com perspectiva
             float scale = 0.3f + (progress * 0.7f);
-            float tamanho_scaled = 30 * scale;
+            float tamanho_scaled = 120 * scale; // 120 pixels (varia de 36px no horizonte a 120px na base)
             
             // posição X com perspectiva
             float lane_width_top = screenWidth / 10.0f; // Perspectiva mais acentuada
@@ -499,9 +513,22 @@ void TelaJogo(int *estadoJogo, int screenWidth, int screenHeight, Texture2D back
             float x_bottom = lane_offset_bottom + (itens[i].lane * lane_width_bottom) + lane_width_bottom / 2;
             float item_x = x_top + (x_bottom - x_top) * progress;
             
-            // Desenha item como círculo ------------- ADD SPRITE AQUI DEPOIS
-            DrawCircle(item_x, itens[i].pos_y + tamanho_scaled / 2, tamanho_scaled / 2, coresItens[itens[i].tipo]);
-            DrawCircleLines(item_x, itens[i].pos_y + tamanho_scaled / 2, tamanho_scaled / 2, BLACK);
+            // Desenha sprite do item
+            if (texturasItens[itens[i].tipo].id > 0) {
+                // Usa a textura se carregada
+                Rectangle source = {0, 0, (float)texturasItens[itens[i].tipo].width, (float)texturasItens[itens[i].tipo].height};
+                Rectangle dest = {
+                    item_x - tamanho_scaled / 2, 
+                    itens[i].pos_y, 
+                    tamanho_scaled, 
+                    tamanho_scaled
+                };
+                DrawTexturePro(texturasItens[itens[i].tipo], source, dest, (Vector2){0, 0}, 0.0f, WHITE);
+            } else {
+                // Fallback: desenha círculo colorido se a textura não carregar
+                DrawCircle(item_x, itens[i].pos_y + tamanho_scaled / 2, tamanho_scaled / 2, coresItens[itens[i].tipo]);
+                DrawCircleLines(item_x, itens[i].pos_y + tamanho_scaled / 2, tamanho_scaled / 2, BLACK);
+            }
         }
     }
 
@@ -536,7 +563,15 @@ void TelaJogo(int *estadoJogo, int screenWidth, int screenHeight, Texture2D back
         // Mostra contagem de itens coletados
         DrawText("Itens coletados:", screenWidth/2 - 100, screenHeight/2 + 50, 20, WHITE);
         for (int i = 0; i < TIPOS_ITENS; i++) {
-            DrawCircle(screenWidth/2 - 100 + (i * 40), screenHeight/2 + 85, 12, coresItens[i]);
+            int icon_x = screenWidth/2 - 100 + (i * 40);
+            int icon_y = screenHeight/2 + 75;
+            if (texturasItens[i].id > 0) {
+                Rectangle source = {0, 0, (float)texturasItens[i].width, (float)texturasItens[i].height};
+                Rectangle dest = {icon_x - 24, icon_y, 48, 48}; // Aumentado de 24x24 para 48x48
+                DrawTexturePro(texturasItens[i], source, dest, (Vector2){0, 0}, 0.0f, WHITE);
+            } else {
+                DrawCircle(icon_x, icon_y + 10, 12, coresItens[i]);
+            }
             DrawText(TextFormat("%d", itensColetados[i]), screenWidth/2 - 95 + (i * 40), screenHeight/2 + 95, 15, WHITE);
         }
         
@@ -580,7 +615,15 @@ void TelaJogo(int *estadoJogo, int screenWidth, int screenHeight, Texture2D back
         // Mostra itens coletados durante o jogo
         DrawText("Itens:", 10, 120, 20, BLACK);
         for (int i = 0; i < TIPOS_ITENS; i++) {
-            DrawCircle(20 + (i * 35), 150, 12, coresItens[i]);
+            int icon_x = 20 + (i * 35);
+            int icon_y = 140;
+            if (texturasItens[i].id > 0) {
+                Rectangle source = {0, 0, (float)texturasItens[i].width, (float)texturasItens[i].height};
+                Rectangle dest = {icon_x - 24, icon_y, 48, 48}; // Aumentado de 24x24 para 48x48
+                DrawTexturePro(texturasItens[i], source, dest, (Vector2){0, 0}, 0.0f, WHITE);
+            } else {
+                DrawCircle(icon_x, icon_y + 10, 12, coresItens[i]);
+            }
             DrawText(TextFormat("%d", itensColetados[i]), 15 + (i * 35), 165, 15, itensColetados[i] > 0 ? GREEN : RED);
         }
         
