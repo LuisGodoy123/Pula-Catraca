@@ -137,6 +137,12 @@ void TelaJogo(int *estadoJogo, int screenWidth, int screenHeight, Texture2D back
     static float tempoDecorrido = 0.0f; // Tempo em segundos
     static bool gameOver = false;
     static bool vitoria = false;
+    
+    // Texturas dos obstáculos (carregadas uma vez)
+    static Texture2D spriteOnibus = {0};
+    static Texture2D spriteCatraca = {0};
+    static Texture2D spriteParada = {0};
+    static bool spritesCarregadas = false;
 
     BeginDrawing();
     ClearBackground(RAYWHITE);
