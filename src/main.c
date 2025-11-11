@@ -141,14 +141,16 @@ void TelaJogo(int *estadoJogo, int screenWidth, int screenHeight, Texture2D back
     static float tempoDecorrido = 0.0f; // Tempo em segundos
     static bool gameOver = false;
     static bool vitoria = false;
-    static float tempoMensagemAceleracao = 0.0f; // Para mostrar mensagem de aceleração
-    static bool mostrarMensagemAceleracao = false;
+<<<<<<< HEAD
     
     // Texturas dos obstáculos (carregadas uma vez)
     static Texture2D spriteOnibus = {0};
     static Texture2D spriteCatraca = {0};
     static Texture2D spriteParada = {0};
     static bool spritesCarregadas = false;
+=======
+    static float tempoMensagemAceleracao = 0.0f; // Para mostrar mensagem de aceleração
+    static bool mostrarMensagemAceleracao = false;
     
     // Texturas dos itens colecionáveis (carregadas uma vez)
     static Texture2D texturasItens[TIPOS_ITENS] = {0};
@@ -156,6 +158,7 @@ void TelaJogo(int *estadoJogo, int screenWidth, int screenHeight, Texture2D back
     
     // Constantes de perspectiva
     const float horizon_y = 200.0f;
+>>>>>>> 4532e41fa0c374eafb637c9b7573a3644287f66a
 
     BeginDrawing();
     ClearBackground(RAYWHITE);
