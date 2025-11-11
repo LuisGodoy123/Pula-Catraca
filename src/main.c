@@ -603,9 +603,9 @@ void TelaJogo(int *estadoJogo, int screenWidth, int screenHeight, Texture2D back
             } else if (obstaculos[i].tipo == 1) {
                 // catraca de onibus (apenas parte inferior) = obstaculo baixo (pular com W)
                 if (spriteCatraca.id > 0) {
-                    // Sprite visual de 100px
-                    float sprite_largura_catraca = 100.0f * scale;
-                    float sprite_altura_catraca = 100.0f * scale;
+                    // Sprite visual de 80px
+                    float sprite_largura_catraca = 80.0f * scale;
+                    float sprite_altura_catraca = 80.0f * scale;
                     Rectangle source = {0, 0, (float)spriteCatraca.width, (float)spriteCatraca.height};
                     Rectangle dest = {obs_x - sprite_largura_catraca / 2, obstaculos[i].pos_y, sprite_largura_catraca, sprite_altura_catraca};
                     DrawTexturePro(spriteCatraca, source, dest, (Vector2){0, 0}, 0.0f, WHITE);
