@@ -14,6 +14,7 @@ int main(void) {
     
     // inicializa a janela
     InitWindow(screenWidth, screenHeight, "Pula-Catraca");
+    SetTraceLogLevel(LOG_WARNING); // Desabilita mensagens de INFO e DEBUG
     SetTargetFPS(60);
 
     // carrega imagens de fundo
@@ -142,9 +143,19 @@ void TelaJogo(int *estadoJogo, int screenWidth, int screenHeight, Texture2D back
     static bool gameOver = false;
     static bool vitoria = false;
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+    static float tempoMensagemAceleracao = 0.0f; // Para mostrar mensagem de aceleração
+    static bool mostrarMensagemAceleracao = false;
+    static int direcaoJogador = 0; // -1 = esquerda, 0 = centro, 1 = direita
+    static float tempoAnimacao = 0.0f; // Timer para animação de sprites
+    static bool frameAnimacao = false; // Alterna entre direito(false) e esquerdo(true)
+>>>>>>> 02f1f18bc5b1d254e40bc3a8f04c0cf7eae30970
     
     // Texturas dos obstáculos (carregadas uma vez)
-    static Texture2D spriteOnibus = {0};
+    static Texture2D spriteOnibusEsquerdo = {0};
+    static Texture2D spriteOnibusCentro = {0};
+    static Texture2D spriteOnibusDireito = {0};
     static Texture2D spriteCatraca = {0};
     static Texture2D spriteParada = {0};
     static bool spritesCarregadas = false;
@@ -155,6 +166,13 @@ void TelaJogo(int *estadoJogo, int screenWidth, int screenHeight, Texture2D back
     // Texturas dos itens colecionáveis (carregadas uma vez)
     static Texture2D texturasItens[TIPOS_ITENS] = {0};
     static bool texturasCarregadas = false;
+    
+    // Texturas do jogador
+    static Texture2D spriteCorrendoDireita = {0};
+    static Texture2D spriteCorrendoEsquerda = {0};
+    static Texture2D spritePulandoDireita = {0};
+    static Texture2D spritePulandoEsquerda = {0};
+    static bool spritesJogadorCarregadas = false;
     
     // Constantes de perspectiva
     const float horizon_y = 200.0f;
@@ -198,6 +216,14 @@ void TelaJogo(int *estadoJogo, int screenWidth, int screenHeight, Texture2D back
         inicializado = true;
     }
     
+    // Carrega texturas dos obstáculos (apenas uma vez)
+    if (!spritesCarregadas) {
+        spriteOnibusEsquerdo = LoadTexture("assets/images/onibus_esquerdo.png");
+        spriteOnibusCentro = LoadTexture("assets/images/onibus.png");
+        spriteOnibusDireito = LoadTexture("assets/images/onibus_direito.png");
+        spritesCarregadas = true;
+    }
+    
     // Carrega texturas dos itens (apenas uma vez)
     if (!texturasCarregadas) {
         texturasItens[0] = LoadTexture("assets/images/pipoca.png");      // Tipo 0: YELLOW
@@ -207,6 +233,15 @@ void TelaJogo(int *estadoJogo, int screenWidth, int screenHeight, Texture2D back
         texturasItens[4] = LoadTexture("assets/images/fone.png");        // Tipo 4: GREEN
         texturasCarregadas = true;
     }
+    
+    // Carrega sprites do jogador (apenas uma vez)
+    if (!spritesJogadorCarregadas) {
+        spriteCorrendoDireita = LoadTexture("assets/images/correndo_direito.png");
+        spriteCorrendoEsquerda = LoadTexture("assets/images/correndo_esquerdo.png");
+        spritePulandoDireita = LoadTexture("assets/images/pulando_direita.png");
+        spritePulandoEsquerda = LoadTexture("assets/images/pulando_esquerda.png");
+        spritesJogadorCarregadas = true;
+    }
 
     if (!gameOver) {
         // inputs do jogador
@@ -215,9 +250,11 @@ void TelaJogo(int *estadoJogo, int screenWidth, int screenHeight, Texture2D back
         }
         if (IsKeyPressed(KEY_A)) {
             moverEsquerda(&jogador);
+            direcaoJogador = -1;
         }
         if (IsKeyPressed(KEY_D)) {
             moverDireita(&jogador);
+            direcaoJogador = 1;
         }
         if (IsKeyPressed(KEY_S)) {
             abaixar(&jogador);
@@ -262,12 +299,19 @@ void TelaJogo(int *estadoJogo, int screenWidth, int screenHeight, Texture2D back
             frameCount = 0;
         }
 
+        // Timer para animação das sprites do jogador (alterna a cada 0.5s)
+        tempoAnimacao += GetFrameTime();
+        if (tempoAnimacao >= 0.5f) {
+            frameAnimacao = !frameAnimacao;
+            tempoAnimacao = 0.0f;
+        }
+
         // atualiza obstáculos
         atualizarObstaculos(obstaculos, MAX_OBSTACULOS, velocidadeJogo);
 
-        // gerar itens colecionáveis a cada 60 frames (1 seg)
+        // gerar itens colecionáveis a cada 180 frames (3 seg)
         frameCountItens++;
-        if (frameCountItens >= 60) {
+        if (frameCountItens >= 180) {
             criarItem(itens, MAX_ITENS, screenHeight, obstaculos, MAX_OBSTACULOS, horizon_y);
             frameCountItens = 0;
         }
@@ -325,7 +369,7 @@ void TelaJogo(int *estadoJogo, int screenWidth, int screenHeight, Texture2D back
 
         // colisões (posição sem perspectiva p cálculo)
         for (int i = 0; i < MAX_OBSTACULOS; i++) {
-            if (verificarColisao(&jogador, &obstaculos[i], lane_width_bottom, lane_offset_bottom)) {
+            if (verificarColisao(&jogador, &obstaculos[i], lane_width_bottom, lane_offset_bottom, horizon_y, screenHeight)) {
                 gameOver = true;
                 break;
             }
@@ -448,22 +492,30 @@ void TelaJogo(int *estadoJogo, int screenWidth, int screenHeight, Texture2D back
             float x_bottom = lane_offset_bottom + lane_width_bottom * obstaculos[i].lane + lane_width_bottom / 2;
             float obs_x = x_top + (x_bottom - x_top) * progress;
             
-            // cor do obstaculo dependendo do tipo ------------ ADD SPRITES AQUI DEPOIS
-            Color cor;
-            
             if (obstaculos[i].tipo == 0) {
                 // Ônibus alto cheio = obstaculo padrão (desviar com A e D)
-                cor = ORANGE;
-                DrawRectangle(
-                    obs_x - largura_scaled / 2, 
-                    obstaculos[i].pos_y, 
-                    largura_scaled, 
-                    altura_scaled, 
-                    cor
-                );
+                // Seleciona a sprite correta baseada na lane
+                Texture2D spriteOnibusAtual = spriteOnibusCentro; // Padrão para lane central (1)
+                if (obstaculos[i].lane == 0) {
+                    spriteOnibusAtual = spriteOnibusEsquerdo;
+                } else if (obstaculos[i].lane == 2) {
+                    spriteOnibusAtual = spriteOnibusDireito;
+                }
+                
+                if (spriteOnibusAtual.id > 0) {
+                    // Sprite visual 300px (aumentado de 150px base)
+                    float sprite_largura = 300.0f * scale;
+                    float sprite_altura = 300.0f * scale;
+                    Rectangle source = {0, 0, (float)spriteOnibusAtual.width, (float)spriteOnibusAtual.height};
+                    Rectangle dest = {obs_x - sprite_largura / 2, obstaculos[i].pos_y, sprite_largura, sprite_altura};
+                    DrawTexturePro(spriteOnibusAtual, source, dest, (Vector2){0, 0}, 0.0f, WHITE);
+                } else {
+                    // Fallback se a textura não carregar
+                    DrawRectangle(obs_x - largura_scaled / 2, obstaculos[i].pos_y, largura_scaled, altura_scaled, ORANGE);
+                }
             } else if (obstaculos[i].tipo == 1) {
                 // catraca de onibus (apenas parte inferior) = obstaculo baixo (pular com W)
-                cor = GREEN;
+                Color cor = GREEN;
                 DrawRectangle(
                     obs_x - largura_scaled / 2, 
                     obstaculos[i].pos_y, 
@@ -473,7 +525,7 @@ void TelaJogo(int *estadoJogo, int screenWidth, int screenHeight, Texture2D back
                 );
             } else {
                 // parada de onibus com teto = obstaculo alto vazado (abaixar com S)
-                cor = PURPLE;
+                Color cor = PURPLE;
                 float border = 8 * scale;
                 DrawRectangle(
                     obs_x - largura_scaled / 2, 
@@ -541,16 +593,40 @@ void TelaJogo(int *estadoJogo, int screenWidth, int screenHeight, Texture2D back
         }
     }
 
-    // desenha o jogador ------------------ ADD SPRITES AQUI DEPOIS
-    Color playerColor = gameOver ? GRAY : RED;
+    // desenha o jogador com sprites
     if (jogador.abaixado) {
-        // abaixado
-        DrawRectangle(jogador.pos_x_real - 20, jogador.pos_y_real + 20, 40, 20, playerColor);
-    } else if (jogador.pulando){
-        // pulando
-        DrawRectangle(jogador.pos_x_real - 20, jogador.pos_y_real - 20, 40, 40, playerColor);
+        // abaixado - usa sprite correndo mas menor, alterna animação
+        Texture2D spriteAtual = frameAnimacao ? spriteCorrendoEsquerda : spriteCorrendoDireita;
+        if (spriteAtual.id > 0) {
+            Rectangle source = {0, 0, (float)spriteAtual.width, (float)spriteAtual.height};
+            // Sprite 150x75 mas hitbox mantém 40x30
+            Rectangle dest = {jogador.pos_x_real - 75, jogador.pos_y_real - 12.5f, 150, 75};
+            DrawTexturePro(spriteAtual, source, dest, (Vector2){0, 0}, 0.0f, WHITE);
+        } else {
+            DrawRectangle(jogador.pos_x_real - 20, jogador.pos_y_real + 20, 40, 20, RED);
+        }
+    } else if (jogador.pulando) {
+        // pulando - usa direção do movimento
+        Texture2D spriteAtual = (direcaoJogador < 0) ? spritePulandoEsquerda : spritePulandoDireita;
+        if (spriteAtual.id > 0) {
+            Rectangle source = {0, 0, (float)spriteAtual.width, (float)spriteAtual.height};
+            // Sprite 150x150 mas hitbox mantém 40x50
+            Rectangle dest = {jogador.pos_x_real - 75, jogador.pos_y_real - 60, 150, 150};
+            DrawTexturePro(spriteAtual, source, dest, (Vector2){0, 0}, 0.0f, WHITE);
+        } else {
+            DrawRectangle(jogador.pos_x_real - 20, jogador.pos_y_real - 20, 40, 40, RED);
+        }
     } else {
-        DrawRectangle(jogador.pos_x_real - 20, jogador.pos_y_real, 40, 40, playerColor);
+        // correndo - alterna entre direita e esquerda a cada 0.5s
+        Texture2D spriteAtual = frameAnimacao ? spriteCorrendoEsquerda : spriteCorrendoDireita;
+        if (spriteAtual.id > 0) {
+            Rectangle source = {0, 0, (float)spriteAtual.width, (float)spriteAtual.height};
+            // Sprite 150x150 mas hitbox mantém 40x50
+            Rectangle dest = {jogador.pos_x_real - 75, jogador.pos_y_real - 60, 150, 150};
+            DrawTexturePro(spriteAtual, source, dest, (Vector2){0, 0}, 0.0f, WHITE);
+        } else {
+            DrawRectangle(jogador.pos_x_real - 20, jogador.pos_y_real, 40, 40, RED);
+        }
     }
 
     if (gameOver) {

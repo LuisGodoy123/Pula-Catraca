@@ -50,7 +50,7 @@ void inicializarObstaculos(Obstaculo obstaculos[], int tamanho);
 void criarObstaculo(Obstaculo obstaculos[], int tamanho, float screenHeight, float horizon_y);
 void criarMultiplosObstaculos(Obstaculo obstaculos[], int tamanho, float screenHeight, int quantidade, float horizon_y);
 void atualizarObstaculos(Obstaculo obstaculos[], int tamanho, float velocidade);
-int verificarColisao(Jogador *j, Obstaculo *obs, float lane_width, float lane_offset);
+int verificarColisao(Jogador *j, Obstaculo *obs, float lane_width, float lane_offset, float horizon_y, float screenHeight);
 
 // funções para itens colecionáveis
 void inicializarItens(ItemColetavel itens[], int tamanho);

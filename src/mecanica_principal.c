@@ -178,7 +178,7 @@ void atualizarObstaculos(Obstaculo obstaculos[], int tamanho, float velocidade) 
     }
 }
 
-int verificarColisao(Jogador *j, Obstaculo *obs, float lane_width, float lane_offset) {
+int verificarColisao(Jogador *j, Obstaculo *obs, float lane_width, float lane_offset, float horizon_y, float screenHeight) {
     if (!obs->ativo) return 0;
     
     // Se é um obstáculo baixo e o jogador está pulando, não colide
@@ -191,21 +191,44 @@ int verificarColisao(Jogador *j, Obstaculo *obs, float lane_width, float lane_of
         return 0;
     }
     
-    // Verifica se estão na mesma lane primeiro (mais eficiente)
-    if (j->lane != obs->lane) {
-        return 0;
-    }
+    // Calcula o scale do obstáculo baseado na perspectiva
+    float progress = (obs->pos_y - horizon_y) / (screenHeight - horizon_y);
+    if (progress < 0) progress = 0;
+    if (progress > 1) progress = 1;
+    float scale = 0.3f + (progress * 0.7f); // De 0.3 a 1.0
     
-    // Hitbox do jogador em Y
-    float player_top = j->abaixado ? j->pos_y_real + 20 : j->pos_y_real;
+    // Calcula posição X do obstáculo com perspectiva (igual ao renderização)
+    float lane_width_top = 800.0f / 10.0f; // Usa screenWidth hardcoded (800)
+    float lane_offset_top = (800.0f - lane_width_top * 3) / 2.0f;
+    float lane_width_bottom = 800.0f / 2.5f;
+    float lane_offset_bottom = (800.0f - lane_width_bottom * 3) / 2.0f;
+    
+    float x_top = lane_offset_top + lane_width_top * obs->lane + lane_width_top / 2;
+    float x_bottom = lane_offset_bottom + lane_width_bottom * obs->lane + lane_width_bottom / 2;
+    float obs_x = x_top + (x_bottom - x_top) * progress;
+    
+    // Hitbox do jogador em X (largura reduzida para 30px ao invés de 40px)
+    float player_left = j->pos_x_real - 15;
+    float player_right = j->pos_x_real + 15;
+    
+    // Hitbox do jogador em Y (expandida 10px para cima)
+    float player_top = j->abaixado ? j->pos_y_real + 10 : j->pos_y_real - 10;
     float player_bottom = j->abaixado ? j->pos_y_real + 40 : j->pos_y_real + 40;
     
-    // Hitbox do obstáculo em Y
-    float obs_top = obs->pos_y;
-    float obs_bottom = obs->pos_y + obs->altura;
+    // Hitbox do obstáculo tipo 0 (ônibus): ajustada proporcionalmente de 150px para 300px
+    // Fator de escala: 300/150 = 2x
+    // Hitbox anterior: 70% da largura visual
+    // Nova hitbox: 70% * 2 = 140% = 1.4x (mantendo proporcional)
+    float hitbox_factor = (obs->tipo == 0) ? 1.4f : 0.7f; // 140% para ônibus, 70% para outros
+    float largura_scaled = obs->largura * scale * hitbox_factor;
+    float obs_left = obs_x - largura_scaled / 2;
+    float obs_right = obs_x + largura_scaled / 2;
+    float obs_top = obs->pos_y + (obs->altura * scale * 0.15f); // 15% de margem no topo
+    float obs_bottom = obs->pos_y + (obs->altura * scale * 0.85f); // 85% da altura (70% + 15%)
     
-    // Verifica colisão em Y (se estão na mesma lane, basta checar Y)
-    if (player_bottom > obs_top && player_top < obs_bottom) {
+    // Verifica colisão em X e Y (AABB - Axis-Aligned Bounding Box)
+    if (player_right > obs_left && player_left < obs_right &&
+        player_bottom > obs_top && player_top < obs_bottom) {
         return 1; // Colidiu!
     }
     
@@ -297,8 +320,8 @@ int verificarColeta(Jogador *j, ItemColetavel *item, float lane_width, float lan
         return 0;
     }
     
-    // Hitbox do jogador (posição real em Y)
-    float player_top = j->abaixado ? j->pos_y_real + 20 : j->pos_y_real;
+    // Hitbox do jogador (posição real em Y, expandida 10px para cima)
+    float player_top = j->abaixado ? j->pos_y_real + 10 : j->pos_y_real - 10;
     float player_bottom = j->abaixado ? j->pos_y_real + 40 : j->pos_y_real + 40;
     
     // Hitbox do item em Y
