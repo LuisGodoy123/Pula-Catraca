@@ -223,8 +223,17 @@ int verificarColisao(Jogador *j, Obstaculo *obs, float lane_width, float lane_of
     float largura_scaled = obs->largura * scale * hitbox_factor;
     float obs_left = obs_x - largura_scaled / 2;
     float obs_right = obs_x + largura_scaled / 2;
-    float obs_top = obs->pos_y + (obs->altura * scale * 0.15f); // 15% de margem no topo
-    float obs_bottom = obs->pos_y + (obs->altura * scale * 0.85f); // 85% da altura (70% + 15%)
+    
+    // Ajuste de altura da hitbox
+    float altura_ajustada = obs->altura * scale;
+    if (obs->tipo == 1) {
+        // Catraca: reduz 20px da altura da hitbox
+        altura_ajustada = (obs->altura * scale) - 20.0f;
+        if (altura_ajustada < 0) altura_ajustada = 0; // Garante que não fique negativo
+    }
+    
+    float obs_top = obs->pos_y + (altura_ajustada * 0.15f); // 15% de margem no topo
+    float obs_bottom = obs->pos_y + (altura_ajustada * 0.85f); // 85% da altura
     
     // Verifica colisão em X e Y (AABB - Axis-Aligned Bounding Box)
     if (player_right > obs_left && player_left < obs_right &&

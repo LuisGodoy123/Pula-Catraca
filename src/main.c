@@ -213,6 +213,7 @@ void TelaJogo(int *estadoJogo, int screenWidth, int screenHeight, Texture2D back
         spriteOnibusEsquerdo = LoadTexture("assets/images/onibus_esquerdo.png");
         spriteOnibusCentro = LoadTexture("assets/images/onibus.png");
         spriteOnibusDireito = LoadTexture("assets/images/onibus_direito.png");
+        spriteCatraca = LoadTexture("assets/images/catraca.png");
         spritesCarregadas = true;
     }
     
@@ -567,14 +568,23 @@ void TelaJogo(int *estadoJogo, int screenWidth, int screenHeight, Texture2D back
                 }
             } else if (obstaculos[i].tipo == 1) {
                 // catraca de onibus (apenas parte inferior) = obstaculo baixo (pular com W)
-                Color cor = GREEN;
-                DrawRectangle(
-                    obs_x - largura_scaled / 2, 
-                    obstaculos[i].pos_y, 
-                    largura_scaled, 
-                    altura_scaled, 
-                    cor
-                );
+                if (spriteCatraca.id > 0) {
+                    // Sprite visual de 100px
+                    float sprite_largura_catraca = 100.0f * scale;
+                    float sprite_altura_catraca = 100.0f * scale;
+                    Rectangle source = {0, 0, (float)spriteCatraca.width, (float)spriteCatraca.height};
+                    Rectangle dest = {obs_x - sprite_largura_catraca / 2, obstaculos[i].pos_y, sprite_largura_catraca, sprite_altura_catraca};
+                    DrawTexturePro(spriteCatraca, source, dest, (Vector2){0, 0}, 0.0f, WHITE);
+                } else {
+                    // Fallback se a textura não carregar
+                    DrawRectangle(
+                        obs_x - largura_scaled / 2, 
+                        obstaculos[i].pos_y, 
+                        largura_scaled, 
+                        altura_scaled, 
+                        GREEN
+                    );
+                }
             } else {
                 // parada de onibus com teto = obstaculo alto vazado (abaixar com S)
                 Color cor = PURPLE;
