@@ -1,11 +1,13 @@
 #include <stddef.h>
 #include <stdlib.h>
+#include <string.h>
 #include "raylib.h"
 #include "../include/mecanica_principal.h"
 
 // Protótipos das funções
 void TelaMenu(int *estadoJogo, int screenWidth, int screenHeight, Texture2D background);
-void TelaJogo(int *estadoJogo, int screenWidth, int screenHeight, Texture2D background_jogo);
+void TelaNickname(int *estadoJogo, int screenWidth, int screenHeight, Texture2D background, char *nickname);
+void TelaJogo(int *estadoJogo, int screenWidth, int screenHeight, Texture2D background_jogo, char *nickname);
 
 int main(void) {
     // resolução da janela
@@ -43,12 +45,16 @@ int main(void) {
         UnloadImage(tempImg);
     }
 
-    int estadoJogo = 0; // 0 = menu, 1 = jogando
+    int estadoJogo = 0; // 0 = menu, 1 = tela nickname, 2 = jogando
+    char nickname[21] = ""; // Armazena até 20 caracteres + null terminator
+    
     while (!WindowShouldClose()) {
         if (estadoJogo == 0) {
             TelaMenu(&estadoJogo, screenWidth, screenHeight, background_menu);
         } else if (estadoJogo == 1) {
-            TelaJogo(&estadoJogo, screenWidth, screenHeight, background_jogo);
+            TelaNickname(&estadoJogo, screenWidth, screenHeight, background_menu, nickname);
+        } else if (estadoJogo == 2) {
+            TelaJogo(&estadoJogo, screenWidth, screenHeight, background_jogo, nickname);
         }
     }
     UnloadTexture(background_menu);
@@ -126,7 +132,143 @@ void TelaMenu(int *estadoJogo, int screenWidth, int screenHeight, Texture2D back
     EndDrawing();
 }
 
-void TelaJogo(int *estadoJogo, int screenWidth, int screenHeight, Texture2D background_jogo) {
+void TelaNickname(int *estadoJogo, int screenWidth, int screenHeight, Texture2D background, char *nickname) {
+    // fonte texto
+    Font titleFont = GetFontDefault();
+    // paleta
+    Color pink = (Color){255, 102, 196, 255};   // #ff66c4
+    Color yellow = (Color){254, 255, 153, 255}; // #feff99
+    Color blue = (Color){175, 218, 225, 255};   // #afdae1
+    Color green = (Color){87, 183, 33, 255};    // #57b721
+
+    // caixa de texto
+    float boxWidth = screenWidth * 0.4f;
+    float boxHeight = screenHeight * 0.08f;
+    Rectangle inputBox = {
+        screenWidth / 2 - boxWidth / 2,
+        screenHeight * 0.5f,
+        boxWidth,
+        boxHeight
+    };
+
+    // botão confirmar
+    float btnWidth = screenWidth * 0.25f;
+    float btnHeight = screenHeight * 0.08f;
+    Rectangle confirmBtn = {
+        screenWidth / 2 - btnWidth / 2,
+        screenHeight * 0.65f,
+        btnWidth,
+        btnHeight
+    };
+
+    Vector2 mousePos = GetMousePosition();
+    bool hoverConfirm = CheckCollisionPointRec(mousePos, confirmBtn);
+
+    // captura teclas
+    int key = GetCharPressed();
+    int nicknameLen = strlen(nickname);
+    
+    while (key > 0) {
+        // aceita letras, números, espaço (32-126 ASCII)
+        if ((key >= 32) && (key <= 126) && (nicknameLen < 20)) {
+            nickname[nicknameLen] = (char)key;
+            nickname[nicknameLen + 1] = '\0';
+            nicknameLen++;
+        }
+        key = GetCharPressed();
+    }
+
+    // backspace
+    if (IsKeyPressed(KEY_BACKSPACE) && nicknameLen > 0) {
+        nickname[nicknameLen - 1] = '\0';
+    }
+
+    // enter ou clique no botão confirmar
+    if ((IsKeyPressed(KEY_ENTER) || (hoverConfirm && IsMouseButtonPressed(MOUSE_LEFT_BUTTON))) && nicknameLen > 0) {
+        *estadoJogo = 2; // vai p jogo
+    }
+
+    BeginDrawing();
+    ClearBackground(RAYWHITE);
+
+    // fundo
+    if (background.id > 0) {
+        Rectangle source = {0, 0, (float)background.width, (float)background.height};
+        Rectangle dest = {0, 0, (float)screenWidth, (float)screenHeight};
+        DrawTexturePro(background, source, dest, (Vector2){0, 0}, 0.0f, WHITE);
+    }
+
+    float fontSize = screenWidth * 0.06f;
+
+    // título
+    const char *title = "Digite seu nickname:";
+    float titleWidth = MeasureTextEx(titleFont, title, fontSize * 0.7f, 2).x;
+    DrawTextEx(titleFont, title,
+               (Vector2){screenWidth / 2 - titleWidth / 2, screenHeight * 0.35f},
+               fontSize * 0.7f, 2, pink);
+
+    // caixa de input
+    DrawRectangleRounded(inputBox, 0.3f, 10, blue);
+    DrawRectangleLinesEx(inputBox, 3.0f, green);
+
+    // texto digitado
+    if (nicknameLen > 0) {
+        float textWidth = MeasureTextEx(titleFont, nickname, fontSize * 0.5f, 2).x;
+        DrawTextEx(titleFont, nickname,
+                   (Vector2){
+                       inputBox.x + boxWidth / 2 - textWidth / 2,
+                       inputBox.y + boxHeight / 2 - fontSize * 0.25f
+                   },
+                   fontSize * 0.5f, 2, BLACK);
+    } else {
+        // placeholder
+        const char *placeholder = "Seu nome aqui...";
+        float phWidth = MeasureTextEx(titleFont, placeholder, fontSize * 0.4f, 2).x;
+        DrawTextEx(titleFont, placeholder,
+                   (Vector2){
+                       inputBox.x + boxWidth / 2 - phWidth / 2,
+                       inputBox.y + boxHeight / 2 - fontSize * 0.2f
+                   },
+                   fontSize * 0.4f, 2, GRAY);
+    }
+
+    // cursor piscando
+    static float cursorTimer = 0.0f;
+    cursorTimer += GetFrameTime();
+    if (((int)(cursorTimer * 2)) % 2 == 0 && nicknameLen < 20) {
+        float textWidth = MeasureTextEx(titleFont, nickname, fontSize * 0.5f, 2).x;
+        DrawRectangle(
+            inputBox.x + boxWidth / 2 + textWidth / 2 + 5,
+            inputBox.y + boxHeight * 0.25f,
+            2,
+            boxHeight * 0.5f,
+            BLACK
+        );
+    }
+
+    // botão confirmar (só ativo se tiver texto)
+    if (nicknameLen > 0) {
+        DrawRectangleRounded(confirmBtn, 0.3f, 10, hoverConfirm ? yellow : blue);
+        DrawTextEx(titleFont, "CONFIRMAR",
+                   (Vector2){
+                       confirmBtn.x + btnWidth / 2 - MeasureTextEx(titleFont, "CONFIRMAR", fontSize * 0.5f, 2).x / 2,
+                       confirmBtn.y + btnHeight / 2 - fontSize * 0.25f
+                   },
+                   fontSize * 0.5f, 2, hoverConfirm ? pink : green);
+    } else {
+        DrawRectangleRounded(confirmBtn, 0.3f, 10, GRAY);
+        DrawTextEx(titleFont, "CONFIRMAR",
+                   (Vector2){
+                       confirmBtn.x + btnWidth / 2 - MeasureTextEx(titleFont, "CONFIRMAR", fontSize * 0.5f, 2).x / 2,
+                       confirmBtn.y + btnHeight / 2 - fontSize * 0.25f
+                   },
+                   fontSize * 0.5f, 2, DARKGRAY);
+    }
+
+    EndDrawing();
+}
+
+void TelaJogo(int *estadoJogo, int screenWidth, int screenHeight, Texture2D background_jogo, char *nickname) {
     static Jogador jogador;
     static Obstaculo obstaculos[MAX_OBSTACULOS];
     static ItemColetavel itens[MAX_ITENS];
@@ -480,10 +622,11 @@ void TelaJogo(int *estadoJogo, int screenWidth, int screenHeight, Texture2D back
         inicializado = false; // Força reinicialização completa (reseta tempo e itens)
     }
 
-    // Tecla ESC para voltar ao menu e resetar tudo
+    // Tecla ESC para voltar ao menu e resetar tudo (incluindo nickname)
     if (IsKeyPressed(KEY_ESCAPE)) {
         *estadoJogo = 0; // de volta ao menu
         inicializado = false; // Força reinicialização completa (reseta tempo e itens)
+        nickname[0] = '\0'; // Limpa o nickname (fim da run)
     }
 
     // Cores dos itens (declarado aqui para uso em toda a função)
