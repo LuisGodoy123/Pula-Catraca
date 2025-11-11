@@ -301,9 +301,9 @@ void TelaJogo(int *estadoJogo, int screenWidth, int screenHeight, Texture2D back
         // atualiza obstáculos
         atualizarObstaculos(obstaculos, MAX_OBSTACULOS, velocidadeJogo);
 
-        // gerar itens colecionáveis a cada 60 frames (1 seg)
+        // gerar itens colecionáveis a cada 180 frames (3 seg)
         frameCountItens++;
-        if (frameCountItens >= 60) {
+        if (frameCountItens >= 180) {
             criarItem(itens, MAX_ITENS, screenHeight, obstaculos, MAX_OBSTACULOS, horizon_y);
             frameCountItens = 0;
         }
