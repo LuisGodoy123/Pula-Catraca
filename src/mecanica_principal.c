@@ -215,8 +215,12 @@ int verificarColisao(Jogador *j, Obstaculo *obs, float lane_width, float lane_of
     float player_top = j->abaixado ? j->pos_y_real + 10 : j->pos_y_real - 10;
     float player_bottom = j->abaixado ? j->pos_y_real + 40 : j->pos_y_real + 40;
     
-    // Hitbox do obstáculo (reduzida para 70% da largura visual)
-    float largura_scaled = obs->largura * scale * 0.7f;
+    // Hitbox do obstáculo tipo 0 (ônibus): ajustada proporcionalmente de 150px para 300px
+    // Fator de escala: 300/150 = 2x
+    // Hitbox anterior: 70% da largura visual
+    // Nova hitbox: 70% * 2 = 140% = 1.4x (mantendo proporcional)
+    float hitbox_factor = (obs->tipo == 0) ? 1.4f : 0.7f; // 140% para ônibus, 70% para outros
+    float largura_scaled = obs->largura * scale * hitbox_factor;
     float obs_left = obs_x - largura_scaled / 2;
     float obs_right = obs_x + largura_scaled / 2;
     float obs_top = obs->pos_y + (obs->altura * scale * 0.15f); // 15% de margem no topo

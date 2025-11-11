@@ -149,7 +149,9 @@ void TelaJogo(int *estadoJogo, int screenWidth, int screenHeight, Texture2D back
     static bool frameAnimacao = false; // Alterna entre direito(false) e esquerdo(true)
     
     // Texturas dos obstáculos (carregadas uma vez)
-    static Texture2D spriteOnibus = {0};
+    static Texture2D spriteOnibusEsquerdo = {0};
+    static Texture2D spriteOnibusCentro = {0};
+    static Texture2D spriteOnibusDireito = {0};
     static Texture2D spriteCatraca = {0};
     static Texture2D spriteParada = {0};
     static bool spritesCarregadas = false;
@@ -204,6 +206,14 @@ void TelaJogo(int *estadoJogo, int screenWidth, int screenHeight, Texture2D back
         tempoMensagemAceleracao = 0.0f;
         mostrarMensagemAceleracao = false;
         inicializado = true;
+    }
+    
+    // Carrega texturas dos obstáculos (apenas uma vez)
+    if (!spritesCarregadas) {
+        spriteOnibusEsquerdo = LoadTexture("assets/images/onibus_esquerdo.png");
+        spriteOnibusCentro = LoadTexture("assets/images/onibus.png");
+        spriteOnibusDireito = LoadTexture("assets/images/onibus_direito.png");
+        spritesCarregadas = true;
     }
     
     // Carrega texturas dos itens (apenas uma vez)
@@ -476,10 +486,21 @@ void TelaJogo(int *estadoJogo, int screenWidth, int screenHeight, Texture2D back
             
             if (obstaculos[i].tipo == 0) {
                 // Ônibus alto cheio = obstaculo padrão (desviar com A e D)
-                if (spriteOnibus.id > 0) {
-                    Rectangle source = {0, 0, (float)spriteOnibus.width, (float)spriteOnibus.height};
-                    Rectangle dest = {obs_x - largura_scaled / 2, obstaculos[i].pos_y, largura_scaled, altura_scaled};
-                    DrawTexturePro(spriteOnibus, source, dest, (Vector2){0, 0}, 0.0f, WHITE);
+                // Seleciona a sprite correta baseada na lane
+                Texture2D spriteOnibusAtual = spriteOnibusCentro; // Padrão para lane central (1)
+                if (obstaculos[i].lane == 0) {
+                    spriteOnibusAtual = spriteOnibusEsquerdo;
+                } else if (obstaculos[i].lane == 2) {
+                    spriteOnibusAtual = spriteOnibusDireito;
+                }
+                
+                if (spriteOnibusAtual.id > 0) {
+                    // Sprite visual 300px (aumentado de 150px base)
+                    float sprite_largura = 300.0f * scale;
+                    float sprite_altura = 300.0f * scale;
+                    Rectangle source = {0, 0, (float)spriteOnibusAtual.width, (float)spriteOnibusAtual.height};
+                    Rectangle dest = {obs_x - sprite_largura / 2, obstaculos[i].pos_y, sprite_largura, sprite_altura};
+                    DrawTexturePro(spriteOnibusAtual, source, dest, (Vector2){0, 0}, 0.0f, WHITE);
                 } else {
                     // Fallback se a textura não carregar
                     DrawRectangle(obs_x - largura_scaled / 2, obstaculos[i].pos_y, largura_scaled, altura_scaled, ORANGE);
