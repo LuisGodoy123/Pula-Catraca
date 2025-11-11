@@ -378,6 +378,12 @@ void TelaJogo(int *estadoJogo, int screenWidth, int screenHeight, Texture2D back
         // NÃO define inicializado = false, então mantém tempo e itens coletados
     }
 
+    // Tecla X para resetar a pontuação e voltar ao menu
+    if (IsKeyPressed(KEY_X)) {
+        *estadoJogo = 0; // de volta ao menu
+        inicializado = false; // Força reinicialização completa (reseta tempo e itens)
+    }
+
     // Tecla ESC para voltar ao menu e resetar tudo
     if (IsKeyPressed(KEY_ESCAPE)) {
         *estadoJogo = 0; // de volta ao menu
