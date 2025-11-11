@@ -148,6 +148,12 @@ void TelaJogo(int *estadoJogo, int screenWidth, int screenHeight, Texture2D back
     static float tempoAnimacao = 0.0f; // Timer para animação de sprites
     static bool frameAnimacao = false; // Alterna entre direito(false) e esquerdo(true)
     
+    // Sistema progressivo de obstáculos
+    static int framesEntreObstaculos = 180; // Começa com 3 segundos (180 frames)
+    static int framesMinimos = 40; // Mínimo de 0.66 segundo (~40 frames)
+    static float tempoUltimoAumentoFrequencia = 0.0f; // Controla quando aumentar frequência
+    static float intervaloAumentoFrequencia = 10.0f; // Aumenta frequência a cada 10 segundos
+    
     // Texturas dos obstáculos (carregadas uma vez)
     static Texture2D spriteOnibusEsquerdo = {0};
     static Texture2D spriteOnibusCentro = {0};
@@ -205,6 +211,15 @@ void TelaJogo(int *estadoJogo, int screenWidth, int screenHeight, Texture2D back
         vitoria = false;
         tempoMensagemAceleracao = 0.0f;
         mostrarMensagemAceleracao = false;
+        
+        // Inicializa sistema progressivo de obstáculos
+        framesEntreObstaculos = 180; // Começa com 3 segundos
+        tempoUltimoAumentoFrequencia = 0.0f;
+        
+        // Cria obstáculos iniciais imediatamente
+        int quantidade_inicial = (rand() % 3) + 1; // 1, 2 ou 3
+        criarMultiplosObstaculos(obstaculos, MAX_OBSTACULOS, screenHeight, quantidade_inicial, horizon_y);
+        
         inicializado = true;
     }
     
@@ -290,9 +305,20 @@ void TelaJogo(int *estadoJogo, int screenWidth, int screenHeight, Texture2D back
             }
         }
 
-        // novos obstaculos a 60fps
+        // Sistema progressivo: aumenta frequência de obstáculos a cada 5 segundos
+        if (framesEntreObstaculos > framesMinimos) {
+            if (tempoDecorrido - tempoUltimoAumentoFrequencia >= intervaloAumentoFrequencia) {
+                framesEntreObstaculos -= 10; // Reduz 10 frames (~0.17 segundos)
+                if (framesEntreObstaculos < framesMinimos) {
+                    framesEntreObstaculos = framesMinimos;
+                }
+                tempoUltimoAumentoFrequencia = tempoDecorrido;
+            }
+        }
+
+        // novos obstaculos com frequência progressiva
         frameCount++;
-        if (frameCount >= 60) {
+        if (frameCount >= framesEntreObstaculos) {
             // Escolhe aleatoriamente: 1, 2 ou 3 obstáculos
             int quantidade = (rand() % 3) + 1; // 1, 2 ou 3
             criarMultiplosObstaculos(obstaculos, MAX_OBSTACULOS, screenHeight, quantidade, horizon_y);
@@ -428,6 +454,14 @@ void TelaJogo(int *estadoJogo, int screenWidth, int screenHeight, Texture2D back
             inicializarObstaculos(obstaculos, MAX_OBSTACULOS);
             velocidadeJogo = 3.5f; // Reinicia na velocidade inicial (lenta)
             tempoUltimaAceleracao = tempoDecorrido; // Mantém tempo acumulado
+            framesEntreObstaculos = 180; // Reinicia frequência de obstáculos (3 segundos)
+            tempoUltimoAumentoFrequencia = tempoDecorrido;
+            frameCount = 0; // Reseta contador para criar obstáculos imediatamente
+            
+            // Cria obstáculos iniciais imediatamente ao reiniciar
+            int quantidade_inicial = (rand() % 3) + 1; // 1, 2 ou 3
+            criarMultiplosObstaculos(obstaculos, MAX_OBSTACULOS, screenHeight, quantidade_inicial, horizon_y);
+            
             gameOver = false;
             vitoria = false;
             // NÃO reseta tempoDecorrido e itensColetados
