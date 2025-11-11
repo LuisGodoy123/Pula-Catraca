@@ -250,7 +250,7 @@ void inicializarItens(ItemColetavel itens[], int tamanho) {
     }
 }
 
-void criarItem(ItemColetavel itens[], int tamanho, float screenHeight, Obstaculo obstaculos[], int tamanhoObstaculos, float horizon_y) {
+void criarItem(ItemColetavel itens[], int tamanho, float screenHeight, Obstaculo obstaculos[], int tamanhoObstaculos, float horizon_y, int itensColetados[]) {
     // Procura um slot vazio
     for (int i = 0; i < tamanho; i++) {
         if (!itens[i].ativo) {
@@ -287,7 +287,40 @@ void criarItem(ItemColetavel itens[], int tamanho, float screenHeight, Obstaculo
             itens[i].coletado = 0;
             itens[i].pos_y = horizon_y - 50; // Começa no horizonte (igual aos obstáculos)
             itens[i].lane = lane_escolhida;
-            itens[i].tipo = rand() % TIPOS_ITENS; // Tipo aleatório (0 a 4)
+            
+            // Verifica quantos itens bons o jogador tem (tipos 0-4)
+            int total_itens_bons = 0;
+            for (int k = 0; k < 5; k++) {
+                total_itens_bons += itensColetados[k];
+            }
+            
+            int tem_pelo_menos_1 = (total_itens_bons >= 1);
+            int tem_pelo_menos_2 = (total_itens_bons >= 2);
+            
+            // Define o tipo do item com probabilidades diferentes
+            // 70% chance de item BOM (tipos 0-4)
+            // 30% chance de item RUIM (tipos 5-7)
+            int chance = rand() % 100;
+            
+            if (chance < 70) {
+                // Item BOM (tipos 0-4)
+                itens[i].tipo = rand() % 5;
+            } else {
+                // Item RUIM (tipos 5-7)
+                int item_ruim = rand() % 100;
+                if (item_ruim < 60) {
+                    itens[i].tipo = 5; // SONO (mais comum) - 18% do total
+                } else if (item_ruim < 90 && tem_pelo_menos_1) {
+                    // IDOSA só aparece se jogador tiver pelo menos 1 item bom
+                    itens[i].tipo = 7; // IDOSA (comum) - 9% do total
+                } else if (item_ruim >= 90 && tem_pelo_menos_2) {
+                    // BALACLAVA só aparece se jogador tiver pelo menos 2 itens bons
+                    itens[i].tipo = 6; // BALACLAVA (mais raro!) - 3% do total
+                } else {
+                    // Se era para ser IDOSA/BALACLAVA mas jogador não tem itens suficientes, vira SONO
+                    itens[i].tipo = 5; // SONO
+                }
+            }
             
             itens[i].largura = 30;
             itens[i].altura = 30;

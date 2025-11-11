@@ -3,7 +3,7 @@
 
 #define MAX_OBSTACULOS 10
 #define MAX_ITENS 25
-#define TIPOS_ITENS 5
+#define TIPOS_ITENS 8  // 5 itens bons + 3 itens ruins
 
 typedef struct {
     float pos_x;
@@ -54,7 +54,7 @@ int verificarColisao(Jogador *j, Obstaculo *obs, float lane_width, float lane_of
 
 // funções para itens colecionáveis
 void inicializarItens(ItemColetavel itens[], int tamanho);
-void criarItem(ItemColetavel itens[], int tamanho, float screenHeight, Obstaculo obstaculos[], int tamanhoObstaculos, float horizon_y);
+void criarItem(ItemColetavel itens[], int tamanho, float screenHeight, Obstaculo obstaculos[], int tamanhoObstaculos, float horizon_y, int itensColetados[]);
 void atualizarItens(ItemColetavel itens[], int tamanho, float velocidade);
 int verificarColeta(Jogador *j, ItemColetavel *item, float lane_width, float lane_offset);
 

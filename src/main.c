@@ -218,11 +218,18 @@ void TelaJogo(int *estadoJogo, int screenWidth, int screenHeight, Texture2D back
     
     // Carrega texturas dos itens (apenas uma vez)
     if (!texturasCarregadas) {
+        // Itens BONS (tipos 0-4)
         texturasItens[0] = LoadTexture("assets/images/pipoca.png");      // Tipo 0: YELLOW
         texturasItens[1] = LoadTexture("assets/images/moeda.png");       // Tipo 1: SKYBLUE
         texturasItens[2] = LoadTexture("assets/images/VEM.png");         // Tipo 2: PINK
         texturasItens[3] = LoadTexture("assets/images/botao_parada.png"); // Tipo 3: GOLD
         texturasItens[4] = LoadTexture("assets/images/fone.png");        // Tipo 4: GREEN
+        
+        // Itens RUINS (tipos 5-7)
+        texturasItens[5] = LoadTexture("assets/images/sono.png");        // Tipo 5: Sono (aumenta 5 seg no tempo)
+        texturasItens[6] = LoadTexture("assets/images/balaclava.png");   // Tipo 6: Balaclava (perde todos os itens)
+        texturasItens[7] = LoadTexture("assets/images/velha.png");       // Tipo 7: Idosa (perde 1 item aleatório)
+        
         texturasCarregadas = true;
     }
     
@@ -304,7 +311,7 @@ void TelaJogo(int *estadoJogo, int screenWidth, int screenHeight, Texture2D back
         // gerar itens colecionáveis a cada 180 frames (3 seg)
         frameCountItens++;
         if (frameCountItens >= 180) {
-            criarItem(itens, MAX_ITENS, screenHeight, obstaculos, MAX_OBSTACULOS, horizon_y);
+            criarItem(itens, MAX_ITENS, screenHeight, obstaculos, MAX_OBSTACULOS, horizon_y, itensColetados);
             frameCountItens = 0;
         }
 
@@ -340,17 +347,61 @@ void TelaJogo(int *estadoJogo, int screenWidth, int screenHeight, Texture2D back
         // verifica coleta de itens
         for (int i = 0; i < MAX_ITENS; i++) {
             if (verificarColeta(&jogador, &itens[i], lane_width_bottom, lane_offset_bottom)) {
-                // incrementa apenas se ainda não atingiu o limite de 5
-                if (itensColetados[itens[i].tipo] < 5) {
-                    itensColetados[itens[i].tipo]++;
+                int tipo = itens[i].tipo;
+                
+                // Itens BONS (tipos 0-4)
+                if (tipo >= 0 && tipo <= 4) {
+                    // incrementa apenas se ainda não atingiu o limite de 5
+                    if (itensColetados[tipo] < 5) {
+                        itensColetados[tipo]++;
+                    }
+                }
+                // Itens RUINS (tipos 5-7)
+                else if (tipo == 5) {
+                    // SONO: "você dormiu e perdeu a parada" - aumenta 5 segundos no tempo
+                    tempoDecorrido += 5.0f;
+                    mostrarMensagemAceleracao = true;
+                    tempoMensagemAceleracao = 0.0f;
+                    // Marca como coletado para mostrar mensagem customizada
+                    itensColetados[tipo]++;
+                }
+                else if (tipo == 6) {
+                    // BALACLAVA: "você foi assaltado e perdeu seus itens" - perde TODOS os itens
+                    for (int j = 0; j < 5; j++) { // Apenas itens bons (0-4)
+                        itensColetados[j] = 0;
+                    }
+                    mostrarMensagemAceleracao = true;
+                    tempoMensagemAceleracao = 0.0f;
+                    itensColetados[tipo]++;
+                }
+                else if (tipo == 7) {
+                    // IDOSA: "você cedeu o assento e ficou em pé" - perde 1 item aleatório
+                    // Procura itens que o jogador possui
+                    int itensDisponiveis[5];
+                    int quantidadeDisponiveis = 0;
+                    for (int j = 0; j < 5; j++) {
+                        if (itensColetados[j] > 0) {
+                            itensDisponiveis[quantidadeDisponiveis] = j;
+                            quantidadeDisponiveis++;
+                        }
+                    }
+                    // Se tiver algum item, remove um aleatório
+                    if (quantidadeDisponiveis > 0) {
+                        int indiceAleatorio = rand() % quantidadeDisponiveis;
+                        int itemRemovido = itensDisponiveis[indiceAleatorio];
+                        itensColetados[itemRemovido]--;
+                    }
+                    mostrarMensagemAceleracao = true;
+                    tempoMensagemAceleracao = 0.0f;
+                    itensColetados[tipo]++;
                 }
             }
         }
 
-        // verifica vitoria (pelo menos 1 item de cada tipo)
+        // verifica vitoria (pelo menos 1 item de cada tipo BOM - apenas tipos 0-4)
         if (!vitoria) {
             bool ganhou = true;
-            for (int i = 0; i < TIPOS_ITENS; i++) {
+            for (int i = 0; i < 5; i++) { // Apenas itens bons (0-4)
                 if (itensColetados[i] == 0) {
                     ganhou = false;
                     break;
@@ -396,11 +447,14 @@ void TelaJogo(int *estadoJogo, int screenWidth, int screenHeight, Texture2D back
 
     // Cores dos itens (declarado aqui para uso em toda a função)
     Color coresItens[TIPOS_ITENS] = {
-        YELLOW,    // Tipo 0
-        SKYBLUE,   // Tipo 1
-        PINK,      // Tipo 2
-        GOLD,      // Tipo 3
-        GREEN      // Tipo 4
+        YELLOW,    // Tipo 0 - Pipoca (BOM)
+        SKYBLUE,   // Tipo 1 - Moeda (BOM)
+        PINK,      // Tipo 2 - VEM (BOM)
+        GOLD,      // Tipo 3 - Botão parada (BOM)
+        GREEN,     // Tipo 4 - Fone (BOM)
+        PURPLE,    // Tipo 5 - Sono (RUIM - aumenta 5 seg)
+        DARKGRAY,  // Tipo 6 - Balaclava (RUIM - perde todos)
+        ORANGE     // Tipo 7 - Idosa (RUIM - perde 1 aleatório)
     };
 
     BeginDrawing();
