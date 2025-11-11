@@ -134,11 +134,11 @@ void TelaJogo(int *estadoJogo, int screenWidth, int screenHeight, Texture2D back
     static bool inicializado = false;
     static int frameCount = 0;
     static int frameCountItens = 0;
-    static float velocidadeJogo = 3.5f; // Velocidade inicial: 3.5 m/s (bem mais lento)
-    static float velocidadeMaxima = 45.0f; // Velocidade máxima: 45 m/s (rápido)
+    static float velocidadeJogo = 3.0f; // Velocidade inicial: 3.0 m/s
+    static float velocidadeMaxima = 30.0f; // Velocidade máxima: 30 m/s
     static float intervaloAceleracao = 30.0f; // Acelera a cada 30 segundos
     static float tempoUltimaAceleracao = 0.0f; // Controla quando acelerar
-    static float incrementoVelocidade = 4.0f; // Aumenta 4 m/s a cada intervalo
+    static float incrementoVelocidade = 2.0f; // Aumenta 2 m/s a cada intervalo
     static float tempoDecorrido = 0.0f; // Tempo em segundos
     static bool gameOver = false;
     static bool vitoria = false;
@@ -201,11 +201,11 @@ void TelaJogo(int *estadoJogo, int screenWidth, int screenHeight, Texture2D back
         
         frameCount = 0;
         frameCountItens = 0;
-        velocidadeJogo = 3.5f; // Velocidade inicial (lenta)
-        velocidadeMaxima = 45.0f;
+        velocidadeJogo = 3.0f; // Velocidade inicial
+        velocidadeMaxima = 30.0f;
         intervaloAceleracao = 30.0f;
         tempoUltimaAceleracao = 0.0f;
-        incrementoVelocidade = 4.0f;
+        incrementoVelocidade = 2.0f;
         tempoDecorrido = 0.0f;
         gameOver = false;
         vitoria = false;
@@ -452,7 +452,7 @@ void TelaJogo(int *estadoJogo, int screenWidth, int screenHeight, Texture2D back
             float pos_y = screenHeight - 100;
             inicializarJogador(&jogador, pos_x, pos_y);
             inicializarObstaculos(obstaculos, MAX_OBSTACULOS);
-            velocidadeJogo = 3.5f; // Reinicia na velocidade inicial (lenta)
+            velocidadeJogo = 3.0f; // Reinicia na velocidade inicial
             tempoUltimaAceleracao = tempoDecorrido; // Mantém tempo acumulado
             framesEntreObstaculos = 180; // Reinicia frequência de obstáculos (3 segundos)
             tempoUltimoAumentoFrequencia = tempoDecorrido;
