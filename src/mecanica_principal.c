@@ -111,27 +111,49 @@ void criarMultiplosObstaculos(Obstaculo obstaculos[], int tamanho, float screenH
     int criados = 0;
     int lanes_usadas[3] = {0, 0, 0}; // Controla quais lanes já têm obstáculo
     int tipos_criados[3] = {0, 0, 0}; // Conta quantos de cada tipo: [laranja, verde, roxo]
+    float pos_y_novo = horizon_y - 50;
     
     for (int i = 0; i < tamanho && criados < quantidade; i++) {
         if (!obstaculos[i].ativo) {
             int lane_tentativa;
             int tentativas = 0;
+            int pode_criar = 0;
             
-            // Tenta encontrar uma lane que ainda não tem obstáculo
+            // Tenta encontrar uma lane válida (sem obstáculo e sem colisão próxima)
             do {
                 lane_tentativa = rand() % 3;
                 tentativas++;
+                
+                // Verifica se a lane já foi usada neste grupo
+                if (lanes_usadas[lane_tentativa]) {
+                    continue;
+                }
+                
+                // Verifica se há obstáculos MUITO PRÓXIMOS nesta lane
+                pode_criar = 1;
+                for (int j = 0; j < tamanho; j++) {
+                    if (j != i && obstaculos[j].ativo && obstaculos[j].lane == lane_tentativa) {
+                        float distancia_y = obstaculos[j].pos_y - pos_y_novo;
+                        
+                        // Se estiver muito próximo (dentro de 100 pixels), não cria
+                        if (distancia_y >= -100.0f && distancia_y <= 100.0f) {
+                            pode_criar = 0;
+                            break;
+                        }
+                    }
+                }
+                
                 if (tentativas >= 20) break; // Evita loop infinito
-            } while (lanes_usadas[lane_tentativa] && tentativas < 20);
+            } while ((!pode_criar || lanes_usadas[lane_tentativa]) && tentativas < 20);
             
-            // Se não conseguiu achar lane livre, pula este obstáculo
-            if (lanes_usadas[lane_tentativa]) {
+            // Se não conseguiu achar lane válida, pula este obstáculo
+            if (!pode_criar || lanes_usadas[lane_tentativa]) {
                 continue;
             }
             
             obstaculos[i].ativo = 1;
             obstaculos[i].lane = lane_tentativa;
-            obstaculos[i].pos_y = horizon_y - 50; // Começa no horizonte
+            obstaculos[i].pos_y = pos_y_novo;
             
             // Define o tipo, mas evita 3 laranjas
             int tipo_tentativa;
@@ -256,6 +278,8 @@ int verificarColisao(Jogador *j, Obstaculo *obs, float lane_width, float lane_of
     return 0; // Não colidiu!
 }
 
+
+
 // ============= FUNÇÕES DE ITENS COLECIONÁVEIS =============
 
 void inicializarItens(ItemColetavel itens[], int tamanho) {
@@ -275,38 +299,57 @@ void criarItem(ItemColetavel itens[], int tamanho, float screenHeight, Obstaculo
     // Procura um slot vazio
     for (int i = 0; i < tamanho; i++) {
         if (!itens[i].ativo) {
-            // Tenta criar o item em uma lane válida (sem obstáculos laranja tipo 0)
+            // Tenta criar o item em uma lane válida (sem obstáculos próximos)
             int tentativas = 0;
             int lane_escolhida;
             int lane_valida = 0;
+            float pos_y_item = horizon_y - 50; // Mesma posição inicial dos obstáculos
             
-            // Tenta até 10 vezes encontrar uma lane sem obstáculo laranja (tipo 0)
-            while (tentativas < 10 && !lane_valida) {
+            // Tenta até 15 vezes encontrar uma posição válida
+            while (tentativas < 15 && !lane_valida) {
                 lane_escolhida = rand() % 3;
                 lane_valida = 1; // Assume que é válida
                 
-                // Verifica se há obstáculo laranja (tipo 0) nesta lane
+                // Verifica se há obstáculo MUITO PRÓXIMO nesta lane e posição Y
                 for (int j = 0; j < tamanhoObstaculos; j++) {
-                    if (obstaculos[j].ativo && 
-                        obstaculos[j].tipo == 0 && 
-                        obstaculos[j].lane == lane_escolhida &&
-                        obstaculos[j].pos_y >= horizon_y - 100 && obstaculos[j].pos_y <= horizon_y + 100) {
-                        // Há um obstáculo laranja recente nesta lane
-                        lane_valida = 0;
-                        break;
+                    if (obstaculos[j].ativo && obstaculos[j].lane == lane_escolhida) {
+                        // Calcula distância em Y entre o item e o obstáculo
+                        float distancia_y = obstaculos[j].pos_y - pos_y_item;
+                        
+                        // Se estiver muito próximo (dentro de 80 pixels), invalida
+                        if (distancia_y >= -80.0f && distancia_y <= 80.0f) {
+                            lane_valida = 0;
+                            break;
+                        }
                     }
                 }
+                
+                // Também verifica se há outro item próximo
+                if (lane_valida) {
+                    for (int j = 0; j < tamanho; j++) {
+                        if (j != i && itens[j].ativo && !itens[j].coletado && itens[j].lane == lane_escolhida) {
+                            float distancia_y = itens[j].pos_y - pos_y_item;
+                            
+                            // Se estiver muito próximo (dentro de 60 pixels), invalida
+                            if (distancia_y >= -60.0f && distancia_y <= 60.0f) {
+                                lane_valida = 0;
+                                break;
+                            }
+                        }
+                    }
+                }
+                
                 tentativas++;
             }
             
-            // Se não encontrou lane válida após tentativas, não cria o item
+            // Se não encontrou posição válida após tentativas, não cria o item
             if (!lane_valida) {
                 return;
             }
             
             itens[i].ativo = 1;
             itens[i].coletado = 0;
-            itens[i].pos_y = horizon_y - 50; // Começa no horizonte (igual aos obstáculos)
+            itens[i].pos_y = pos_y_item;
             itens[i].lane = lane_escolhida;
             
             // Verifica quantos itens bons o jogador tem (tipos 0-4)

@@ -318,17 +318,18 @@ void TelaJogo(int *estadoJogo, int screenWidth, int screenHeight, Texture2D back
     static Texture2D spriteDeslizandoEsquerda = {0};
     static bool spritesJogadorCarregadas = false;
     
-    // Perspectiva das lanes
-    const float horizon_y = 200.0f;          // linha do horizonte (igual a imagem de fundo)
-    float lane_top_divisor = 20.0f;          // maior = topo mais estreito (aumenta angulação)
-    float lane_bottom_divisor = 2.0f;        // menor = base mais larga (aumenta angulação)
-    float lane_top_extra_offset = 0.25f;      // desloca lanes no topo (positivo move pra direita)
-    float lane_bottom_extra_offset = 0.5f;    // desloca lanes na base (positivo move pra direita)
-
-    float lane_width_top = screenWidth / lane_top_divisor;
-    float lane_offset_top = (screenWidth - lane_width_top * 3) / 2.0f + lane_top_extra_offset;
-    float lane_width_bottom = screenWidth / lane_bottom_divisor;
-    float lane_offset_bottom = (screenWidth - lane_width_bottom * 3) / 2.0f + lane_bottom_extra_offset;
+    // Perspectiva das lanes - ajustadas para coincidir com as faixas do asfalto
+    const float horizon_y = 235.0f;          // linha do horizonte onde a estrada começa
+    
+    // Medidas calibradas para coincidir com a imagem de fundo (800x600)
+    // No topo (horizonte): as 3 lanes ocupam aproximadamente 25% da largura da tela
+    // Na base: ocupam mais que a largura da tela para coincidir com as faixas
+    
+    float lane_width_top = screenWidth * 0.083f;      // ~66px por lane no topo (3 lanes = 25% da tela)
+    float lane_offset_top = screenWidth * 0.375f;     // começa em 37.5% da tela (centralizado)
+    
+    float lane_width_bottom = screenWidth * 0.45f;    // ~360px por lane na base (3 lanes = 135% da tela)
+    float lane_offset_bottom = -screenWidth * 0.175f; // começa antes da borda esquerda (-17.5%)
 
     BeginDrawing();
     ClearBackground(RAYWHITE);
@@ -491,7 +492,7 @@ void TelaJogo(int *estadoJogo, int screenWidth, int screenHeight, Texture2D back
 
         // gerar itens colecionáveis a cada 180 frames (3 seg)
         frameCountItens++;
-        if (frameCountItens >= 180) {
+        if (frameCountItens >= 90) {
             criarItem(itens, MAX_ITENS, screenHeight, obstaculos, MAX_OBSTACULOS, horizon_y, itensColetados);
             frameCountItens = 0;
         }
