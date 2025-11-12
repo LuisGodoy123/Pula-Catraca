@@ -73,7 +73,7 @@ void inicializarObstaculos(Obstaculo obstaculos[], int tamanho) {
         obstaculos[i].pos_y = 0;
         obstaculos[i].lane = 0;
         obstaculos[i].tipo = 0;
-        obstaculos[i].largura = 0;
+        obstaculos[i].largura = 60;
         obstaculos[i].altura = 0;
     }
     srand(time(NULL)); // Inicializa gerador aleatório
@@ -85,23 +85,22 @@ void criarObstaculo(Obstaculo obstaculos[], int tamanho, float screenHeight, flo
         if (!obstaculos[i].ativo) {
             obstaculos[i].ativo = 1;
             obstaculos[i].lane = rand() % 3; // Lane aleatória (0, 1 ou 2)
-            obstaculos[i].pos_y = horizon_y - 50; // Começa no horizonte
-            obstaculos[i].tipo = rand() % 3; // 0 = ônibus alto, 1 = baixo, 2 = alto vazado
+            obstaculos[i].pos_y = horizon_y + 10; // Começa no horizonte
+            obstaculos[i].tipo = rand() % 3; // 0 = ônibus, 1 = catraca, 2 = parada
             
             if (obstaculos[i].tipo == 0) {
-                // Ônibus alto (precisa desviar ou abaixar)
+                // Ônibus (precisa desviar)
                 obstaculos[i].largura = 60;
                 obstaculos[i].altura = 80;
             } else if (obstaculos[i].tipo == 1) {
-                // Obstáculo baixo no chão (precisa pular)
+                // Catraca (precisa pular)
                 obstaculos[i].largura = 60;
                 obstaculos[i].altura = 30;
             } else {
-                // Obstáculo alto vazado (precisa abaixar para passar por baixo)
+                // Parada de ônibus (precisa abaixar)
                 obstaculos[i].largura = 60;
                 obstaculos[i].altura = 50; // Alto, mas deixa espaço embaixo
             }
-            
             break;
         }
     }
@@ -109,9 +108,9 @@ void criarObstaculo(Obstaculo obstaculos[], int tamanho, float screenHeight, flo
 
 void criarMultiplosObstaculos(Obstaculo obstaculos[], int tamanho, float screenHeight, int quantidade, float horizon_y) {
     int criados = 0;
-    int lanes_usadas[3] = {0, 0, 0}; // Controla quais lanes já têm obstáculo
-    int tipos_criados[3] = {0, 0, 0}; // Conta quantos de cada tipo: [laranja, verde, roxo]
-    float pos_y_novo = horizon_y - 50;
+    int lanes_usadas[3] = {0, 0, 0};   // Controla quais lanes já têm obstáculo
+    int tipos_criados[3] = {0, 0, 0};  // Conta quantos de cada tipo: [laranja, verde, roxo]
+    float pos_y_novo = horizon_y + 10; // Mesma posição inicial dos obstáculos
     
     for (int i = 0; i < tamanho && criados < quantidade; i++) {
         if (!obstaculos[i].ativo) {
@@ -219,8 +218,7 @@ int verificarColisao(Jogador *j, Obstaculo *obs, float lane_width, float lane_of
     if (obs->tipo == 1 && j->pulando) {
         return 0;
     }
-    
-    // Se é um obstáculo alto vazado e o jogador está abaixado, não colide
+    // Se é um obstáculo alto vazado e o jogador está deslizando, não colide
     if (obs->tipo == 2 && j->abaixado) {
         return 0;
     }
@@ -303,7 +301,7 @@ void criarItem(ItemColetavel itens[], int tamanho, float screenHeight, Obstaculo
             int tentativas = 0;
             int lane_escolhida;
             int lane_valida = 0;
-            float pos_y_item = horizon_y - 50; // Mesma posição inicial dos obstáculos
+            float pos_y_item = horizon_y + 10; // Mesma posição inicial dos obstáculos
             
             // Tenta até 15 vezes encontrar uma posição válida
             while (tentativas < 15 && !lane_valida) {

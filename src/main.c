@@ -3,6 +3,9 @@
 #include <string.h>
 #include "raylib.h"
 #include "../include/mecanica_principal.h"
+#include "../include/ranking.h"
+#include <stdio.h>
+
 #define BASE_ITEM_SIZE 120.0f
 
 // Protótipos das funções
@@ -10,15 +13,24 @@ void TelaMenu(int *estadoJogo, int screenWidth, int screenHeight, Texture2D back
 void TelaNickname(int *estadoJogo, int screenWidth, int screenHeight, Texture2D background, char *nickname);
 void TelaJogo(int *estadoJogo, int screenWidth, int screenHeight, Texture2D background_jogo, char *nickname);
 
+// Ranking (persistente)
+static RankingList ranking;
+
 int main(void) {
-    // resolução da janela
+    // resolução  e init da janela
     int screenWidth = 800;
     int screenHeight = 600;
-    
-    // inicializa a janela
     InitWindow(screenWidth, screenHeight, "Pula-Catraca");
     SetTraceLogLevel(LOG_WARNING); // Desabilita mensagens de INFO e DEBUG
     SetTargetFPS(60);
+
+    // Inicializa e carrega ranking salvo (se existir)
+    initRanking(&ranking);
+    loadRankingAll(&ranking, "ranking_all.csv");
+
+    // Inicializa ranking em memória e carrega do disco (arquivo com todos os tempos)
+    initRanking(&ranking);
+    loadRankingAll(&ranking, "ranking_all.csv");
 
     // carrega imagens de fundo
     Texture2D background_menu = {0};
@@ -30,7 +42,7 @@ int main(void) {
         background_menu = LoadTextureFromImage(fundo_menu);
         UnloadImage(fundo_menu);
     } else {
-        // textura vazia com cor caso não carregue a imagem do menu
+        // fundo = cor, caso não carregue a imagem do menu
         Image tempImg = GenImageColor(screenWidth, screenHeight, (Color){215, 50, 133, 255}); // #d73285
         background_menu = LoadTextureFromImage(tempImg);
         UnloadImage(tempImg);
@@ -40,7 +52,7 @@ int main(void) {
         background_jogo = LoadTextureFromImage(fundo_do_jogo);
         UnloadImage(fundo_do_jogo);
     } else {
-        // textura vazia com cor caso não carregue a imagem do jogo
+        // fundo = cor, caso não carregue a imagem do menu
         Image tempImg = GenImageColor(screenWidth, screenHeight, (Color){96, 80, 125, 255}); // #60507d
         background_jogo = LoadTextureFromImage(tempImg);
         UnloadImage(tempImg);
@@ -58,6 +70,11 @@ int main(void) {
             TelaJogo(&estadoJogo, screenWidth, screenHeight, background_jogo, nickname);
         }
     }
+    // salva ranking completo e top10 antes de sair
+    saveRankingAll(&ranking, "ranking_all.csv");
+    saveTopCSV(&ranking, "ranking_top10.csv", 10);
+    freeRanking(&ranking);
+
     UnloadTexture(background_menu);
     UnloadTexture(background_jogo);
     CloseWindow();
@@ -129,6 +146,40 @@ void TelaMenu(int *estadoJogo, int screenWidth, int screenHeight, Texture2D back
                    optionsBtn.y + btnHeight / 2 - fontSize * 0.25f
                },
                fontSize * 0.5f, 2, hoverOptions ? pink : green);
+
+    // --- Desenha ranking (top 10) no canto direito inferior do menu ---
+    float rankFont = screenWidth * 0.028f; // tamanho do texto para ranking
+    float lineGap = rankFont * 1.15f;
+    int maxLines = 10;
+    float pad = 12.0f;
+    float boxWidth = screenWidth * 0.35f;
+    float boxHeight = (maxLines + 1) * lineGap + pad * 2; // +1 para o título
+    float boxX = screenWidth - boxWidth - pad;
+    float boxY = screenHeight - boxHeight - pad;
+
+    // fundo semitransparente
+    DrawRectangleRec((Rectangle){boxX, boxY, boxWidth, boxHeight}, (Color){20, 20, 20, 180});
+
+    // título
+    DrawTextEx(titleFont, "Ranking - Top 10", (Vector2){boxX + pad, boxY + pad}, rankFont, 1, WHITE);
+
+    // percorre a lista ligada do ranking e desenha cada entrada
+    RankingNode *cur = ranking.head;
+    int ridx = 1;
+    float textX = boxX + pad;
+    float textY = boxY + pad + lineGap;
+    while (cur && ridx <= maxLines) {
+        char buf[128];
+        int whole = (int)cur->time;
+        int mins = whole / 60;
+        int secs = whole % 60;
+        int centis = (int)((cur->time - whole) * 100.0f + 0.5f);
+        if (centis >= 100) centis = 99;
+        snprintf(buf, sizeof(buf), "%2d. %s - %02d:%02d.%02d", ridx, cur->name ? cur->name : "---", mins, secs, centis);
+        DrawTextEx(titleFont, buf, (Vector2){textX, textY + (ridx - 1) * lineGap}, rankFont * 0.9f, 1, WHITE);
+        cur = cur->next;
+        ridx++;
+    }
 
     EndDrawing();
 }
@@ -285,6 +336,7 @@ void TelaJogo(int *estadoJogo, int screenWidth, int screenHeight, Texture2D back
     static float tempoDecorrido = 0.0f; // Tempo em segundos
     static bool gameOver = false;
     static bool vitoria = false;
+    static bool rankingInserido = false;
     static float tempoMensagemAceleracao = 0.0f; // Para mostrar mensagem de aceleração
     static bool mostrarMensagemAceleracao = false;
     static int direcaoJogador = 0; // -1 = esquerda, 0 = centro, 1 = direita
@@ -539,8 +591,6 @@ void TelaJogo(int *estadoJogo, int screenWidth, int screenHeight, Texture2D back
                 else if (tipo == 5) {
                     // SONO: "você dormiu e perdeu a parada" - aumenta 5 segundos no tempo
                     tempoDecorrido += 5.0f;
-                    mostrarMensagemAceleracao = true;
-                    tempoMensagemAceleracao = 0.0f;
                     // Marca como coletado para mostrar mensagem customizada
                     itensColetados[tipo]++;
                 }
@@ -549,8 +599,6 @@ void TelaJogo(int *estadoJogo, int screenWidth, int screenHeight, Texture2D back
                     for (int j = 0; j < 5; j++) { // Apenas itens bons (0-4)
                         itensColetados[j] = 0;
                     }
-                    mostrarMensagemAceleracao = true;
-                    tempoMensagemAceleracao = 0.0f;
                     itensColetados[tipo]++;
                 }
                 else if (tipo == 7) {
@@ -569,10 +617,7 @@ void TelaJogo(int *estadoJogo, int screenWidth, int screenHeight, Texture2D back
                         int indiceAleatorio = rand() % quantidadeDisponiveis;
                         int itemRemovido = itensDisponiveis[indiceAleatorio];
                         itensColetados[itemRemovido]--;
-                    }
-                    mostrarMensagemAceleracao = true;
-                    tempoMensagemAceleracao = 0.0f;
-                    itensColetados[tipo]++;
+                    }itensColetados[tipo]++;
                 }
             }
         }
@@ -587,8 +632,15 @@ void TelaJogo(int *estadoJogo, int screenWidth, int screenHeight, Texture2D back
                 }
             }
             vitoria = ganhou;
+            // Se o jogador acabou de vencer, insere no ranking (apenas uma vez)
+            if (vitoria && !rankingInserido && nickname[0] != '\0') {
+                insertRanking(&ranking, nickname, tempoDecorrido);
+                saveTopCSV(&ranking, "ranking_top10.csv", 10);
+                saveRankingAll(&ranking, "ranking_all.csv");
+                rankingInserido = true;
+                gameOver = true; // Termina o jogo
+            }
         }
-
         // colisões (posição sem perspectiva p cálculo)
         for (int i = 0; i < MAX_OBSTACULOS; i++) {
             if (verificarColisao(&jogador, &obstaculos[i], lane_width_bottom, lane_offset_bottom, horizon_y, screenHeight)) {
