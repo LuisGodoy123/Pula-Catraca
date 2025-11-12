@@ -49,13 +49,13 @@ void atualizarFisica(Jogador *j);
 void inicializarObstaculos(Obstaculo obstaculos[], int tamanho);
 void criarObstaculo(Obstaculo obstaculos[], int tamanho, float screenHeight, float horizon_y);
 void criarMultiplosObstaculos(Obstaculo obstaculos[], int tamanho, float screenHeight, int quantidade, float horizon_y);
-void atualizarObstaculos(Obstaculo obstaculos[], int tamanho, float velocidade);
+void atualizarObstaculos(Obstaculo obstaculos[], int tamanho, float velocidade, float horizon_y, int screenHeight, float delta);
 int verificarColisao(Jogador *j, Obstaculo *obs, float lane_width, float lane_offset, float horizon_y, float screenHeight);
 
 // funções para itens colecionáveis
 void inicializarItens(ItemColetavel itens[], int tamanho);
 void criarItem(ItemColetavel itens[], int tamanho, float screenHeight, Obstaculo obstaculos[], int tamanhoObstaculos, float horizon_y, int itensColetados[]);
-void atualizarItens(ItemColetavel itens[], int tamanho, float velocidade);
+void atualizarItens(ItemColetavel itens[], int tamanho, float velocidade, float horizon_y, int screenHeight, float delta);
 int verificarColeta(Jogador *j, ItemColetavel *item, float lane_width, float lane_offset);
 
 #endif

@@ -1,11 +1,14 @@
 #include <stddef.h>
 #include <stdlib.h>
+#include <string.h>
 #include "raylib.h"
 #include "../include/mecanica_principal.h"
+#define BASE_ITEM_SIZE 120.0f
 
 // Protótipos das funções
 void TelaMenu(int *estadoJogo, int screenWidth, int screenHeight, Texture2D background);
-void TelaJogo(int *estadoJogo, int screenWidth, int screenHeight, Texture2D background_jogo);
+void TelaNickname(int *estadoJogo, int screenWidth, int screenHeight, Texture2D background, char *nickname);
+void TelaJogo(int *estadoJogo, int screenWidth, int screenHeight, Texture2D background_jogo, char *nickname);
 
 int main(void) {
     // resolução da janela
@@ -43,12 +46,16 @@ int main(void) {
         UnloadImage(tempImg);
     }
 
-    int estadoJogo = 0; // 0 = menu, 1 = jogando
+    int estadoJogo = 0; // 0 = menu, 1 = tela nickname, 2 = jogando
+    char nickname[21] = ""; // Armazena até 20 caracteres + null terminator
+    
     while (!WindowShouldClose()) {
         if (estadoJogo == 0) {
             TelaMenu(&estadoJogo, screenWidth, screenHeight, background_menu);
         } else if (estadoJogo == 1) {
-            TelaJogo(&estadoJogo, screenWidth, screenHeight, background_jogo);
+            TelaNickname(&estadoJogo, screenWidth, screenHeight, background_menu, nickname);
+        } else if (estadoJogo == 2) {
+            TelaJogo(&estadoJogo, screenWidth, screenHeight, background_jogo, nickname);
         }
     }
     UnloadTexture(background_menu);
@@ -126,7 +133,143 @@ void TelaMenu(int *estadoJogo, int screenWidth, int screenHeight, Texture2D back
     EndDrawing();
 }
 
-void TelaJogo(int *estadoJogo, int screenWidth, int screenHeight, Texture2D background_jogo) {
+void TelaNickname(int *estadoJogo, int screenWidth, int screenHeight, Texture2D background, char *nickname) {
+    // fonte texto
+    Font titleFont = GetFontDefault();
+    // paleta
+    Color pink = (Color){255, 102, 196, 255};   // #ff66c4
+    Color yellow = (Color){254, 255, 153, 255}; // #feff99
+    Color blue = (Color){175, 218, 225, 255};   // #afdae1
+    Color green = (Color){87, 183, 33, 255};    // #57b721
+
+    // caixa de texto
+    float boxWidth = screenWidth * 0.4f;
+    float boxHeight = screenHeight * 0.08f;
+    Rectangle inputBox = {
+        screenWidth / 2 - boxWidth / 2,
+        screenHeight * 0.5f,
+        boxWidth,
+        boxHeight
+    };
+
+    // botão confirmar
+    float btnWidth = screenWidth * 0.25f;
+    float btnHeight = screenHeight * 0.08f;
+    Rectangle confirmBtn = {
+        screenWidth / 2 - btnWidth / 2,
+        screenHeight * 0.65f,
+        btnWidth,
+        btnHeight
+    };
+
+    Vector2 mousePos = GetMousePosition();
+    bool hoverConfirm = CheckCollisionPointRec(mousePos, confirmBtn);
+
+    // captura teclas
+    int key = GetCharPressed();
+    int nicknameLen = strlen(nickname);
+    
+    while (key > 0) {
+        // aceita letras, números, espaço (32-126 ASCII)
+        if ((key >= 32) && (key <= 126) && (nicknameLen < 20)) {
+            nickname[nicknameLen] = (char)key;
+            nickname[nicknameLen + 1] = '\0';
+            nicknameLen++;
+        }
+        key = GetCharPressed();
+    }
+
+    // backspace
+    if (IsKeyPressed(KEY_BACKSPACE) && nicknameLen > 0) {
+        nickname[nicknameLen - 1] = '\0';
+    }
+
+    // enter ou clique no botão confirmar
+    if ((IsKeyPressed(KEY_ENTER) || (hoverConfirm && IsMouseButtonPressed(MOUSE_LEFT_BUTTON))) && nicknameLen > 0) {
+        *estadoJogo = 2; // vai p jogo
+    }
+
+    BeginDrawing();
+    ClearBackground(RAYWHITE);
+
+    // fundo
+    if (background.id > 0) {
+        Rectangle source = {0, 0, (float)background.width, (float)background.height};
+        Rectangle dest = {0, 0, (float)screenWidth, (float)screenHeight};
+        DrawTexturePro(background, source, dest, (Vector2){0, 0}, 0.0f, WHITE);
+    }
+
+    float fontSize = screenWidth * 0.06f;
+
+    // título
+    const char *title = "Digite seu nickname:";
+    float titleWidth = MeasureTextEx(titleFont, title, fontSize * 0.7f, 2).x;
+    DrawTextEx(titleFont, title,
+               (Vector2){screenWidth / 2 - titleWidth / 2, screenHeight * 0.35f},
+               fontSize * 0.7f, 2, pink);
+
+    // caixa de input
+    DrawRectangleRounded(inputBox, 0.3f, 10, blue);
+    DrawRectangleLinesEx(inputBox, 3.0f, green);
+
+    // texto digitado
+    if (nicknameLen > 0) {
+        float textWidth = MeasureTextEx(titleFont, nickname, fontSize * 0.5f, 2).x;
+        DrawTextEx(titleFont, nickname,
+                   (Vector2){
+                       inputBox.x + boxWidth / 2 - textWidth / 2,
+                       inputBox.y + boxHeight / 2 - fontSize * 0.25f
+                   },
+                   fontSize * 0.5f, 2, BLACK);
+    } else {
+        // placeholder
+        const char *placeholder = "Seu nome aqui...";
+        float phWidth = MeasureTextEx(titleFont, placeholder, fontSize * 0.4f, 2).x;
+        DrawTextEx(titleFont, placeholder,
+                   (Vector2){
+                       inputBox.x + boxWidth / 2 - phWidth / 2,
+                       inputBox.y + boxHeight / 2 - fontSize * 0.2f
+                   },
+                   fontSize * 0.4f, 2, GRAY);
+    }
+
+    // cursor piscando
+    static float cursorTimer = 0.0f;
+    cursorTimer += GetFrameTime();
+    if (((int)(cursorTimer * 2)) % 2 == 0 && nicknameLen < 20) {
+        float textWidth = MeasureTextEx(titleFont, nickname, fontSize * 0.5f, 2).x;
+        DrawRectangle(
+            inputBox.x + boxWidth / 2 + textWidth / 2 + 5,
+            inputBox.y + boxHeight * 0.25f,
+            2,
+            boxHeight * 0.5f,
+            BLACK
+        );
+    }
+
+    // botão confirmar (só ativo se tiver texto)
+    if (nicknameLen > 0) {
+        DrawRectangleRounded(confirmBtn, 0.3f, 10, hoverConfirm ? yellow : blue);
+        DrawTextEx(titleFont, "CONFIRMAR",
+                   (Vector2){
+                       confirmBtn.x + btnWidth / 2 - MeasureTextEx(titleFont, "CONFIRMAR", fontSize * 0.5f, 2).x / 2,
+                       confirmBtn.y + btnHeight / 2 - fontSize * 0.25f
+                   },
+                   fontSize * 0.5f, 2, hoverConfirm ? pink : green);
+    } else {
+        DrawRectangleRounded(confirmBtn, 0.3f, 10, GRAY);
+        DrawTextEx(titleFont, "CONFIRMAR",
+                   (Vector2){
+                       confirmBtn.x + btnWidth / 2 - MeasureTextEx(titleFont, "CONFIRMAR", fontSize * 0.5f, 2).x / 2,
+                       confirmBtn.y + btnHeight / 2 - fontSize * 0.25f
+                   },
+                   fontSize * 0.5f, 2, DARKGRAY);
+    }
+
+    EndDrawing();
+}
+
+void TelaJogo(int *estadoJogo, int screenWidth, int screenHeight, Texture2D background_jogo, char *nickname) {
     static Jogador jogador;
     static Obstaculo obstaculos[MAX_OBSTACULOS];
     static ItemColetavel itens[MAX_ITENS];
@@ -134,11 +277,11 @@ void TelaJogo(int *estadoJogo, int screenWidth, int screenHeight, Texture2D back
     static bool inicializado = false;
     static int frameCount = 0;
     static int frameCountItens = 0;
-    static float velocidadeJogo = 3.5f; // Velocidade inicial: 3.5 m/s (bem mais lento)
-    static float velocidadeMaxima = 45.0f; // Velocidade máxima: 45 m/s (rápido)
+    static float velocidadeJogo = 3.0f; // Velocidade inicial: 3.0 m/s
+    static float velocidadeMaxima = 30.0f; // Velocidade máxima: 30 m/s
     static float intervaloAceleracao = 30.0f; // Acelera a cada 30 segundos
     static float tempoUltimaAceleracao = 0.0f; // Controla quando acelerar
-    static float incrementoVelocidade = 4.0f; // Aumenta 4 m/s a cada intervalo
+    static float incrementoVelocidade = 2.0f; // Aumenta 2 m/s a cada intervalo
     static float tempoDecorrido = 0.0f; // Tempo em segundos
     static bool gameOver = false;
     static bool vitoria = false;
@@ -147,6 +290,12 @@ void TelaJogo(int *estadoJogo, int screenWidth, int screenHeight, Texture2D back
     static int direcaoJogador = 0; // -1 = esquerda, 0 = centro, 1 = direita
     static float tempoAnimacao = 0.0f; // Timer para animação de sprites
     static bool frameAnimacao = false; // Alterna entre direito(false) e esquerdo(true)
+    
+    // Sistema progressivo de obstáculos
+    static int framesEntreObstaculos = 180; // Começa com 3 segundos (180 frames)
+    static int framesMinimos = 40; // Mínimo de 0.66 segundo (~40 frames)
+    static float tempoUltimoAumentoFrequencia = 0.0f; // Controla quando aumentar frequência
+    static float intervaloAumentoFrequencia = 10.0f; // Aumenta frequência a cada 10 segundos
     
     // Texturas dos obstáculos (carregadas uma vez)
     static Texture2D spriteOnibusEsquerdo = {0};
@@ -165,10 +314,22 @@ void TelaJogo(int *estadoJogo, int screenWidth, int screenHeight, Texture2D back
     static Texture2D spriteCorrendoEsquerda = {0};
     static Texture2D spritePulandoDireita = {0};
     static Texture2D spritePulandoEsquerda = {0};
+    static Texture2D spriteDeslizandoDireita = {0};
+    static Texture2D spriteDeslizandoEsquerda = {0};
     static bool spritesJogadorCarregadas = false;
     
-    // Constantes de perspectiva
-    const float horizon_y = 200.0f;
+    // Perspectiva das lanes - ajustadas para coincidir com as faixas do asfalto
+    const float horizon_y = 235.0f;          // linha do horizonte onde a estrada começa
+    
+    // Medidas calibradas para coincidir com a imagem de fundo (800x600)
+    // No topo (horizonte): as 3 lanes ocupam aproximadamente 25% da largura da tela
+    // Na base: ocupam mais que a largura da tela para coincidir com as faixas
+    
+    float lane_width_top = screenWidth * 0.083f;      // ~66px por lane no topo (3 lanes = 25% da tela)
+    float lane_offset_top = screenWidth * 0.375f;     // começa em 37.5% da tela (centralizado)
+    
+    float lane_width_bottom = screenWidth * 0.45f;    // ~360px por lane na base (3 lanes = 135% da tela)
+    float lane_offset_bottom = -screenWidth * 0.175f; // começa antes da borda esquerda (-17.5%)
 
     BeginDrawing();
     ClearBackground(RAYWHITE);
@@ -195,16 +356,25 @@ void TelaJogo(int *estadoJogo, int screenWidth, int screenHeight, Texture2D back
         
         frameCount = 0;
         frameCountItens = 0;
-        velocidadeJogo = 3.5f; // Velocidade inicial (lenta)
-        velocidadeMaxima = 45.0f;
+        velocidadeJogo = 3.0f; // Velocidade inicial
+        velocidadeMaxima = 30.0f;
         intervaloAceleracao = 30.0f;
         tempoUltimaAceleracao = 0.0f;
-        incrementoVelocidade = 4.0f;
+        incrementoVelocidade = 2.0f;
         tempoDecorrido = 0.0f;
         gameOver = false;
         vitoria = false;
         tempoMensagemAceleracao = 0.0f;
         mostrarMensagemAceleracao = false;
+        
+        // Inicializa sistema progressivo de obstáculos
+        framesEntreObstaculos = 180; // Começa com 3 segundos
+        tempoUltimoAumentoFrequencia = 0.0f;
+        
+        // Cria obstáculos iniciais imediatamente
+        int quantidade_inicial = (rand() % 3) + 1; // 1, 2 ou 3
+        criarMultiplosObstaculos(obstaculos, MAX_OBSTACULOS, screenHeight, quantidade_inicial, horizon_y);
+        
         inicializado = true;
     }
     
@@ -225,7 +395,6 @@ void TelaJogo(int *estadoJogo, int screenWidth, int screenHeight, Texture2D back
         texturasItens[2] = LoadTexture("assets/images/VEM.png");         // Tipo 2: PINK
         texturasItens[3] = LoadTexture("assets/images/botao_parada.png"); // Tipo 3: GOLD
         texturasItens[4] = LoadTexture("assets/images/fone.png");        // Tipo 4: GREEN
-        
         // Itens RUINS (tipos 5-7)
         texturasItens[5] = LoadTexture("assets/images/sono.png");        // Tipo 5: Sono (aumenta 5 seg no tempo)
         texturasItens[6] = LoadTexture("assets/images/balaclava.png");   // Tipo 6: Balaclava (perde todos os itens)
@@ -240,6 +409,8 @@ void TelaJogo(int *estadoJogo, int screenWidth, int screenHeight, Texture2D back
         spriteCorrendoEsquerda = LoadTexture("assets/images/correndo_esquerdo.png");
         spritePulandoDireita = LoadTexture("assets/images/pulando_direita.png");
         spritePulandoEsquerda = LoadTexture("assets/images/pulando_esquerda.png");
+        spriteDeslizandoDireita = LoadTexture("assets/images/deslizando_direita.png");
+        spriteDeslizandoEsquerda = LoadTexture("assets/images/deslizando_esquerda.png");
         spritesJogadorCarregadas = true;
     }
 
@@ -290,9 +461,20 @@ void TelaJogo(int *estadoJogo, int screenWidth, int screenHeight, Texture2D back
             }
         }
 
-        // novos obstaculos a 60fps
+        // Sistema progressivo: aumenta frequência de obstáculos a cada 5 segundos
+        if (framesEntreObstaculos > framesMinimos) {
+            if (tempoDecorrido - tempoUltimoAumentoFrequencia >= intervaloAumentoFrequencia) {
+                framesEntreObstaculos -= 10; // Reduz 10 frames (~0.17 segundos)
+                if (framesEntreObstaculos < framesMinimos) {
+                    framesEntreObstaculos = framesMinimos;
+                }
+                tempoUltimoAumentoFrequencia = tempoDecorrido;
+            }
+        }
+
+        // novos obstaculos com frequencia progressiva
         frameCount++;
-        if (frameCount >= 60) {
+        if (frameCount >= framesEntreObstaculos) {
             // Escolhe aleatoriamente: 1, 2 ou 3 obstáculos
             int quantidade = (rand() % 3) + 1; // 1, 2 ou 3
             criarMultiplosObstaculos(obstaculos, MAX_OBSTACULOS, screenHeight, quantidade, horizon_y);
@@ -301,30 +483,26 @@ void TelaJogo(int *estadoJogo, int screenWidth, int screenHeight, Texture2D back
 
         // Timer para animação das sprites do jogador (alterna a cada 0.5s)
         tempoAnimacao += GetFrameTime();
-        if (tempoAnimacao >= 0.5f) {
+        if (tempoAnimacao >= 0.25f) {
             frameAnimacao = !frameAnimacao;
             tempoAnimacao = 0.0f;
         }
 
-        // atualiza obstáculos
-        atualizarObstaculos(obstaculos, MAX_OBSTACULOS, velocidadeJogo);
+        
 
         // gerar itens colecionáveis a cada 180 frames (3 seg)
         frameCountItens++;
-        if (frameCountItens >= 180) {
+        if (frameCountItens >= 90) {
             criarItem(itens, MAX_ITENS, screenHeight, obstaculos, MAX_OBSTACULOS, horizon_y, itensColetados);
             frameCountItens = 0;
         }
 
-        // atualiza itens
-        atualizarItens(itens, MAX_ITENS, velocidadeJogo);
+        float dt = GetFrameTime();
+        atualizarObstaculos(obstaculos, MAX_OBSTACULOS, velocidadeJogo, horizon_y, screenHeight, dt);
+        atualizarItens(itens, MAX_ITENS, velocidadeJogo, horizon_y, screenHeight, dt);
 
         // posição X baseada na lane com perspectiva
         // O jogador está em uma posição Y específica, então precisa interpolar igual aos obstáculos/itens
-        float lane_width_top = screenWidth / 10.0f;
-        float lane_offset_top = (screenWidth - lane_width_top * 3) / 2.0f;
-        float lane_width_bottom = screenWidth / 2.5f;
-        float lane_offset_bottom = (screenWidth - lane_width_bottom * 3) / 2.0f;
         
         // Calcula progress baseado na posição Y do jogador (mesma lógica dos obstáculos)
         float player_progress = (jogador.pos_y_real - horizon_y) / (screenHeight - horizon_y);
@@ -426,8 +604,16 @@ void TelaJogo(int *estadoJogo, int screenWidth, int screenHeight, Texture2D back
             float pos_y = screenHeight - 100;
             inicializarJogador(&jogador, pos_x, pos_y);
             inicializarObstaculos(obstaculos, MAX_OBSTACULOS);
-            velocidadeJogo = 3.5f; // Reinicia na velocidade inicial (lenta)
+            velocidadeJogo = 3.0f; // Reinicia na velocidade inicial
             tempoUltimaAceleracao = tempoDecorrido; // Mantém tempo acumulado
+            framesEntreObstaculos = 180; // Reinicia frequência de obstáculos (3 segundos)
+            tempoUltimoAumentoFrequencia = tempoDecorrido;
+            frameCount = 0; // Reseta contador para criar obstáculos imediatamente
+            
+            // Cria obstáculos iniciais imediatamente ao reiniciar
+            int quantidade_inicial = (rand() % 3) + 1; // 1, 2 ou 3
+            criarMultiplosObstaculos(obstaculos, MAX_OBSTACULOS, screenHeight, quantidade_inicial, horizon_y);
+            
             gameOver = false;
             vitoria = false;
             // NÃO reseta tempoDecorrido e itensColetados
@@ -446,10 +632,11 @@ void TelaJogo(int *estadoJogo, int screenWidth, int screenHeight, Texture2D back
         inicializado = false; // Força reinicialização completa (reseta tempo e itens)
     }
 
-    // Tecla ESC para voltar ao menu e resetar tudo
+    // Tecla ESC para voltar ao menu e resetar tudo (incluindo nickname)
     if (IsKeyPressed(KEY_ESCAPE)) {
         *estadoJogo = 0; // de volta ao menu
         inicializado = false; // Força reinicialização completa (reseta tempo e itens)
+        nickname[0] = '\0'; // Limpa o nickname (fim da run)
     }
 
     // Cores dos itens (declarado aqui para uso em toda a função)
@@ -468,11 +655,6 @@ void TelaJogo(int *estadoJogo, int screenWidth, int screenHeight, Texture2D back
     ClearBackground(SKYBLUE);
 
     // lanes com perspectiva
-    float lane_width_bottom = screenWidth / 2.5f; // mais largo embaixo
-    float lane_width_top = screenWidth / 10.0f; // mais estreito em cima
-    float lane_offset_top = (screenWidth - lane_width_top * 3) / 2.0f;
-    float lane_offset_bottom = (screenWidth - lane_width_bottom * 3) / 2.0f; // Centraliza as lanes na base
-    
     // lane esq
     DrawTriangle(
         (Vector2){lane_offset_bottom, screenHeight},
@@ -519,7 +701,7 @@ void TelaJogo(int *estadoJogo, int screenWidth, int screenHeight, Texture2D back
     DrawLine(lane_offset_bottom + lane_width_bottom, screenHeight, lane_offset_top + lane_width_top, horizon_y, DARKGRAY);
     DrawLine(lane_offset_bottom + lane_width_bottom * 2, screenHeight, lane_offset_top + lane_width_top * 2, horizon_y, DARKGRAY);
 
-    // obstáculos com perspectiva
+    // caminho dos obstaculos com perspectiva
     for (int i = 0; i < MAX_OBSTACULOS; i++) {
         if (obstaculos[i].ativo) {
             // Progress baseado na distância entre horizonte e fundo da tela
@@ -533,12 +715,6 @@ void TelaJogo(int *estadoJogo, int screenWidth, int screenHeight, Texture2D back
             // largura e altura em escala
             float largura_scaled = obstaculos[i].largura * scale;
             float altura_scaled = obstaculos[i].altura * scale;
-            
-            // posição X com perspectiva
-            float lane_width_top = screenWidth / 10.0f; // Perspectiva mais acentuada
-            float lane_offset_top = (screenWidth - lane_width_top * 3) / 2.0f;
-            float lane_width_bottom = screenWidth / 2.5f;
-            float lane_offset_bottom = (screenWidth - lane_width_bottom * 3) / 2.0f;
             
             // posição X interpolada entre topo e base
             float x_top = lane_offset_top + lane_width_top * obstaculos[i].lane + lane_width_top / 2;
@@ -569,9 +745,9 @@ void TelaJogo(int *estadoJogo, int screenWidth, int screenHeight, Texture2D back
             } else if (obstaculos[i].tipo == 1) {
                 // catraca de onibus (apenas parte inferior) = obstaculo baixo (pular com W)
                 if (spriteCatraca.id > 0) {
-                    // Sprite visual de 100px
-                    float sprite_largura_catraca = 100.0f * scale;
-                    float sprite_altura_catraca = 100.0f * scale;
+                    // Sprite visual de 80px
+                    float sprite_largura_catraca = 80.0f * scale;
+                    float sprite_altura_catraca = 80.0f * scale;
                     Rectangle source = {0, 0, (float)spriteCatraca.width, (float)spriteCatraca.height};
                     Rectangle dest = {obs_x - sprite_largura_catraca / 2, obstaculos[i].pos_y, sprite_largura_catraca, sprite_altura_catraca};
                     DrawTexturePro(spriteCatraca, source, dest, (Vector2){0, 0}, 0.0f, WHITE);
@@ -624,14 +800,9 @@ void TelaJogo(int *estadoJogo, int screenWidth, int screenHeight, Texture2D back
             
             // escala com perspectiva
             float scale = 0.3f + (progress * 0.7f);
-            float tamanho_scaled = 120 * scale; // 120 pixels (varia de 36px no horizonte a 120px na base)
+            float tamanho_scaled = BASE_ITEM_SIZE * scale; // 120 pixels (varia de 36px no horizonte a 120px na base)
             
             // posição X com perspectiva
-            float lane_width_top = screenWidth / 10.0f; // Perspectiva mais acentuada
-            float lane_offset_top = (screenWidth - lane_width_top * 3) / 2.0f;
-            float lane_width_bottom = screenWidth / 2.5f;
-            float lane_offset_bottom = (screenWidth - lane_width_bottom * 3) / 2.0f;
-            
             float x_top = lane_offset_top + (itens[i].lane * lane_width_top) + lane_width_top / 2;
             float x_bottom = lane_offset_bottom + (itens[i].lane * lane_width_bottom) + lane_width_bottom / 2;
             float item_x = x_top + (x_bottom - x_top) * progress;
