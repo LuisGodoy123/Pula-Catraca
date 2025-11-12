@@ -497,8 +497,8 @@ void TelaJogo(int *estadoJogo, int screenWidth, int screenHeight, Texture2D back
         }
 
         float dt = GetFrameTime();
-        atualizarObstaculos(obstaculos, MAX_OBSTACULOS, velocidadeJogo, dt);
-        atualizarItens(itens, MAX_ITENS, velocidadeJogo, dt);
+        atualizarObstaculos(obstaculos, MAX_OBSTACULOS, velocidadeJogo, horizon_y, screenHeight, dt);
+        atualizarItens(itens, MAX_ITENS, velocidadeJogo, horizon_y, screenHeight, dt);
 
         // posição X baseada na lane com perspectiva
         // O jogador está em uma posição Y específica, então precisa interpolar igual aos obstáculos/itens

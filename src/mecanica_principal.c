@@ -165,14 +165,27 @@ void criarMultiplosObstaculos(Obstaculo obstaculos[], int tamanho, float screenH
     }
 }
 
-void atualizarObstaculos(Obstaculo obstaculos[], int tamanho, float velocidade, float delta) {
+void atualizarObstaculos(Obstaculo obstaculos[], int tamanho, float velocidade, float horizon_y, int screenHeight, float delta) {
+    // Tunáveis para sensação de velocidade realista
+    const float baseFactor = 0.5f;   // velocidade mínima no horizonte (50%)
+    const float extraFactor = 1.5f;  // incremento adicional até chegar perto (total 200%)
+
     for (int i = 0; i < tamanho; i++) {
-        if (obstaculos[i].ativo) {
-            obstaculos[i].pos_y += velocidade* delta * 60.0f; // usa delta para ficar independente do FPS (multiplica 60 para manter escala atual)
-            
-            if (obstaculos[i].pos_y > 700) {
-                obstaculos[i].ativo = 0; // a baixo de 700 pixels não está mais ativo
-            }
+        if (!obstaculos[i].ativo) continue;
+        
+        // Calcula progress (0 = no horizonte, 1 = na base da tela)
+        float progress = (obstaculos[i].pos_y - horizon_y) / (screenHeight - horizon_y);
+        if (progress < 0) progress = 0;
+        if (progress > 1) progress = 1;
+
+        // Fator de velocidade aumenta conforme se aproxima (objetos próximos parecem mais rápidos)
+        float speedFactor = baseFactor + progress * extraFactor;
+        
+        obstaculos[i].pos_y += velocidade * speedFactor * delta * 60.0f;
+        
+        // Desativa quando sai da tela
+        if (obstaculos[i].pos_y > screenHeight + 200) {
+            obstaculos[i].ativo = 0;
         }
     }
 }
@@ -337,14 +350,27 @@ void criarItem(ItemColetavel itens[], int tamanho, float screenHeight, Obstaculo
     }
 }
 
-void atualizarItens(ItemColetavel itens[], int tamanho, float velocidade, float delta) {
+void atualizarItens(ItemColetavel itens[], int tamanho, float velocidade, float horizon_y, int screenHeight, float delta) {
+    // Tunáveis para sensação de velocidade realista (mesmos valores dos obstáculos)
+    const float baseFactor = 0.5f;   // velocidade mínima no horizonte (50%)
+    const float extraFactor = 1.5f;  // incremento adicional até chegar perto (total 200%)
+
     for (int i = 0; i < tamanho; i++) {
-        if (itens[i].ativo && !itens[i].coletado) {
-            itens[i].pos_y += velocidade* delta * 60.0f; // usa delta para ficar independente do FPS (multiplica 60 para manter escala atual)
-            
-            if (itens[i].pos_y > 700) { // se passar de 700px n]ao dá mais para coletar
-                itens[i].ativo = 0;
-            }
+        if (!itens[i].ativo || itens[i].coletado) continue;
+        
+        // Calcula progress (0 = no horizonte, 1 = na base da tela)
+        float progress = (itens[i].pos_y - horizon_y) / (screenHeight - horizon_y);
+        if (progress < 0) progress = 0;
+        if (progress > 1) progress = 1;
+
+        // Fator de velocidade aumenta conforme se aproxima (mesma física dos obstáculos)
+        float speedFactor = baseFactor + progress * extraFactor;
+        
+        itens[i].pos_y += velocidade * speedFactor * delta * 60.0f;
+        
+        // Desativa quando sai da tela
+        if (itens[i].pos_y > screenHeight + 200) {
+            itens[i].ativo = 0;
         }
     }
 }
