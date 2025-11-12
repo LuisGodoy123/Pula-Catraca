@@ -165,14 +165,13 @@ void criarMultiplosObstaculos(Obstaculo obstaculos[], int tamanho, float screenH
     }
 }
 
-void atualizarObstaculos(Obstaculo obstaculos[], int tamanho, float velocidade) {
+void atualizarObstaculos(Obstaculo obstaculos[], int tamanho, float velocidade, float delta) {
     for (int i = 0; i < tamanho; i++) {
         if (obstaculos[i].ativo) {
-            obstaculos[i].pos_y += velocidade; // Move para baixo
+            obstaculos[i].pos_y += velocidade* delta * 60.0f; // usa delta para ficar independente do FPS (multiplica 60 para manter escala atual)
             
-            // Desativa se sair da tela
             if (obstaculos[i].pos_y > 700) {
-                obstaculos[i].ativo = 0;
+                obstaculos[i].ativo = 0; // a baixo de 700 pixels não está mais ativo
             }
         }
     }
@@ -338,13 +337,12 @@ void criarItem(ItemColetavel itens[], int tamanho, float screenHeight, Obstaculo
     }
 }
 
-void atualizarItens(ItemColetavel itens[], int tamanho, float velocidade) {
+void atualizarItens(ItemColetavel itens[], int tamanho, float velocidade, float delta) {
     for (int i = 0; i < tamanho; i++) {
         if (itens[i].ativo && !itens[i].coletado) {
-            itens[i].pos_y += velocidade; // Move para baixo (igual aos obstáculos)
+            itens[i].pos_y += velocidade* delta * 60.0f; // usa delta para ficar independente do FPS (multiplica 60 para manter escala atual)
             
-            // Desativa item se saiu da tela (passou do fundo)
-            if (itens[i].pos_y > 700) { // Ajuste conforme a altura da tela
+            if (itens[i].pos_y > 700) { // se passar de 700px n]ao dá mais para coletar
                 itens[i].ativo = 0;
             }
         }

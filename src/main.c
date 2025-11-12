@@ -3,6 +3,7 @@
 #include <string.h>
 #include "raylib.h"
 #include "../include/mecanica_principal.h"
+#define BASE_ITEM_SIZE 120.0f
 
 // Protótipos das funções
 void TelaMenu(int *estadoJogo, int screenWidth, int screenHeight, Texture2D background);
@@ -313,10 +314,21 @@ void TelaJogo(int *estadoJogo, int screenWidth, int screenHeight, Texture2D back
     static Texture2D spriteCorrendoEsquerda = {0};
     static Texture2D spritePulandoDireita = {0};
     static Texture2D spritePulandoEsquerda = {0};
+    static Texture2D spriteDeslizandoDireita = {0};
+    static Texture2D spriteDeslizandoEsquerda = {0};
     static bool spritesJogadorCarregadas = false;
     
-    // Constantes de perspectiva
-    const float horizon_y = 200.0f;
+    // Perspectiva das lanes
+    const float horizon_y = 200.0f;          // linha do horizonte (igual a imagem de fundo)
+    float lane_top_divisor = 20.0f;          // maior = topo mais estreito (aumenta angulação)
+    float lane_bottom_divisor = 2.0f;        // menor = base mais larga (aumenta angulação)
+    float lane_top_extra_offset = 0.25f;      // desloca lanes no topo (positivo move pra direita)
+    float lane_bottom_extra_offset = 0.5f;    // desloca lanes na base (positivo move pra direita)
+
+    float lane_width_top = screenWidth / lane_top_divisor;
+    float lane_offset_top = (screenWidth - lane_width_top * 3) / 2.0f + lane_top_extra_offset;
+    float lane_width_bottom = screenWidth / lane_bottom_divisor;
+    float lane_offset_bottom = (screenWidth - lane_width_bottom * 3) / 2.0f + lane_bottom_extra_offset;
 
     BeginDrawing();
     ClearBackground(RAYWHITE);
@@ -382,7 +394,6 @@ void TelaJogo(int *estadoJogo, int screenWidth, int screenHeight, Texture2D back
         texturasItens[2] = LoadTexture("assets/images/VEM.png");         // Tipo 2: PINK
         texturasItens[3] = LoadTexture("assets/images/botao_parada.png"); // Tipo 3: GOLD
         texturasItens[4] = LoadTexture("assets/images/fone.png");        // Tipo 4: GREEN
-        
         // Itens RUINS (tipos 5-7)
         texturasItens[5] = LoadTexture("assets/images/sono.png");        // Tipo 5: Sono (aumenta 5 seg no tempo)
         texturasItens[6] = LoadTexture("assets/images/balaclava.png");   // Tipo 6: Balaclava (perde todos os itens)
@@ -397,6 +408,8 @@ void TelaJogo(int *estadoJogo, int screenWidth, int screenHeight, Texture2D back
         spriteCorrendoEsquerda = LoadTexture("assets/images/correndo_esquerdo.png");
         spritePulandoDireita = LoadTexture("assets/images/pulando_direita.png");
         spritePulandoEsquerda = LoadTexture("assets/images/pulando_esquerda.png");
+        spriteDeslizandoDireita = LoadTexture("assets/images/deslizando_direita.png");
+        spriteDeslizandoEsquerda = LoadTexture("assets/images/deslizando_esquerda.png");
         spritesJogadorCarregadas = true;
     }
 
@@ -458,7 +471,7 @@ void TelaJogo(int *estadoJogo, int screenWidth, int screenHeight, Texture2D back
             }
         }
 
-        // novos obstaculos com frequência progressiva
+        // novos obstaculos com frequencia progressiva
         frameCount++;
         if (frameCount >= framesEntreObstaculos) {
             // Escolhe aleatoriamente: 1, 2 ou 3 obstáculos
@@ -469,13 +482,12 @@ void TelaJogo(int *estadoJogo, int screenWidth, int screenHeight, Texture2D back
 
         // Timer para animação das sprites do jogador (alterna a cada 0.5s)
         tempoAnimacao += GetFrameTime();
-        if (tempoAnimacao >= 0.5f) {
+        if (tempoAnimacao >= 0.25f) {
             frameAnimacao = !frameAnimacao;
             tempoAnimacao = 0.0f;
         }
 
-        // atualiza obstáculos
-        atualizarObstaculos(obstaculos, MAX_OBSTACULOS, velocidadeJogo);
+        
 
         // gerar itens colecionáveis a cada 180 frames (3 seg)
         frameCountItens++;
@@ -484,15 +496,12 @@ void TelaJogo(int *estadoJogo, int screenWidth, int screenHeight, Texture2D back
             frameCountItens = 0;
         }
 
-        // atualiza itens
-        atualizarItens(itens, MAX_ITENS, velocidadeJogo);
+        float dt = GetFrameTime();
+        atualizarObstaculos(obstaculos, MAX_OBSTACULOS, velocidadeJogo, dt);
+        atualizarItens(itens, MAX_ITENS, velocidadeJogo, dt);
 
         // posição X baseada na lane com perspectiva
         // O jogador está em uma posição Y específica, então precisa interpolar igual aos obstáculos/itens
-        float lane_width_top = screenWidth / 10.0f;
-        float lane_offset_top = (screenWidth - lane_width_top * 3) / 2.0f;
-        float lane_width_bottom = screenWidth / 2.5f;
-        float lane_offset_bottom = (screenWidth - lane_width_bottom * 3) / 2.0f;
         
         // Calcula progress baseado na posição Y do jogador (mesma lógica dos obstáculos)
         float player_progress = (jogador.pos_y_real - horizon_y) / (screenHeight - horizon_y);
@@ -645,11 +654,6 @@ void TelaJogo(int *estadoJogo, int screenWidth, int screenHeight, Texture2D back
     ClearBackground(SKYBLUE);
 
     // lanes com perspectiva
-    float lane_width_bottom = screenWidth / 2.5f; // mais largo embaixo
-    float lane_width_top = screenWidth / 10.0f; // mais estreito em cima
-    float lane_offset_top = (screenWidth - lane_width_top * 3) / 2.0f;
-    float lane_offset_bottom = (screenWidth - lane_width_bottom * 3) / 2.0f; // Centraliza as lanes na base
-    
     // lane esq
     DrawTriangle(
         (Vector2){lane_offset_bottom, screenHeight},
@@ -696,7 +700,7 @@ void TelaJogo(int *estadoJogo, int screenWidth, int screenHeight, Texture2D back
     DrawLine(lane_offset_bottom + lane_width_bottom, screenHeight, lane_offset_top + lane_width_top, horizon_y, DARKGRAY);
     DrawLine(lane_offset_bottom + lane_width_bottom * 2, screenHeight, lane_offset_top + lane_width_top * 2, horizon_y, DARKGRAY);
 
-    // obstáculos com perspectiva
+    // caminho dos obstaculos com perspectiva
     for (int i = 0; i < MAX_OBSTACULOS; i++) {
         if (obstaculos[i].ativo) {
             // Progress baseado na distância entre horizonte e fundo da tela
@@ -710,12 +714,6 @@ void TelaJogo(int *estadoJogo, int screenWidth, int screenHeight, Texture2D back
             // largura e altura em escala
             float largura_scaled = obstaculos[i].largura * scale;
             float altura_scaled = obstaculos[i].altura * scale;
-            
-            // posição X com perspectiva
-            float lane_width_top = screenWidth / 10.0f; // Perspectiva mais acentuada
-            float lane_offset_top = (screenWidth - lane_width_top * 3) / 2.0f;
-            float lane_width_bottom = screenWidth / 2.5f;
-            float lane_offset_bottom = (screenWidth - lane_width_bottom * 3) / 2.0f;
             
             // posição X interpolada entre topo e base
             float x_top = lane_offset_top + lane_width_top * obstaculos[i].lane + lane_width_top / 2;
@@ -801,14 +799,9 @@ void TelaJogo(int *estadoJogo, int screenWidth, int screenHeight, Texture2D back
             
             // escala com perspectiva
             float scale = 0.3f + (progress * 0.7f);
-            float tamanho_scaled = 120 * scale; // 120 pixels (varia de 36px no horizonte a 120px na base)
+            float tamanho_scaled = BASE_ITEM_SIZE * scale; // 120 pixels (varia de 36px no horizonte a 120px na base)
             
             // posição X com perspectiva
-            float lane_width_top = screenWidth / 10.0f; // Perspectiva mais acentuada
-            float lane_offset_top = (screenWidth - lane_width_top * 3) / 2.0f;
-            float lane_width_bottom = screenWidth / 2.5f;
-            float lane_offset_bottom = (screenWidth - lane_width_bottom * 3) / 2.0f;
-            
             float x_top = lane_offset_top + (itens[i].lane * lane_width_top) + lane_width_top / 2;
             float x_bottom = lane_offset_bottom + (itens[i].lane * lane_width_bottom) + lane_width_bottom / 2;
             float item_x = x_top + (x_bottom - x_top) * progress;
