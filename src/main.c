@@ -9,9 +9,10 @@
 #define BASE_ITEM_SIZE 120.0f
 
 // Protótipos das funções
-void TelaMenu(int *estadoJogo, int screenWidth, int screenHeight, Texture2D background);
+void TelaMenu(int *estadoJogo, int screenWidth, int screenHeight, Texture2D background, Sound somMenu);
 void TelaNickname(int *estadoJogo, int screenWidth, int screenHeight, Texture2D background, char *nickname);
-void TelaJogo(int *estadoJogo, int screenWidth, int screenHeight, Texture2D background_jogo, char *nickname);
+void TelaJogo(int *estadoJogo, int screenWidth, int screenHeight, Texture2D background_jogo, char *nickname, Sound somCorrida, Sound somItemBom, Sound somItemRuim, Sound somColisao, Sound somVitoria);
+void TelaRanking(int *estadoJogo, int screenWidth, int screenHeight, Texture2D background);
 
 // Ranking (persistente)
 static RankingList ranking;
@@ -23,6 +24,9 @@ int main(void) {
     InitWindow(screenWidth, screenHeight, "Pula-Catraca");
     SetTraceLogLevel(LOG_WARNING); // Desabilita mensagens de INFO e DEBUG
     SetTargetFPS(60);
+    
+    // Inicializa sistema de áudio
+    InitAudioDevice();
 
     // Inicializa e carrega ranking salvo (se existir)
     initRanking(&ranking);
@@ -31,6 +35,22 @@ int main(void) {
     // Inicializa ranking em memória e carrega do disco (arquivo com todos os tempos)
     initRanking(&ranking);
     loadRankingAll(&ranking, "ranking_all.csv");
+    
+    // Carrega sons
+    Sound somMenu = LoadSound("assets/sound/scene_inicial.wav");
+    Sound somCorrida = LoadSound("assets/sound/corrida.wav");
+    Sound somItemBom = LoadSound("assets/sound/item_bom.wav");
+    Sound somItemRuim = LoadSound("assets/sound/item_ruim.wav");
+    Sound somColisao = LoadSound("assets/sound/ouch.wav");
+    Sound somVitoria = LoadSound("assets/sound/vitoria.wav");
+    
+    // Ajusta volume dos sons (0.0 a 1.0)
+    SetSoundVolume(somMenu, 0.3f);
+    SetSoundVolume(somCorrida, 0.2f);
+    SetSoundVolume(somItemBom, 0.5f);
+    SetSoundVolume(somItemRuim, 0.5f);
+    SetSoundVolume(somColisao, 0.6f);
+    SetSoundVolume(somVitoria, 0.5f);
 
     // carrega imagens de fundo
     Texture2D background_menu = {0};
@@ -58,30 +78,46 @@ int main(void) {
         UnloadImage(tempImg);
     }
 
-    int estadoJogo = 0; // 0 = menu, 1 = tela nickname, 2 = jogando
+    int estadoJogo = 0; // 0 = menu, 1 = tela nickname, 2 = jogando, 3 = ranking
     char nickname[21] = ""; // Armazena até 20 caracteres + null terminator
     
     while (!WindowShouldClose()) {
         if (estadoJogo == 0) {
-            TelaMenu(&estadoJogo, screenWidth, screenHeight, background_menu);
+            TelaMenu(&estadoJogo, screenWidth, screenHeight, background_menu, somMenu);
         } else if (estadoJogo == 1) {
             TelaNickname(&estadoJogo, screenWidth, screenHeight, background_menu, nickname);
         } else if (estadoJogo == 2) {
-            TelaJogo(&estadoJogo, screenWidth, screenHeight, background_jogo, nickname);
+            TelaJogo(&estadoJogo, screenWidth, screenHeight, background_jogo, nickname, somCorrida, somItemBom, somItemRuim, somColisao, somVitoria);
+        } else if (estadoJogo == 3) {
+            TelaRanking(&estadoJogo, screenWidth, screenHeight, background_menu);
         }
     }
     // salva ranking completo e top10 antes de sair
     saveRankingAll(&ranking, "ranking_all.csv");
     saveTopCSV(&ranking, "ranking_top10.csv", 10);
     freeRanking(&ranking);
+    
+    // Descarrega sons
+    UnloadSound(somMenu);
+    UnloadSound(somCorrida);
+    UnloadSound(somItemBom);
+    UnloadSound(somItemRuim);
+    UnloadSound(somColisao);
+    UnloadSound(somVitoria);
 
     UnloadTexture(background_menu);
     UnloadTexture(background_jogo);
+    CloseAudioDevice();
     CloseWindow();
     return 0;
 }
 
-void TelaMenu(int *estadoJogo, int screenWidth, int screenHeight, Texture2D background) {
+void TelaMenu(int *estadoJogo, int screenWidth, int screenHeight, Texture2D background, Sound somMenu) {
+    // Toca som do menu em loop (se não estiver tocando)
+    if (!IsSoundPlaying(somMenu)) {
+        PlaySound(somMenu);
+    }
+    
     // fonte texto
     Font titleFont = GetFontDefault();
     // paleta
@@ -95,6 +131,13 @@ void TelaMenu(int *estadoJogo, int screenWidth, int screenHeight, Texture2D back
     float btnHeight = screenHeight * 0.08f;
 
     Rectangle playBtn = {
+        screenWidth / 2 - btnWidth / 2,
+        screenHeight * 0.55f,
+        btnWidth,
+        btnHeight
+    };
+
+    Rectangle rankingBtn = {
         screenWidth / 2 - btnWidth / 2,
         screenHeight * 0.65f,
         btnWidth,
@@ -110,11 +153,17 @@ void TelaMenu(int *estadoJogo, int screenWidth, int screenHeight, Texture2D back
 
     Vector2 mousePos = GetMousePosition();
     bool hoverPlay = CheckCollisionPointRec(mousePos, playBtn);
+    bool hoverRanking = CheckCollisionPointRec(mousePos, rankingBtn);
     bool hoverOptions = CheckCollisionPointRec(mousePos, optionsBtn);
 
     // verifica clique no "PLAY"
     if (hoverPlay && IsMouseButtonPressed(MOUSE_LEFT_BUTTON)) {
-        *estadoJogo = 1; // vai p tela do jogo
+        *estadoJogo = 1; // vai p tela nickname
+    }
+    
+    // verifica clique no "RANKING"
+    if (hoverRanking && IsMouseButtonPressed(MOUSE_LEFT_BUTTON)) {
+        *estadoJogo = 3; // vai p tela de ranking
     }
 
     BeginDrawing();
@@ -138,6 +187,15 @@ void TelaMenu(int *estadoJogo, int screenWidth, int screenHeight, Texture2D back
                },
                fontSize * 0.5f, 2, hoverPlay ? pink : green);
 
+    // botão "RANKING"
+    DrawRectangleRounded(rankingBtn, 0.3f, 10, hoverRanking ? yellow : blue);
+    DrawTextEx(titleFont, "RANKING",
+               (Vector2){
+                   rankingBtn.x + btnWidth / 2 - MeasureTextEx(titleFont, "RANKING", fontSize * 0.5f, 2).x / 2,
+                   rankingBtn.y + btnHeight / 2 - fontSize * 0.25f
+               },
+               fontSize * 0.5f, 2, hoverRanking ? pink : green);
+
     // botão "OPTIONS"
     DrawRectangleRounded(optionsBtn, 0.3f, 10, hoverOptions ? yellow : blue);
     DrawTextEx(titleFont, "OPTIONS",
@@ -146,40 +204,6 @@ void TelaMenu(int *estadoJogo, int screenWidth, int screenHeight, Texture2D back
                    optionsBtn.y + btnHeight / 2 - fontSize * 0.25f
                },
                fontSize * 0.5f, 2, hoverOptions ? pink : green);
-
-    // --- Desenha ranking (top 10) no canto direito inferior do menu ---
-    float rankFont = screenWidth * 0.028f; // tamanho do texto para ranking
-    float lineGap = rankFont * 1.15f;
-    int maxLines = 10;
-    float pad = 12.0f;
-    float boxWidth = screenWidth * 0.35f;
-    float boxHeight = (maxLines + 1) * lineGap + pad * 2; // +1 para o título
-    float boxX = screenWidth - boxWidth - pad;
-    float boxY = screenHeight - boxHeight - pad;
-
-    // fundo semitransparente
-    DrawRectangleRec((Rectangle){boxX, boxY, boxWidth, boxHeight}, (Color){20, 20, 20, 180});
-
-    // título
-    DrawTextEx(titleFont, "Ranking - Top 10", (Vector2){boxX + pad, boxY + pad}, rankFont, 1, WHITE);
-
-    // percorre a lista ligada do ranking e desenha cada entrada
-    RankingNode *cur = ranking.head;
-    int ridx = 1;
-    float textX = boxX + pad;
-    float textY = boxY + pad + lineGap;
-    while (cur && ridx <= maxLines) {
-        char buf[128];
-        int whole = (int)cur->time;
-        int mins = whole / 60;
-        int secs = whole % 60;
-        int centis = (int)((cur->time - whole) * 100.0f + 0.5f);
-        if (centis >= 100) centis = 99;
-        snprintf(buf, sizeof(buf), "%2d. %s - %02d:%02d.%02d", ridx, cur->name ? cur->name : "---", mins, secs, centis);
-        DrawTextEx(titleFont, buf, (Vector2){textX, textY + (ridx - 1) * lineGap}, rankFont * 0.9f, 1, WHITE);
-        cur = cur->next;
-        ridx++;
-    }
 
     EndDrawing();
 }
@@ -320,7 +344,7 @@ void TelaNickname(int *estadoJogo, int screenWidth, int screenHeight, Texture2D 
     EndDrawing();
 }
 
-void TelaJogo(int *estadoJogo, int screenWidth, int screenHeight, Texture2D background_jogo, char *nickname) {
+void TelaJogo(int *estadoJogo, int screenWidth, int screenHeight, Texture2D background_jogo, char *nickname, Sound somCorrida, Sound somItemBom, Sound somItemRuim, Sound somColisao, Sound somVitoria) {
     static Jogador jogador;
     static Obstaculo obstaculos[MAX_OBSTACULOS];
     static ItemColetavel itens[MAX_ITENS];
@@ -463,6 +487,11 @@ void TelaJogo(int *estadoJogo, int screenWidth, int screenHeight, Texture2D back
     }
 
     if (!gameOver) {
+        // Toca som de corrida em loop durante o jogo
+        if (!IsSoundPlaying(somCorrida)) {
+            PlaySound(somCorrida);
+        }
+        
         // inputs do jogador
         if (IsKeyPressed(KEY_W)) {
             pular(&jogador);
@@ -571,6 +600,7 @@ void TelaJogo(int *estadoJogo, int screenWidth, int screenHeight, Texture2D back
                     // incrementa apenas se ainda não atingiu o limite de 5
                     if (itensColetados[tipo] < 5) {
                         itensColetados[tipo]++;
+                        PlaySound(somItemBom); // Toca som de item bom
                     }
                 }
                 // Itens RUINS (tipos 5-7)
@@ -579,6 +609,7 @@ void TelaJogo(int *estadoJogo, int screenWidth, int screenHeight, Texture2D back
                     tempoDecorrido += 5.0f;
                     // Marca como coletado para mostrar mensagem customizada
                     itensColetados[tipo]++;
+                    PlaySound(somItemRuim); // Toca som de item ruim
                 }
                 else if (tipo == 6) {
                     // BALACLAVA: "você foi assaltado e perdeu seus itens" - perde TODOS os itens
@@ -586,6 +617,7 @@ void TelaJogo(int *estadoJogo, int screenWidth, int screenHeight, Texture2D back
                         itensColetados[j] = 0;
                     }
                     itensColetados[tipo]++;
+                    PlaySound(somItemRuim); // Toca som de item ruim
                 }
                 else if (tipo == 7) {
                     // IDOSA: "você cedeu o assento e ficou em pé" - perde 1 item aleatório
@@ -603,7 +635,9 @@ void TelaJogo(int *estadoJogo, int screenWidth, int screenHeight, Texture2D back
                         int indiceAleatorio = rand() % quantidadeDisponiveis;
                         int itemRemovido = itensDisponiveis[indiceAleatorio];
                         itensColetados[itemRemovido]--;
-                    }itensColetados[tipo]++;
+                    }
+                    itensColetados[tipo]++;
+                    PlaySound(somItemRuim); // Toca som de item ruim
                 }
             }
         }
@@ -625,12 +659,16 @@ void TelaJogo(int *estadoJogo, int screenWidth, int screenHeight, Texture2D back
                 saveRankingAll(&ranking, "ranking_all.csv");
                 rankingInserido = true;
                 gameOver = true; // Termina o jogo
+                PlaySound(somVitoria); // Toca som de vitória
+                StopSound(somCorrida); // Para som de corrida
             }
         }
         // colisões (posição sem perspectiva p cálculo)
         for (int i = 0; i < MAX_OBSTACULOS; i++) {
             if (verificarColisao(&jogador, &obstaculos[i], lane_width_bottom, lane_offset_bottom, horizon_y, screenHeight)) {
                 gameOver = true;
+                PlaySound(somColisao); // Toca som de colisão
+                StopSound(somCorrida); // Para som de corrida
                 break;
             }
         }
@@ -661,18 +699,21 @@ void TelaJogo(int *estadoJogo, int screenWidth, int screenHeight, Texture2D back
     // Tecla P para voltar ao menu sem resetar progresso (pausa)
     if (IsKeyPressed(KEY_P)) {
         *estadoJogo = 0; // de volta ao menu
+        StopSound(somCorrida); // Para som de corrida
         // NÃO define inicializado = false, então mantém tempo e itens coletados
     }
 
     // Tecla X para resetar a pontuação e voltar ao menu
     if (IsKeyPressed(KEY_X)) {
         *estadoJogo = 0; // de volta ao menu
+        StopSound(somCorrida); // Para som de corrida
         inicializado = false; // Força reinicialização completa (reseta tempo e itens)
     }
 
     // Tecla ESC para voltar ao menu e resetar tudo (incluindo nickname)
     if (IsKeyPressed(KEY_ESCAPE)) {
         *estadoJogo = 0; // de volta ao menu
+        StopSound(somCorrida); // Para som de corrida
         inicializado = false; // Força reinicialização completa (reseta tempo e itens)
         nickname[0] = '\0'; // Limpa o nickname (fim da run)
     }
@@ -1011,5 +1052,160 @@ void TelaJogo(int *estadoJogo, int screenWidth, int screenHeight, Texture2D back
         DrawText("P=Pausar | X=Menu", 10, screenHeight - 28, 18, BLACK);
     }
 
+    EndDrawing();
+}
+
+void TelaRanking(int *estadoJogo, int screenWidth, int screenHeight, Texture2D background) {
+    // Paleta de cores inspirada na imagem
+    Color pink = (Color){215, 50, 133, 255};      // #d73285 - fundo rosa/magenta
+    Color cyan = (Color){102, 255, 255, 255};      // #66FFFF - azul ciano para título
+    Color cyanBorder = (Color){150, 255, 255, 255}; // borda do título
+    Color green1 = (Color){150, 255, 100, 255};    // #96FF64 - verde claro para linhas
+    Color green2 = (Color){120, 220, 80, 255};     // verde mais escuro
+    Color cyan2 = (Color){120, 240, 240, 255};     // ciano para linhas alternadas
+    Color white = (Color){255, 255, 255, 255};
+    
+    BeginDrawing();
+    ClearBackground(pink); // Fundo rosa/magenta
+    
+    // Desenha fundo se existir (mas com overlay rosa)
+    if (background.id > 0) {
+        Rectangle source = {0, 0, (float)background.width, (float)background.height};
+        Rectangle dest = {0, 0, (float)screenWidth, (float)screenHeight};
+        DrawTexturePro(background, source, dest, (Vector2){0, 0}, 0.0f, (Color){255, 255, 255, 100});
+    }
+    
+    // Dimensões da tabela
+    float tableWidth = screenWidth * 0.8f;
+    float tableHeight = screenHeight * 0.65f;
+    float tableX = (screenWidth - tableWidth) / 2;
+    float tableY = screenHeight * 0.2f;
+    
+    // Borda externa branca/ciano
+    DrawRectangleLinesEx((Rectangle){tableX - 5, tableY - 80, tableWidth + 10, tableHeight + 90}, 4, cyanBorder);
+    DrawRectangleLinesEx((Rectangle){tableX - 8, tableY - 83, tableWidth + 16, tableHeight + 96}, 2, white);
+    
+    // Título "RANKING" grande
+    float titleSize = screenWidth * 0.12f;
+    const char* titleText = "RANKING";
+    Vector2 titleMeasure = MeasureTextEx(GetFontDefault(), titleText, titleSize, 4);
+    float titleX = screenWidth / 2 - titleMeasure.x / 2;
+    float titleY = tableY - 70;
+    
+    // Sombra do título
+    DrawTextEx(GetFontDefault(), titleText, (Vector2){titleX + 4, titleY + 4}, titleSize, 4, (Color){0, 0, 0, 100});
+    // Borda rosa do título
+    DrawTextEx(GetFontDefault(), titleText, (Vector2){titleX - 2, titleY}, titleSize, 4, pink);
+    DrawTextEx(GetFontDefault(), titleText, (Vector2){titleX + 2, titleY}, titleSize, 4, pink);
+    DrawTextEx(GetFontDefault(), titleText, (Vector2){titleX, titleY - 2}, titleSize, 4, pink);
+    DrawTextEx(GetFontDefault(), titleText, (Vector2){titleX, titleY + 2}, titleSize, 4, pink);
+    // Texto principal ciano
+    DrawTextEx(GetFontDefault(), titleText, (Vector2){titleX, titleY}, titleSize, 4, cyan);
+    
+    // Cabeçalhos das colunas
+    float headerY = tableY + 10;
+    float headerSize = screenWidth * 0.04f;
+    float colRankX = tableX + 40;
+    float colPlayerX = tableX + tableWidth * 0.25f;
+    float colScoreX = tableX + tableWidth * 0.7f;
+    
+    // Cabeçalhos em branco
+    DrawTextEx(GetFontDefault(), "RANK", (Vector2){colRankX, headerY}, headerSize, 2, white);
+    DrawTextEx(GetFontDefault(), "PLAYER", (Vector2){colPlayerX, headerY}, headerSize, 2, white);
+    DrawTextEx(GetFontDefault(), "SCORE", (Vector2){colScoreX, headerY}, headerSize, 2, white);
+    
+    // Linha abaixo do cabeçalho
+    float lineY = headerY + headerSize + 10;
+    DrawRectangle(tableX, lineY, tableWidth, 3, white);
+    
+    // Desenha top 10 do ranking
+    float rowHeight = 45;
+    float rowY = lineY + 15;
+    float rowSize = screenWidth * 0.035f;
+    
+    RankingNode* current = ranking.head;
+    int rank = 1;
+    
+    while (current != NULL && rank <= 10) {
+        // Alterna cores das linhas (verde e ciano)
+        Color rowColor = (rank % 2 == 1) ? green1 : cyan2;
+        
+        // Fundo da linha
+        DrawRectangle(tableX + 5, rowY - 5, tableWidth - 10, rowHeight - 5, rowColor);
+        
+        // Número do rank
+        DrawTextEx(GetFontDefault(), TextFormat("%d.", rank), 
+                   (Vector2){colRankX, rowY}, rowSize, 2, (Color){0, 0, 0, 255});
+        
+        // Nome do jogador (trunca se for muito longo)
+        char playerName[21];
+        strncpy(playerName, current->name, 20);
+        playerName[20] = '\0';
+        DrawTextEx(GetFontDefault(), playerName, 
+                   (Vector2){colPlayerX, rowY}, rowSize, 2, (Color){0, 0, 0, 255});
+        
+        // Score (tempo em formato MM:SS.ms)
+        int minutos = (int)current->time / 60;
+        float segundos = current->time - (minutos * 60);
+        DrawTextEx(GetFontDefault(), TextFormat("%02d:%05.2f", minutos, segundos), 
+                   (Vector2){colScoreX, rowY}, rowSize, 2, (Color){0, 0, 0, 255});
+        
+        rowY += rowHeight;
+        current = current->next;
+        rank++;
+    }
+    
+    // Preenche linhas vazias se houver menos de 10
+    while (rank <= 10) {
+        Color rowColor = (rank % 2 == 1) ? green1 : cyan2;
+        DrawRectangle(tableX + 5, rowY - 5, tableWidth - 10, rowHeight - 5, rowColor);
+        
+        DrawTextEx(GetFontDefault(), TextFormat("%d.", rank), 
+                   (Vector2){colRankX, rowY}, rowSize, 2, (Color){100, 100, 100, 255});
+        DrawTextEx(GetFontDefault(), "---", 
+                   (Vector2){colPlayerX, rowY}, rowSize, 2, (Color){100, 100, 100, 255});
+        DrawTextEx(GetFontDefault(), "---", 
+                   (Vector2){colScoreX, rowY}, rowSize, 2, (Color){100, 100, 100, 255});
+        
+        rowY += rowHeight;
+        rank++;
+    }
+    
+    // Botão de voltar
+    float btnWidth = screenWidth * 0.2f;
+    float btnHeight = screenHeight * 0.08f;
+    Rectangle backBtn = {
+        screenWidth / 2 - btnWidth / 2,
+        screenHeight * 0.9f,
+        btnWidth,
+        btnHeight
+    };
+    
+    Vector2 mousePos = GetMousePosition();
+    bool hoverBack = CheckCollisionPointRec(mousePos, backBtn);
+    
+    if (hoverBack && IsMouseButtonPressed(MOUSE_LEFT_BUTTON)) {
+        *estadoJogo = 0; // Volta ao menu
+    }
+    
+    // Desenha botão voltar
+    DrawRectangleRounded(backBtn, 0.3f, 10, hoverBack ? (Color){254, 255, 153, 255} : cyan);
+    float btnTextSize = screenWidth * 0.04f;
+    const char* backText = "VOLTAR";
+    Vector2 backMeasure = MeasureTextEx(GetFontDefault(), backText, btnTextSize, 2);
+    DrawTextEx(GetFontDefault(), backText,
+               (Vector2){backBtn.x + btnWidth / 2 - backMeasure.x / 2,
+                        backBtn.y + btnHeight / 2 - btnTextSize / 2},
+               btnTextSize, 2, hoverBack ? pink : (Color){0, 0, 0, 255});
+    
+    // Instruções
+    DrawTextEx(GetFontDefault(), "Pressione ESC para voltar ao menu", 
+               (Vector2){10, screenHeight - 30}, 18, 1, white);
+    
+    // Permite voltar com ESC
+    if (IsKeyPressed(KEY_ESCAPE)) {
+        *estadoJogo = 0;
+    }
+    
     EndDrawing();
 }
