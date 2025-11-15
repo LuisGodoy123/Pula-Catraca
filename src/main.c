@@ -452,22 +452,9 @@ void TelaJogo(int *estadoJogo, int screenWidth, int screenHeight, Texture2D back
     static Texture2D spriteDeslizandoEsquerda = {0};
     static bool spritesJogadorCarregadas = false;
     
-<<<<<<< HEAD
     // Textura de Game Over
     static Texture2D texturaGameOver = {0};
     static bool texturaGameOverCarregada = false;
-=======
-    // Texturas de morte (apenas para primeira morte)
-    static Texture2D texturaMorte1 = {0};
-    static Texture2D texturaMorte2 = {0};
-    static bool texturasMorteCarregadas = false;
-    static int imagemMorteEscolhida = 0; // 0 = morte_1, 1 = morte_2
-    
-    // Controle de fade para transições entre imagens de morte
-    static float fadeTimer = 0.0f;
-    static float fadeDuration = 1.0f; // Duração do fade em segundos
-    static bool fadeOut = false; // true = escurecendo, false = clareando
->>>>>>> d78c8d5bcccddcd4657b4287acf1eaefa1e37e31
     
     // Perspectiva das lanes - ajustadas para coincidir com as faixas do asfalto
     const float horizon_y = 235.0f;          // linha do horizonte onde a estrada começa
@@ -565,18 +552,10 @@ void TelaJogo(int *estadoJogo, int screenWidth, int screenHeight, Texture2D back
         spritesJogadorCarregadas = true;
     }
     
-<<<<<<< HEAD
     // Carrega textura de Game Over (apenas uma vez)
     if (!texturaGameOverCarregada) {
         texturaGameOver = LoadTexture("assets/images/game_over.png");
         texturaGameOverCarregada = true;
-=======
-    // Carrega texturas de morte (apenas uma vez)
-    if (!texturasMorteCarregadas) {
-        texturaMorte1 = LoadTexture("assets/images/morte_1.png");
-        texturaMorte2 = LoadTexture("assets/images/morte_2.png");
-        texturasMorteCarregadas = true;
->>>>>>> d78c8d5bcccddcd4657b4287acf1eaefa1e37e31
     }
 
     if (!gameOver) {
@@ -1074,7 +1053,6 @@ void TelaJogo(int *estadoJogo, int screenWidth, int screenHeight, Texture2D back
     }
 
     if (gameOver) {
-<<<<<<< HEAD
         // Desenha imagem de game over preenchendo toda a tela
         if (texturaGameOver.id > 0) {
             Rectangle source = {0, 0, (float)texturaGameOver.width, (float)texturaGameOver.height};
@@ -1085,40 +1063,6 @@ void TelaJogo(int *estadoJogo, int screenWidth, int screenHeight, Texture2D back
             DrawRectangle(0, 0, screenWidth, screenHeight, (Color){0, 0, 0, 150});
         }
         
-=======
-        // Sequência de imagens de morte (apenas na primeira vez jogando)
-        if (primeiraVezJogando && !vitoria && estadoMorte == 1) {
-            // Mostra primeira imagem de morte (morte_1.png) sem fade
-            if (texturaMorte1.id > 0) {
-                Rectangle source = {0, 0, (float)texturaMorte1.width, (float)texturaMorte1.height};
-                Rectangle dest = {0, 0, (float)screenWidth, (float)screenHeight};
-                DrawTexturePro(texturaMorte1, source, dest, (Vector2){0, 0}, 0.0f, WHITE);
-                
-                // Instrução para continuar
-                const char* instrucao = "Pressione ENTER para continuar...";
-                int instrWidth = MeasureText(instrucao, 20);
-                DrawText(instrucao, screenWidth/2 - instrWidth/2, screenHeight - 40, 20, WHITE);
-            }
-        } else if (primeiraVezJogando && !vitoria && estadoMorte == 2) {
-            // Mostra segunda imagem de morte (morte_2.png) sem fade
-            if (texturaMorte2.id > 0) {
-                Rectangle source = {0, 0, (float)texturaMorte2.width, (float)texturaMorte2.height};
-                Rectangle dest = {0, 0, (float)screenWidth, (float)screenHeight};
-                DrawTexturePro(texturaMorte2, source, dest, (Vector2){0, 0}, 0.0f, WHITE);
-                
-                // Instrução para continuar
-                const char* instrucao = "Pressione ENTER para continuar...";
-                int instrWidth = MeasureText(instrucao, 20);
-                DrawText(instrucao, screenWidth/2 - instrWidth/2, screenHeight - 40, 20, WHITE);
-            }
-        } else {
-            // Tela normal de game over (com opacidade)
-            DrawRectangle(0, 0, screenWidth, screenHeight, (Color){0, 0, 0, 150});
-        }
-        
-        // Só mostra informações de game over após passar pelas imagens (estadoMorte == 3)
-        if (estadoMorte == 3 || !primeiraVezJogando || vitoria) {
->>>>>>> d78c8d5bcccddcd4657b4287acf1eaefa1e37e31
         if (vitoria) {
             const char* titulo = "VOCÊ VENCEU!";
             int tituloWidth = MeasureText(titulo, 50);
@@ -1170,7 +1114,6 @@ void TelaJogo(int *estadoJogo, int screenWidth, int screenHeight, Texture2D back
         const char* instrucao2 = "P=Pausar | X=Resetar | ESC=Fechar jogo";
         int instr2Width = MeasureText(instrucao2, 20);
         DrawText(instrucao2, screenWidth/2 - instr2Width/2, screenHeight/2 + 195, 20, WHITE);
-        }
     } else {
         // debug e HUD
         // Mostra tempo em minutos:segundos
