@@ -12,6 +12,7 @@
 void TelaMenu(int *estadoJogo, int screenWidth, int screenHeight, Texture2D background, Sound somMenu);
 void TelaNickname(int *estadoJogo, int screenWidth, int screenHeight, Texture2D background, char *nickname);
 void TelaJogo(int *estadoJogo, int screenWidth, int screenHeight, Texture2D background_jogo, char *nickname, Sound somCorrida, Sound somItemBom, Sound somItemRuim, Sound somColisao, Sound somVitoria);
+void TelaRanking(int *estadoJogo, int screenWidth, int screenHeight, Texture2D background);
 
 // Ranking (persistente)
 static RankingList ranking;
@@ -77,7 +78,7 @@ int main(void) {
         UnloadImage(tempImg);
     }
 
-    int estadoJogo = 0; // 0 = menu, 1 = tela nickname, 2 = jogando
+    int estadoJogo = 0; // 0 = menu, 1 = tela nickname, 2 = jogando, 3 = ranking
     char nickname[21] = ""; // Armazena até 20 caracteres + null terminator
     
     while (!WindowShouldClose()) {
@@ -87,6 +88,8 @@ int main(void) {
             TelaNickname(&estadoJogo, screenWidth, screenHeight, background_menu, nickname);
         } else if (estadoJogo == 2) {
             TelaJogo(&estadoJogo, screenWidth, screenHeight, background_jogo, nickname, somCorrida, somItemBom, somItemRuim, somColisao, somVitoria);
+        } else if (estadoJogo == 3) {
+            TelaRanking(&estadoJogo, screenWidth, screenHeight, background_menu);
         }
     }
     // salva ranking completo e top10 antes de sair
@@ -129,6 +132,13 @@ void TelaMenu(int *estadoJogo, int screenWidth, int screenHeight, Texture2D back
 
     Rectangle playBtn = {
         screenWidth / 2 - btnWidth / 2,
+        screenHeight * 0.55f,
+        btnWidth,
+        btnHeight
+    };
+
+    Rectangle rankingBtn = {
+        screenWidth / 2 - btnWidth / 2,
         screenHeight * 0.65f,
         btnWidth,
         btnHeight
@@ -143,11 +153,17 @@ void TelaMenu(int *estadoJogo, int screenWidth, int screenHeight, Texture2D back
 
     Vector2 mousePos = GetMousePosition();
     bool hoverPlay = CheckCollisionPointRec(mousePos, playBtn);
+    bool hoverRanking = CheckCollisionPointRec(mousePos, rankingBtn);
     bool hoverOptions = CheckCollisionPointRec(mousePos, optionsBtn);
 
     // verifica clique no "PLAY"
     if (hoverPlay && IsMouseButtonPressed(MOUSE_LEFT_BUTTON)) {
-        *estadoJogo = 1; // vai p tela do jogo
+        *estadoJogo = 1; // vai p tela nickname
+    }
+    
+    // verifica clique no "RANKING"
+    if (hoverRanking && IsMouseButtonPressed(MOUSE_LEFT_BUTTON)) {
+        *estadoJogo = 3; // vai p tela de ranking
     }
 
     BeginDrawing();
@@ -171,6 +187,15 @@ void TelaMenu(int *estadoJogo, int screenWidth, int screenHeight, Texture2D back
                },
                fontSize * 0.5f, 2, hoverPlay ? pink : green);
 
+    // botão "RANKING"
+    DrawRectangleRounded(rankingBtn, 0.3f, 10, hoverRanking ? yellow : blue);
+    DrawTextEx(titleFont, "RANKING",
+               (Vector2){
+                   rankingBtn.x + btnWidth / 2 - MeasureTextEx(titleFont, "RANKING", fontSize * 0.5f, 2).x / 2,
+                   rankingBtn.y + btnHeight / 2 - fontSize * 0.25f
+               },
+               fontSize * 0.5f, 2, hoverRanking ? pink : green);
+
     // botão "OPTIONS"
     DrawRectangleRounded(optionsBtn, 0.3f, 10, hoverOptions ? yellow : blue);
     DrawTextEx(titleFont, "OPTIONS",
@@ -179,40 +204,6 @@ void TelaMenu(int *estadoJogo, int screenWidth, int screenHeight, Texture2D back
                    optionsBtn.y + btnHeight / 2 - fontSize * 0.25f
                },
                fontSize * 0.5f, 2, hoverOptions ? pink : green);
-
-    // --- Desenha ranking (top 10) no canto direito inferior do menu ---
-    float rankFont = screenWidth * 0.028f; // tamanho do texto para ranking
-    float lineGap = rankFont * 1.15f;
-    int maxLines = 10;
-    float pad = 12.0f;
-    float boxWidth = screenWidth * 0.35f;
-    float boxHeight = (maxLines + 1) * lineGap + pad * 2; // +1 para o título
-    float boxX = screenWidth - boxWidth - pad;
-    float boxY = screenHeight - boxHeight - pad;
-
-    // fundo semitransparente
-    DrawRectangleRec((Rectangle){boxX, boxY, boxWidth, boxHeight}, (Color){20, 20, 20, 180});
-
-    // título
-    DrawTextEx(titleFont, "Ranking - Top 10", (Vector2){boxX + pad, boxY + pad}, rankFont, 1, WHITE);
-
-    // percorre a lista ligada do ranking e desenha cada entrada
-    RankingNode *cur = ranking.head;
-    int ridx = 1;
-    float textX = boxX + pad;
-    float textY = boxY + pad + lineGap;
-    while (cur && ridx <= maxLines) {
-        char buf[128];
-        int whole = (int)cur->time;
-        int mins = whole / 60;
-        int secs = whole % 60;
-        int centis = (int)((cur->time - whole) * 100.0f + 0.5f);
-        if (centis >= 100) centis = 99;
-        snprintf(buf, sizeof(buf), "%2d. %s - %02d:%02d.%02d", ridx, cur->name ? cur->name : "---", mins, secs, centis);
-        DrawTextEx(titleFont, buf, (Vector2){textX, textY + (ridx - 1) * lineGap}, rankFont * 0.9f, 1, WHITE);
-        cur = cur->next;
-        ridx++;
-    }
 
     EndDrawing();
 }
@@ -1099,5 +1090,160 @@ void TelaJogo(int *estadoJogo, int screenWidth, int screenHeight, Texture2D back
         DrawText("P=Pausar | X=Menu", 10, screenHeight - 28, 18, BLACK);
     }
 
+    EndDrawing();
+}
+
+void TelaRanking(int *estadoJogo, int screenWidth, int screenHeight, Texture2D background) {
+    // Paleta de cores inspirada na imagem
+    Color pink = (Color){215, 50, 133, 255};      // #d73285 - fundo rosa/magenta
+    Color cyan = (Color){102, 255, 255, 255};      // #66FFFF - azul ciano para título
+    Color cyanBorder = (Color){150, 255, 255, 255}; // borda do título
+    Color green1 = (Color){150, 255, 100, 255};    // #96FF64 - verde claro para linhas
+    Color green2 = (Color){120, 220, 80, 255};     // verde mais escuro
+    Color cyan2 = (Color){120, 240, 240, 255};     // ciano para linhas alternadas
+    Color white = (Color){255, 255, 255, 255};
+    
+    BeginDrawing();
+    ClearBackground(pink); // Fundo rosa/magenta
+    
+    // Desenha fundo se existir (mas com overlay rosa)
+    if (background.id > 0) {
+        Rectangle source = {0, 0, (float)background.width, (float)background.height};
+        Rectangle dest = {0, 0, (float)screenWidth, (float)screenHeight};
+        DrawTexturePro(background, source, dest, (Vector2){0, 0}, 0.0f, (Color){255, 255, 255, 100});
+    }
+    
+    // Dimensões da tabela
+    float tableWidth = screenWidth * 0.8f;
+    float tableHeight = screenHeight * 0.65f;
+    float tableX = (screenWidth - tableWidth) / 2;
+    float tableY = screenHeight * 0.2f;
+    
+    // Borda externa branca/ciano
+    DrawRectangleLinesEx((Rectangle){tableX - 5, tableY - 80, tableWidth + 10, tableHeight + 90}, 4, cyanBorder);
+    DrawRectangleLinesEx((Rectangle){tableX - 8, tableY - 83, tableWidth + 16, tableHeight + 96}, 2, white);
+    
+    // Título "RANKING" grande
+    float titleSize = screenWidth * 0.12f;
+    const char* titleText = "RANKING";
+    Vector2 titleMeasure = MeasureTextEx(GetFontDefault(), titleText, titleSize, 4);
+    float titleX = screenWidth / 2 - titleMeasure.x / 2;
+    float titleY = tableY - 70;
+    
+    // Sombra do título
+    DrawTextEx(GetFontDefault(), titleText, (Vector2){titleX + 4, titleY + 4}, titleSize, 4, (Color){0, 0, 0, 100});
+    // Borda rosa do título
+    DrawTextEx(GetFontDefault(), titleText, (Vector2){titleX - 2, titleY}, titleSize, 4, pink);
+    DrawTextEx(GetFontDefault(), titleText, (Vector2){titleX + 2, titleY}, titleSize, 4, pink);
+    DrawTextEx(GetFontDefault(), titleText, (Vector2){titleX, titleY - 2}, titleSize, 4, pink);
+    DrawTextEx(GetFontDefault(), titleText, (Vector2){titleX, titleY + 2}, titleSize, 4, pink);
+    // Texto principal ciano
+    DrawTextEx(GetFontDefault(), titleText, (Vector2){titleX, titleY}, titleSize, 4, cyan);
+    
+    // Cabeçalhos das colunas
+    float headerY = tableY + 10;
+    float headerSize = screenWidth * 0.04f;
+    float colRankX = tableX + 40;
+    float colPlayerX = tableX + tableWidth * 0.25f;
+    float colScoreX = tableX + tableWidth * 0.7f;
+    
+    // Cabeçalhos em branco
+    DrawTextEx(GetFontDefault(), "RANK", (Vector2){colRankX, headerY}, headerSize, 2, white);
+    DrawTextEx(GetFontDefault(), "PLAYER", (Vector2){colPlayerX, headerY}, headerSize, 2, white);
+    DrawTextEx(GetFontDefault(), "SCORE", (Vector2){colScoreX, headerY}, headerSize, 2, white);
+    
+    // Linha abaixo do cabeçalho
+    float lineY = headerY + headerSize + 10;
+    DrawRectangle(tableX, lineY, tableWidth, 3, white);
+    
+    // Desenha top 10 do ranking
+    float rowHeight = 45;
+    float rowY = lineY + 15;
+    float rowSize = screenWidth * 0.035f;
+    
+    RankingNode* current = ranking.head;
+    int rank = 1;
+    
+    while (current != NULL && rank <= 10) {
+        // Alterna cores das linhas (verde e ciano)
+        Color rowColor = (rank % 2 == 1) ? green1 : cyan2;
+        
+        // Fundo da linha
+        DrawRectangle(tableX + 5, rowY - 5, tableWidth - 10, rowHeight - 5, rowColor);
+        
+        // Número do rank
+        DrawTextEx(GetFontDefault(), TextFormat("%d.", rank), 
+                   (Vector2){colRankX, rowY}, rowSize, 2, (Color){0, 0, 0, 255});
+        
+        // Nome do jogador (trunca se for muito longo)
+        char playerName[21];
+        strncpy(playerName, current->name, 20);
+        playerName[20] = '\0';
+        DrawTextEx(GetFontDefault(), playerName, 
+                   (Vector2){colPlayerX, rowY}, rowSize, 2, (Color){0, 0, 0, 255});
+        
+        // Score (tempo em formato MM:SS.ms)
+        int minutos = (int)current->time / 60;
+        float segundos = current->time - (minutos * 60);
+        DrawTextEx(GetFontDefault(), TextFormat("%02d:%05.2f", minutos, segundos), 
+                   (Vector2){colScoreX, rowY}, rowSize, 2, (Color){0, 0, 0, 255});
+        
+        rowY += rowHeight;
+        current = current->next;
+        rank++;
+    }
+    
+    // Preenche linhas vazias se houver menos de 10
+    while (rank <= 10) {
+        Color rowColor = (rank % 2 == 1) ? green1 : cyan2;
+        DrawRectangle(tableX + 5, rowY - 5, tableWidth - 10, rowHeight - 5, rowColor);
+        
+        DrawTextEx(GetFontDefault(), TextFormat("%d.", rank), 
+                   (Vector2){colRankX, rowY}, rowSize, 2, (Color){100, 100, 100, 255});
+        DrawTextEx(GetFontDefault(), "---", 
+                   (Vector2){colPlayerX, rowY}, rowSize, 2, (Color){100, 100, 100, 255});
+        DrawTextEx(GetFontDefault(), "---", 
+                   (Vector2){colScoreX, rowY}, rowSize, 2, (Color){100, 100, 100, 255});
+        
+        rowY += rowHeight;
+        rank++;
+    }
+    
+    // Botão de voltar
+    float btnWidth = screenWidth * 0.2f;
+    float btnHeight = screenHeight * 0.08f;
+    Rectangle backBtn = {
+        screenWidth / 2 - btnWidth / 2,
+        screenHeight * 0.9f,
+        btnWidth,
+        btnHeight
+    };
+    
+    Vector2 mousePos = GetMousePosition();
+    bool hoverBack = CheckCollisionPointRec(mousePos, backBtn);
+    
+    if (hoverBack && IsMouseButtonPressed(MOUSE_LEFT_BUTTON)) {
+        *estadoJogo = 0; // Volta ao menu
+    }
+    
+    // Desenha botão voltar
+    DrawRectangleRounded(backBtn, 0.3f, 10, hoverBack ? (Color){254, 255, 153, 255} : cyan);
+    float btnTextSize = screenWidth * 0.04f;
+    const char* backText = "VOLTAR";
+    Vector2 backMeasure = MeasureTextEx(GetFontDefault(), backText, btnTextSize, 2);
+    DrawTextEx(GetFontDefault(), backText,
+               (Vector2){backBtn.x + btnWidth / 2 - backMeasure.x / 2,
+                        backBtn.y + btnHeight / 2 - btnTextSize / 2},
+               btnTextSize, 2, hoverBack ? pink : (Color){0, 0, 0, 255});
+    
+    // Instruções
+    DrawTextEx(GetFontDefault(), "Pressione ESC para voltar ao menu", 
+               (Vector2){10, screenHeight - 30}, 18, 1, white);
+    
+    // Permite voltar com ESC
+    if (IsKeyPressed(KEY_ESCAPE)) {
+        *estadoJogo = 0;
+    }
+    
     EndDrawing();
 }
