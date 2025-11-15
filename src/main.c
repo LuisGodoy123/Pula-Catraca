@@ -418,8 +418,8 @@ void TelaJogo(int *estadoJogo, int screenWidth, int screenHeight, Texture2D back
     static bool gameOver = false;
     static bool vitoria = false;
     static bool rankingInserido = false;
-    static float tempoMensagemAceleracao = 0.0f; // Para mostrar mensagem de aceleração
-    static bool mostrarMensagemAceleracao = false;
+    static bool primeiraVezJogando = true; // Flag para controlar se é a primeira vez jogando (nunca resetou com X)
+    static int estadoMorte = 0; // 0 = jogo normal, 1 = mostra morte_1, 2 = mostra morte_2, 3 = tela game over
     static int direcaoJogador = 0; // -1 = esquerda, 0 = centro, 1 = direita
     static float tempoAnimacao = 0.0f; // Timer para animação de sprites
     static bool frameAnimacao = false; // Alterna entre direito(false) e esquerdo(true)
@@ -451,6 +451,17 @@ void TelaJogo(int *estadoJogo, int screenWidth, int screenHeight, Texture2D back
     static Texture2D spriteDeslizandoEsquerda = {0};
     static bool spritesJogadorCarregadas = false;
     
+    // Texturas de morte (apenas para primeira morte)
+    static Texture2D texturaMorte1 = {0};
+    static Texture2D texturaMorte2 = {0};
+    static bool texturasMorteCarregadas = false;
+    static int imagemMorteEscolhida = 0; // 0 = morte_1, 1 = morte_2
+    
+    // Controle de fade para transições entre imagens de morte
+    static float fadeTimer = 0.0f;
+    static float fadeDuration = 1.0f; // Duração do fade em segundos
+    static bool fadeOut = false; // true = escurecendo, false = clareando
+    
     // Perspectiva das lanes - ajustadas para coincidir com as faixas do asfalto
     const float horizon_y = 235.0f;          // linha do horizonte onde a estrada começa
     
@@ -460,9 +471,10 @@ void TelaJogo(int *estadoJogo, int screenWidth, int screenHeight, Texture2D back
     
     float lane_width_top = screenWidth * 0.083f;      // ~66px por lane no topo (3 lanes = 25% da tela)
     float lane_offset_top = screenWidth * 0.375f;     // começa em 37.5% da tela (centralizado)
-    
     float lane_width_bottom = screenWidth * 0.45f;    // ~360px por lane na base (3 lanes = 135% da tela)
     float lane_offset_bottom = -screenWidth * 0.175f; // começa antes da borda esquerda (-17.5%)
+
+    int cont = 0;
 
     BeginDrawing();
     ClearBackground(RAYWHITE);
@@ -497,8 +509,6 @@ void TelaJogo(int *estadoJogo, int screenWidth, int screenHeight, Texture2D back
         tempoDecorrido = 0.0f;
         gameOver = false;
         vitoria = false;
-        tempoMensagemAceleracao = 0.0f;
-        mostrarMensagemAceleracao = false;
         
         // Inicializa sistema progressivo de obstáculos
         framesEntreObstaculos = 180; // Começa com 3 segundos
@@ -546,6 +556,13 @@ void TelaJogo(int *estadoJogo, int screenWidth, int screenHeight, Texture2D back
         spriteDeslizandoEsquerda = LoadTexture("assets/images/deslizando_esquerda.png");
         spritesJogadorCarregadas = true;
     }
+    
+    // Carrega texturas de morte (apenas uma vez)
+    if (!texturasMorteCarregadas) {
+        texturaMorte1 = LoadTexture("assets/images/morte_1.png");
+        texturaMorte2 = LoadTexture("assets/images/morte_2.png");
+        texturasMorteCarregadas = true;
+    }
 
     if (!gameOver) {
         // Toca som de corrida em loop durante o jogo
@@ -566,7 +583,7 @@ void TelaJogo(int *estadoJogo, int screenWidth, int screenHeight, Texture2D back
             direcaoJogador = 1;
         }
         if (IsKeyPressed(KEY_S)) {
-            abaixar(&jogador);
+            deslizar(&jogador);
         }
 
         // atualiza fisica
@@ -586,16 +603,6 @@ void TelaJogo(int *estadoJogo, int screenWidth, int screenHeight, Texture2D back
                 }
                 tempoUltimaAceleracao = tempoDecorrido;
                 // Ativa mensagem de aceleração
-                mostrarMensagemAceleracao = true;
-                tempoMensagemAceleracao = 0.0f;
-            }
-        }
-
-        // Atualiza temporizador da mensagem de aceleração
-        if (mostrarMensagemAceleracao) {
-            tempoMensagemAceleracao += 1.0f / 60.0f;
-            if (tempoMensagemAceleracao >= 2.0f) { // Mostra por 2 segundos
-                mostrarMensagemAceleracao = false;
             }
         }
 
@@ -740,10 +747,31 @@ void TelaJogo(int *estadoJogo, int screenWidth, int screenHeight, Texture2D back
                 gameOver = true;
                 PlaySound(somColisao); // Toca som de colisão
                 StopSound(somCorrida); // Para som de corrida
+                // Se é primeira vez jogando, inicia sequência de imagens
+                if (primeiraVezJogando) {
+                    estadoMorte = 1; // Mostra primeira imagem
+                } else {
+                    estadoMorte = 3; // Vai direto para tela de game over
+                }
                 break;
             }
         }
     } else {
+        // Controle da sequência de imagens de morte (sem fade)
+        if (primeiraVezJogando && !vitoria) {
+            if (estadoMorte == 1) {
+                // Mostrando morte_1
+                if (IsKeyPressed(KEY_ENTER)) {
+                    estadoMorte = 2; // Vai para morte_2
+                }
+            } else if (estadoMorte == 2) {
+                // Mostrando morte_2
+                if (IsKeyPressed(KEY_ENTER)) {
+                    estadoMorte = 3; // Vai para game over
+                }
+            }
+        }
+        
         // "Game Over" ou "Vitória" - R p reiniciar (mantém tempo e itens coletados)
         if (IsKeyPressed(KEY_R)) {
             // Reinicia o jogador, obstáculos e velocidade
@@ -763,6 +791,7 @@ void TelaJogo(int *estadoJogo, int screenWidth, int screenHeight, Texture2D back
             
             gameOver = false;
             vitoria = false;
+            estadoMorte = 0; // Reseta estado de morte
             // NÃO reseta tempoDecorrido e itensColetados
         }
     }
@@ -774,11 +803,12 @@ void TelaJogo(int *estadoJogo, int screenWidth, int screenHeight, Texture2D back
         // NÃO define inicializado = false, então mantém tempo e itens coletados
     }
 
-    // Tecla X para resetar a pontuação e voltar ao menu
+    // Tecla X para resetar o tempo, os itens e voltar ao menu
     if (IsKeyPressed(KEY_X)) {
         *estadoJogo = 0; // de volta ao menu
         StopSound(somCorrida); // Para som de corrida
         inicializado = false; // Força reinicialização completa (reseta tempo e itens)
+        primeiraVezJogando = false; // Marca que já não é mais a primeira vez (resetou)
     }
 
     // Tecla ESC para voltar ao menu e resetar tudo (incluindo nickname)
@@ -787,6 +817,7 @@ void TelaJogo(int *estadoJogo, int screenWidth, int screenHeight, Texture2D back
         StopSound(somCorrida); // Para som de corrida
         inicializado = false; // Força reinicialização completa (reseta tempo e itens)
         nickname[0] = '\0'; // Limpa o nickname (fim da run)
+        primeiraVezJogando = false; // Marca que já não é mais a primeira vez (resetou)
     }
 
     // Cores dos itens (declarado aqui para uso em toda a função)
@@ -977,13 +1008,13 @@ void TelaJogo(int *estadoJogo, int screenWidth, int screenHeight, Texture2D back
     }
 
     // desenha o jogador com sprites
-    if (jogador.abaixado) {
-        // abaixado - usa sprite correndo mas menor, alterna animação
-        Texture2D spriteAtual = frameAnimacao ? spriteCorrendoEsquerda : spriteCorrendoDireita;
+    if (jogador.deslizando) {
+        // deslizando - usa direção do movimento
+        Texture2D spriteAtual = frameAnimacao ? spriteDeslizandoEsquerda : spriteDeslizandoDireita;
         if (spriteAtual.id > 0) {
             Rectangle source = {0, 0, (float)spriteAtual.width, (float)spriteAtual.height};
             // Sprite 150x75 mas hitbox mantém 40x30
-            Rectangle dest = {jogador.pos_x_real - 75, jogador.pos_y_real - 12.5f, 150, 75};
+            Rectangle dest = {jogador.pos_x_real - 75, jogador.pos_y_real - 60, 150, 150};
             DrawTexturePro(spriteAtual, source, dest, (Vector2){0, 0}, 0.0f, WHITE);
         } else {
             DrawRectangle(jogador.pos_x_real - 20, jogador.pos_y_real + 20, 40, 20, RED);
@@ -1013,10 +1044,38 @@ void TelaJogo(int *estadoJogo, int screenWidth, int screenHeight, Texture2D back
     }
 
     if (gameOver) {
-        // game over
-        DrawRectangle(0, 0, screenWidth, screenHeight, (Color){0, 0, 0, 150});
+        // Sequência de imagens de morte (apenas na primeira vez jogando)
+        if (primeiraVezJogando && !vitoria && estadoMorte == 1) {
+            // Mostra primeira imagem de morte (morte_1.png) sem fade
+            if (texturaMorte1.id > 0) {
+                Rectangle source = {0, 0, (float)texturaMorte1.width, (float)texturaMorte1.height};
+                Rectangle dest = {0, 0, (float)screenWidth, (float)screenHeight};
+                DrawTexturePro(texturaMorte1, source, dest, (Vector2){0, 0}, 0.0f, WHITE);
+                
+                // Instrução para continuar
+                const char* instrucao = "Pressione ENTER para continuar...";
+                int instrWidth = MeasureText(instrucao, 20);
+                DrawText(instrucao, screenWidth/2 - instrWidth/2, screenHeight - 40, 20, WHITE);
+            }
+        } else if (primeiraVezJogando && !vitoria && estadoMorte == 2) {
+            // Mostra segunda imagem de morte (morte_2.png) sem fade
+            if (texturaMorte2.id > 0) {
+                Rectangle source = {0, 0, (float)texturaMorte2.width, (float)texturaMorte2.height};
+                Rectangle dest = {0, 0, (float)screenWidth, (float)screenHeight};
+                DrawTexturePro(texturaMorte2, source, dest, (Vector2){0, 0}, 0.0f, WHITE);
+                
+                // Instrução para continuar
+                const char* instrucao = "Pressione ENTER para continuar...";
+                int instrWidth = MeasureText(instrucao, 20);
+                DrawText(instrucao, screenWidth/2 - instrWidth/2, screenHeight - 40, 20, WHITE);
+            }
+        } else {
+            // Tela normal de game over (com opacidade)
+            DrawRectangle(0, 0, screenWidth, screenHeight, (Color){0, 0, 0, 150});
+        }
         
-        // Título centralizado
+        // Só mostra informações de game over após passar pelas imagens (estadoMorte == 3)
+        if (estadoMorte == 3 || !primeiraVezJogando || vitoria) {
         if (vitoria) {
             const char* titulo = "VOCÊ VENCEU!";
             int tituloWidth = MeasureText(titulo, 50);
@@ -1072,6 +1131,7 @@ void TelaJogo(int *estadoJogo, int screenWidth, int screenHeight, Texture2D back
         const char* instrucao2 = "P=Pausar | X=Resetar | ESC=Fechar jogo";
         int instr2Width = MeasureText(instrucao2, 20);
         DrawText(instrucao2, screenWidth/2 - instr2Width/2, screenHeight/2 + 195, 20, WHITE);
+        }
     } else {
         // debug e HUD
         // Mostra tempo em minutos:segundos
@@ -1100,7 +1160,6 @@ void TelaJogo(int *estadoJogo, int screenWidth, int screenHeight, Texture2D back
             
             // Tempo restante
             int tempoRestante = (int)(intervaloAceleracao - tempoDesdeUltimaAceleracao);
-            DrawText(TextFormat("Próxima aceleração: %ds", tempoRestante), barX + barWidth + 10, barY, 15, BLACK);
         } else {
             DrawText("VELOCIDADE MÁXIMA ATINGIDA!", 10, 72, 15, RED);
         }
@@ -1122,28 +1181,7 @@ void TelaJogo(int *estadoJogo, int screenWidth, int screenHeight, Texture2D back
             DrawText(TextFormat("%d", itensColetados[i]), 15 + (i * 35), 165, 15, itensColetados[i] > 0 ? GREEN : RED);
         }
         
-        // Mensagem de aceleração
-        if (mostrarMensagemAceleracao) {
-            int msgX = screenWidth / 2 - 150;
-            int msgY = screenHeight / 2 - 50;
-            
-            // Fundo semi-transparente
-            DrawRectangle(msgX - 20, msgY - 10, 320, 80, (Color){0, 0, 0, 150});
-            
-            // Texto de aceleração com efeito pulsante
-            float alpha = 1.0f - (tempoMensagemAceleracao / 2.0f); // Fade out gradual
-            Color textColor = (Color){255, 200, 0, (unsigned char)(255 * alpha)};
-            
-            if (velocidadeJogo >= velocidadeMaxima) {
-                DrawText("VELOCIDADE MÁXIMA!", msgX, msgY, 30, textColor);
-                DrawText(TextFormat("%.0f m/s", velocidadeJogo), msgX + 60, msgY + 40, 25, (Color){255, 255, 255, (unsigned char)(255 * alpha)});
-            } else {
-                DrawText("ACELERANDO!", msgX + 30, msgY, 35, textColor);
-                DrawText(TextFormat("Nova velocidade: %.0f m/s", velocidadeJogo), msgX + 10, msgY + 40, 20, (Color){255, 255, 255, (unsigned char)(255 * alpha)});
-            }
-        }
-        
-        DrawText("W=Pular | A=Esq | D=Dir | S=Abaixar", 10, screenHeight - 50, 18, BLACK);
+        DrawText("W=Pular | A=Esq | D=Dir | S=Deslizar", 10, screenHeight - 50, 18, BLACK);
         DrawText("P=Pausar | X=Menu", 10, screenHeight - 28, 18, BLACK);
     }
 
