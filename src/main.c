@@ -5,6 +5,10 @@
 #include "../include/mecanica_principal.h"
 #include "../include/ranking.h"
 #include <stdio.h>
+#include <stdbool.h>
+
+// Forward declaration for DrawTextRec (some raylib headers/toolchains may not expose it)
+void DrawTextRec(Font font, const char *text, Rectangle rec, float fontSize, float spacing, bool wordWrap, Color tint);
 
 #define BASE_ITEM_SIZE 120.0f
 
@@ -13,9 +17,55 @@ void TelaMenu(int *estadoJogo, int screenWidth, int screenHeight, Texture2D back
 void TelaNickname(int *estadoJogo, int screenWidth, int screenHeight, Texture2D background, char *nickname);
 void TelaJogo(int *estadoJogo, int screenWidth, int screenHeight, Texture2D background_jogo, char *nickname, Sound somCorrida, Sound somItemBom, Sound somItemRuim, Sound somColisao, Sound somVitoria);
 void TelaRanking(int *estadoJogo, int screenWidth, int screenHeight, Texture2D background);
+void TelaComoJogar(int *estadoJogo, int screenWidth, int screenHeight, Texture2D background);
 
 // Ranking (persistente)
 static RankingList ranking;
+
+// Helper: desenha texto com quebra por largura (word wrap) e retorna a altura ocupada
+static float DrawWrappedText(Font font, const char *text, Vector2 pos, float fontSize, float spacing, float wrapWidth, Color tint) {
+    // Copia o texto para poder tokenizar
+    size_t len = strlen(text);
+    char *buf = (char *)malloc(len + 1);
+    if (!buf) return 0.0f;
+    strcpy(buf, text);
+
+    float y = pos.y;
+    char line[1024] = {0};
+    char *word = strtok(buf, " ");
+
+    while (word) {
+        char candidate[1024] = {0};
+        if (line[0] == '\0')
+            snprintf(candidate, sizeof(candidate), "%s", word);
+        else
+            snprintf(candidate, sizeof(candidate), "%s %s", line, word);
+
+        Vector2 measure = MeasureTextEx(font, candidate, fontSize, spacing);
+        if (measure.x <= wrapWidth) {
+            // cabe na mesma linha
+            strncpy(line, candidate, sizeof(line) - 1);
+        } else {
+            // desenha a linha atual e inicia nova linha com a palavra
+            if (line[0] != '\0') {
+                DrawTextEx(font, line, (Vector2){pos.x, y}, fontSize, spacing, tint);
+                y += fontSize * 1.15f;
+            }
+            // palavra começa a nova linha
+            strncpy(line, word, sizeof(line) - 1);
+        }
+
+        word = strtok(NULL, " ");
+    }
+
+    if (line[0] != '\0') {
+        DrawTextEx(font, line, (Vector2){pos.x, y}, fontSize, spacing, tint);
+        y += fontSize * 1.15f;
+    }
+
+    free(buf);
+    return y - pos.y; // altura ocupada
+}
 
 int main(void) {
     // resolução  e init da janela
@@ -78,7 +128,7 @@ int main(void) {
         UnloadImage(tempImg);
     }
 
-    int estadoJogo = 0; // 0 = menu, 1 = tela nickname, 2 = jogando, 3 = ranking
+    int estadoJogo = 0; // 0 = menu, 1 = tela nickname, 2 = jogando, 3 = ranking, 4 = como jogar
     char nickname[21] = ""; // Armazena até 20 caracteres + null terminator
     
     while (!WindowShouldClose()) {
@@ -90,6 +140,8 @@ int main(void) {
             TelaJogo(&estadoJogo, screenWidth, screenHeight, background_jogo, nickname, somCorrida, somItemBom, somItemRuim, somColisao, somVitoria);
         } else if (estadoJogo == 3) {
             TelaRanking(&estadoJogo, screenWidth, screenHeight, background_menu);
+        } else if (estadoJogo == 4) {
+            TelaComoJogar(&estadoJogo, screenWidth, screenHeight, background_menu);
         }
     }
     // salva ranking completo e top10 antes de sair
@@ -144,7 +196,7 @@ void TelaMenu(int *estadoJogo, int screenWidth, int screenHeight, Texture2D back
         btnHeight
     };
 
-    Rectangle optionsBtn = {
+    Rectangle comoJogarBtn = {
         screenWidth / 2 - btnWidth / 2,
         screenHeight * 0.75f,
         btnWidth,
@@ -154,7 +206,7 @@ void TelaMenu(int *estadoJogo, int screenWidth, int screenHeight, Texture2D back
     Vector2 mousePos = GetMousePosition();
     bool hoverPlay = CheckCollisionPointRec(mousePos, playBtn);
     bool hoverRanking = CheckCollisionPointRec(mousePos, rankingBtn);
-    bool hoverOptions = CheckCollisionPointRec(mousePos, optionsBtn);
+    bool hoverComoJogar = CheckCollisionPointRec(mousePos, comoJogarBtn);
 
     // verifica clique no "PLAY"
     if (hoverPlay && IsMouseButtonPressed(MOUSE_LEFT_BUTTON)) {
@@ -164,6 +216,11 @@ void TelaMenu(int *estadoJogo, int screenWidth, int screenHeight, Texture2D back
     // verifica clique no "RANKING"
     if (hoverRanking && IsMouseButtonPressed(MOUSE_LEFT_BUTTON)) {
         *estadoJogo = 3; // vai p tela de ranking
+    }
+    
+    // verifica clique no "COMO JOGAR"
+    if (hoverComoJogar && IsMouseButtonPressed(MOUSE_LEFT_BUTTON)) {
+        *estadoJogo = 4; // vai p tela de como jogar
     }
 
     BeginDrawing();
@@ -196,14 +253,14 @@ void TelaMenu(int *estadoJogo, int screenWidth, int screenHeight, Texture2D back
                },
                fontSize * 0.5f, 2, hoverRanking ? pink : green);
 
-    // botão "OPTIONS"
-    DrawRectangleRounded(optionsBtn, 0.3f, 10, hoverOptions ? yellow : blue);
-    DrawTextEx(titleFont, "OPTIONS",
+    // botão "COMO JOGAR"
+    DrawRectangleRounded(comoJogarBtn, 0.3f, 10, hoverComoJogar ? yellow : blue);
+    DrawTextEx(titleFont, "COMO JOGAR",
                (Vector2){
-                   optionsBtn.x + btnWidth / 2 - MeasureTextEx(titleFont, "OPTIONS", fontSize * 0.5f, 2).x / 2,
-                   optionsBtn.y + btnHeight / 2 - fontSize * 0.25f
+                   comoJogarBtn.x + btnWidth / 2 - MeasureTextEx(titleFont, "COMO JOGAR", fontSize * 0.5f, 2).x / 2,
+                   comoJogarBtn.y + btnHeight / 2 - fontSize * 0.25f
                },
-               fontSize * 0.5f, 2, hoverOptions ? pink : green);
+               fontSize * 0.5f, 2, hoverComoJogar ? pink : green);
 
     EndDrawing();
 }
@@ -1228,6 +1285,193 @@ void TelaRanking(int *estadoJogo, int screenWidth, int screenHeight, Texture2D b
     
     // Desenha botão voltar
     DrawRectangleRounded(backBtn, 0.3f, 10, hoverBack ? (Color){254, 255, 153, 255} : cyan);
+    float btnTextSize = screenWidth * 0.04f;
+    const char* backText = "VOLTAR";
+    Vector2 backMeasure = MeasureTextEx(GetFontDefault(), backText, btnTextSize, 2);
+    DrawTextEx(GetFontDefault(), backText,
+               (Vector2){backBtn.x + btnWidth / 2 - backMeasure.x / 2,
+                        backBtn.y + btnHeight / 2 - btnTextSize / 2},
+               btnTextSize, 2, hoverBack ? pink : (Color){0, 0, 0, 255});
+    
+    // Instruções
+    DrawTextEx(GetFontDefault(), "Pressione ESC para voltar ao menu", 
+               (Vector2){10, screenHeight - 30}, 18, 1, white);
+    
+    // Permite voltar com ESC
+    if (IsKeyPressed(KEY_ESCAPE)) {
+        *estadoJogo = 0;
+    }
+    
+    EndDrawing();
+}
+
+void TelaComoJogar(int *estadoJogo, int screenWidth, int screenHeight, Texture2D background) {
+    // Carrega as texturas dos itens colecionáveis (apenas uma vez)
+    static Texture2D texturasItensComoJogar[5] = {0};
+    static bool texturasCarregadasComoJogar = false;
+    
+    if (!texturasCarregadasComoJogar) {
+        texturasItensComoJogar[0] = LoadTexture("assets/images/pipoca.png");      // Tipo 0: Pipoca
+        texturasItensComoJogar[1] = LoadTexture("assets/images/moeda.png");       // Tipo 1: Moeda
+        texturasItensComoJogar[2] = LoadTexture("assets/images/VEM.png");         // Tipo 2: VEM
+        texturasItensComoJogar[3] = LoadTexture("assets/images/botao_parada.png"); // Tipo 3: Botão de parada
+        texturasItensComoJogar[4] = LoadTexture("assets/images/fone.png");        // Tipo 4: Fone
+        texturasCarregadasComoJogar = true;
+    }
+    
+    // Paleta de cores (mesma da imagem de referência)
+    Color pink = (Color){215, 50, 133, 255};       // #d73285 - fundo rosa/magenta
+    Color cyan = (Color){102, 255, 255, 255};      // #66FFFF - azul ciano para título
+    Color cyanLight = (Color){150, 255, 255, 255}; // ciano claro para texto
+    Color yellow = (Color){254, 255, 153, 255};    // #feff99 - amarelo para botões
+    Color green = (Color){150, 255, 100, 255};     // #96FF64 - verde para texto objetivo
+    Color white = (Color){255, 255, 255, 255};
+    
+    BeginDrawing();
+    ClearBackground(pink); // Fundo rosa/magenta
+    
+    // Desenha fundo se existir (mas com overlay rosa)
+    if (background.id > 0) {
+        Rectangle source = {0, 0, (float)background.width, (float)background.height};
+        Rectangle dest = {0, 0, (float)screenWidth, (float)screenHeight};
+        DrawTexturePro(background, source, dest, (Vector2){0, 0}, 0.0f, (Color){255, 255, 255, 100});
+    }
+    
+    // Box principal (ajustado: largura menor, altura maior para o texto "Para vencer")
+    float boxWidth = screenWidth * 0.78f; // reduzido de 0.85 -> 0.78
+    float boxHeight = screenHeight * 0.82f; // aumentado de 0.75 -> 0.82
+    float boxX = (screenWidth - boxWidth) / 2;
+    float boxY = screenHeight * 0.06f; // movido mais para cima (0.06)
+    
+    // Borda externa
+    DrawRectangleLinesEx((Rectangle){boxX - 5, boxY - 5, boxWidth + 10, boxHeight + 10}, 4, cyanLight);
+    DrawRectangleLinesEx((Rectangle){boxX - 8, boxY - 8, boxWidth + 16, boxHeight + 16}, 2, white);
+    
+    // Fundo do box
+    DrawRectangleRounded((Rectangle){boxX, boxY, boxWidth, boxHeight}, 0.02f, 10, pink);
+    
+    // Título "COMO JOGAR" grande
+    float titleSize = screenWidth * 0.08f;
+    const char* titleText = "COMO JOGAR";
+    Vector2 titleMeasure = MeasureTextEx(GetFontDefault(), titleText, titleSize, 4);
+    float titleX = screenWidth / 2 - titleMeasure.x / 2;
+    float titleY = boxY + 15;
+    
+    // Sombra do título
+    DrawTextEx(GetFontDefault(), titleText, (Vector2){titleX + 3, titleY + 3}, titleSize, 4, (Color){0, 0, 0, 100});
+    // Borda rosa do título
+    DrawTextEx(GetFontDefault(), titleText, (Vector2){titleX - 2, titleY}, titleSize, 4, pink);
+    DrawTextEx(GetFontDefault(), titleText, (Vector2){titleX + 2, titleY}, titleSize, 4, pink);
+    DrawTextEx(GetFontDefault(), titleText, (Vector2){titleX, titleY - 2}, titleSize, 4, pink);
+    DrawTextEx(GetFontDefault(), titleText, (Vector2){titleX, titleY + 2}, titleSize, 4, pink);
+    // Texto principal ciano
+    DrawTextEx(GetFontDefault(), titleText, (Vector2){titleX, titleY}, titleSize, 4, cyan);
+    
+    // Linha divisória
+    float dividerY = titleY + titleSize + 20;
+    DrawLine(boxX + 20, dividerY, boxX + boxWidth - 20, dividerY, white);
+    
+    // Conteúdo dividido em duas colunas
+    float contentY = dividerY + 25;
+    float col1X = boxX + 40;
+    float col2X = boxX + boxWidth / 2 + 20;
+    float textSize = screenWidth * 0.028f;
+    float lineHeight = textSize * 1.5f;
+    
+    // COLUNA 1: CONTROLES
+    DrawTextEx(GetFontDefault(), "CONTROLES", (Vector2){col1X, contentY}, textSize * 1.2f, 2, yellow);
+    
+    float ctrlY = contentY + lineHeight * 1.5f;
+    DrawTextEx(GetFontDefault(), "W: PULAR", (Vector2){col1X, ctrlY}, textSize, 2, cyanLight);
+    ctrlY += lineHeight;
+    DrawTextEx(GetFontDefault(), "A: ESQUERDA", (Vector2){col1X, ctrlY}, textSize, 2, cyanLight);
+    ctrlY += lineHeight;
+    DrawTextEx(GetFontDefault(), "D: DIREITA", (Vector2){col1X, ctrlY}, textSize, 2, cyanLight);
+    ctrlY += lineHeight;
+    DrawTextEx(GetFontDefault(), "S: AGACHAR", (Vector2){col1X, ctrlY}, textSize, 2, cyanLight);
+    ctrlY += lineHeight * 1.5f;
+    DrawTextEx(GetFontDefault(), "P: PAUSAR", (Vector2){col1X, ctrlY}, textSize, 2, cyanLight);
+    
+    // COLUNA 2: OBJETIVO — usar DrawTextRec para caber todo o conteúdo no box
+    DrawTextEx(GetFontDefault(), "OBJETIVO", (Vector2){col2X, contentY}, textSize * 1.2f, 2, yellow);
+
+    // Preparar área e reservas para texto, ícones e aviso
+    float iconSize = 50.0f;
+    float iconSpacing = 65.0f;
+    float iconsStartX = col2X + 20;
+
+    // Não reservar espaço para aviso (removido) — reservar apenas para ícones
+    float footerReserve = iconSize + 20.0f; // reduzido para dar mais espaço vertical
+
+    // Área do texto do objetivo (coluna da direita) — movido para esquerda e aumentado
+    float objTextSize = textSize * 0.72f; // reduzido para garantir que caiba
+    float objBoxPadding = 12.0f; // padding interno do box de objetivo (aumentado)
+    float objBoxX = col2X - 15.0f; // movido 15px para a esquerda
+    float objBoxY = contentY + lineHeight * 1.5f;
+    float objBoxWidth = (boxX + boxWidth - 30) - objBoxX; // aumentado largura (margem reduzida de 40 para 30)
+    float objBoxHeight = (boxY + boxHeight) - objBoxY - footerReserve - 5.0f; // aumentado altura (margem reduzida de 10 para 5)
+    
+    // Desenha o retângulo de fundo para o objetivo
+    Rectangle objBgRect = { objBoxX, objBoxY, objBoxWidth, objBoxHeight };
+    DrawRectangleRounded(objBgRect, 0.05f, 10, (Color){0, 0, 0, 60}); // fundo escuro transparente
+    DrawRectangleLinesEx(objBgRect, 2.0f, cyanLight); // borda ciano
+    
+    // Área de texto interna (com padding)
+    Rectangle objRec = { objBoxX + objBoxPadding, objBoxY + objBoxPadding, objBoxWidth - (objBoxPadding * 2), objBoxHeight - (objBoxPadding * 2) };
+    const char* objetivoFull = "Para vencer o guarda e garantir sua liberdade, voce precisa de mais do que apenas velocidade. Sua fuga sera um sucesso apenas se voce coletar pelo menos 1 de CADA ITEM espalhado pelo cenario. Cada moeda, cartao e fone e um passo mais perto da sua vitoria. Se voce nao pegar tudo, a perseguicao nao tera fim!";
+    // Desenha com quebra automática dentro de objRec usando helper (retorna altura usada)
+    Vector2 objPos = { objRec.x, objRec.y };
+    float usedHeight = DrawWrappedText(GetFontDefault(), objetivoFull, objPos, objTextSize, 2, objRec.width, green);
+
+    // Posicao Y para desenhar icones: logo abaixo do box de objetivo
+    float iconsY = objBoxY + objBoxHeight + 10.0f;
+    
+    // Cores dos itens para fallback (se sprites não carregarem)
+    Color coresItens[5] = {
+        YELLOW,   // Tipo 0 - Pipoca
+        SKYBLUE,  // Tipo 1 - Moeda
+        PINK,     // Tipo 2 - VEM
+        GOLD,     // Tipo 3 - Botão de parada
+        GREEN     // Tipo 4 - Fone
+    };
+    
+    for (int i = 0; i < 5; i++) {
+        float iconX = iconsStartX + (i * iconSpacing);
+        
+        // Desenha a textura do item se carregada
+        if (texturasItensComoJogar[i].id > 0) {
+            Rectangle source = {0, 0, (float)texturasItensComoJogar[i].width, (float)texturasItensComoJogar[i].height};
+            Rectangle dest = {iconX, iconsY, iconSize, iconSize};
+            DrawTexturePro(texturasItensComoJogar[i], source, dest, (Vector2){0, 0}, 0.0f, WHITE);
+        } else {
+            // Fallback: desenha círculo colorido se a textura não carregar
+            DrawCircle(iconX + iconSize/2, iconsY + iconSize/2, iconSize/2 - 2, coresItens[i]);
+            DrawCircleLines(iconX + iconSize/2, iconsY + iconSize/2, iconSize/2 - 2, (Color){0, 0, 0, 255});
+        }
+    }
+    
+    // Aviso removido por pedido do usuario - nada a desenhar aqui
+    (void)0; // placeholder para manter lógica
+    
+    // Botão de voltar
+    float btnWidth = screenWidth * 0.2f;
+    float btnHeight = screenHeight * 0.08f;
+    Rectangle backBtn = {
+        screenWidth / 2 - btnWidth / 2,
+        boxY + boxHeight + 15,
+        btnWidth,
+        btnHeight
+    };
+    
+    Vector2 mousePos = GetMousePosition();
+    bool hoverBack = CheckCollisionPointRec(mousePos, backBtn);
+    
+    if (hoverBack && IsMouseButtonPressed(MOUSE_LEFT_BUTTON)) {
+        *estadoJogo = 0; // Volta ao menu
+    }
+    
+    // Desenha botão voltar
+    DrawRectangleRounded(backBtn, 0.3f, 10, hoverBack ? yellow : cyan);
     float btnTextSize = screenWidth * 0.04f;
     const char* backText = "VOLTAR";
     Vector2 backMeasure = MeasureTextEx(GetFontDefault(), backText, btnTextSize, 2);
