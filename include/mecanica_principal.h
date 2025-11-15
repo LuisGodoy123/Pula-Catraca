@@ -21,9 +21,9 @@ typedef struct {
     int y;
     int lane; // 0 = esquerda, 1 = centro, 2 = direita
     int pulando;
-    int abaixado;
+    int deslizando;
     int velocidade_pulo;
-    int tempo_abaixado;
+    int tempo_deslizando;
     float pos_x_real; // posição real em pixels
     float pos_y_real; // posição real em pixels
     float chao_y; // posição do chão
@@ -43,7 +43,7 @@ void inicializarJogador(Jogador *j, float pos_x_inicial, float pos_y_inicial);
 void moverEsquerda(Jogador *j);
 void moverDireita(Jogador *j);
 void pular(Jogador *j);
-void abaixar(Jogador *j);
+void deslizar(Jogador *j);
 void atualizarFisica(Jogador *j);
 
 void inicializarObstaculos(Obstaculo obstaculos[], int tamanho);

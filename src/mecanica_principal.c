@@ -6,9 +6,9 @@
 void inicializarJogador(Jogador *j, float pos_x_inicial, float pos_y_inicial) {
     j->lane = 1; // começa no centro
     j->pulando = 0;
-    j->abaixado = 0;
+    j->deslizando = 0;
     j->velocidade_pulo = 0;
-    j->tempo_abaixado = 0;
+    j->tempo_deslizando = 0;
     j->pos_x_real = pos_x_inicial;
     j->pos_y_real = pos_y_inicial;
     j->chao_y = pos_y_inicial;
@@ -27,16 +27,16 @@ void moverDireita(Jogador *j) {
 }
 
 void pular(Jogador *j) {
-    if (!j->pulando && !j->abaixado) {
+    if (!j->pulando && !j->deslizando) {
         j->pulando = 1;
         j->velocidade_pulo = 15; // Reduzido de 17 para 15 (mais 10% de redução)
     }
 }
 
-void abaixar(Jogador *j) {
-    if (!j->pulando && !j->abaixado) {
-        j->abaixado = 1;
-        j->tempo_abaixado = 46; // Reduzido de 51 para 46 frames (mais 10% de redução = ~0.77 segundos)
+void deslizar(Jogador *j) {
+    if (!j->pulando && !j->deslizando) {
+        j->deslizando = 1;
+        j->tempo_deslizando = 46; // Reduzido de 51 para 46 frames (mais 10% de redução = ~0.77 segundos)
     }
 }
 
@@ -54,12 +54,12 @@ void atualizarFisica(Jogador *j) {
         }
     }
     
-    // Atualiza estado de abaixado
-    if (j->abaixado) {
-        j->tempo_abaixado--;
+    // Atualiza estado de deslizando
+    if (j->deslizando) {
+        j->tempo_deslizando--;
         
-        if (j->tempo_abaixado <= 0) {
-            j->abaixado = 0;
+        if (j->tempo_deslizando <= 0) {
+            j->deslizando = 0;
         }
     }
 }
@@ -97,7 +97,7 @@ void criarObstaculo(Obstaculo obstaculos[], int tamanho, float screenHeight, flo
                 obstaculos[i].largura = 60;
                 obstaculos[i].altura = 30;
             } else {
-                // Parada de ônibus (precisa abaixar)
+                // Parada de ônibus (precisa deslizar)
                 obstaculos[i].largura = 60;
                 obstaculos[i].altura = 50; // Alto, mas deixa espaço embaixo
             }
@@ -167,7 +167,7 @@ void criarMultiplosObstaculos(Obstaculo obstaculos[], int tamanho, float screenH
             tipos_criados[tipo_tentativa]++;
             
             if (obstaculos[i].tipo == 0) {
-                // Ônibus alto (precisa desviar ou abaixar)
+                // Ônibus alto (precisa desviar ou deslizar)
                 obstaculos[i].largura = 60;
                 obstaculos[i].altura = 80;
             } else if (obstaculos[i].tipo == 1) {
@@ -175,7 +175,7 @@ void criarMultiplosObstaculos(Obstaculo obstaculos[], int tamanho, float screenH
                 obstaculos[i].largura = 60;
                 obstaculos[i].altura = 30;
             } else {
-                // Obstáculo alto vazado (precisa abaixar para passar por baixo)
+                // Obstáculo alto vazado (precisa deslizar para passar por baixo)
                 obstaculos[i].largura = 60;
                 obstaculos[i].altura = 50;
             }
@@ -219,7 +219,7 @@ int verificarColisao(Jogador *j, Obstaculo *obs, float lane_width, float lane_of
         return 0;
     }
     // Se é um obstáculo alto vazado e o jogador está deslizando, não colide
-    if (obs->tipo == 2 && j->abaixado) {
+    if (obs->tipo == 2 && j->deslizando) {
         return 0;
     }
     
@@ -244,8 +244,8 @@ int verificarColisao(Jogador *j, Obstaculo *obs, float lane_width, float lane_of
     float player_right = j->pos_x_real + 15;
     
     // Hitbox do jogador em Y (expandida 10px para cima)
-    float player_top = j->abaixado ? j->pos_y_real + 10 : j->pos_y_real - 10;
-    float player_bottom = j->abaixado ? j->pos_y_real + 40 : j->pos_y_real + 40;
+    float player_top = j->deslizando ? j->pos_y_real + 10 : j->pos_y_real - 10;
+    float player_bottom = j->deslizando ? j->pos_y_real + 40 : j->pos_y_real + 40;
     
     // Hitbox do obstáculo tipo 0 (ônibus): ajustada proporcionalmente de 150px para 300px
     // Fator de escala: 300/150 = 2x
@@ -428,8 +428,8 @@ int verificarColeta(Jogador *j, ItemColetavel *item, float lane_width, float lan
     }
     
     // Hitbox do jogador (posição real em Y, expandida 10px para cima)
-    float player_top = j->abaixado ? j->pos_y_real + 10 : j->pos_y_real - 10;
-    float player_bottom = j->abaixado ? j->pos_y_real + 40 : j->pos_y_real + 40;
+    float player_top = j->deslizando ? j->pos_y_real + 10 : j->pos_y_real - 10;
+    float player_bottom = j->deslizando ? j->pos_y_real + 40 : j->pos_y_real + 40;
     
     // Hitbox do item em Y
     float item_top = item->pos_y;

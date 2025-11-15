@@ -337,8 +337,6 @@ void TelaJogo(int *estadoJogo, int screenWidth, int screenHeight, Texture2D back
     static bool gameOver = false;
     static bool vitoria = false;
     static bool rankingInserido = false;
-    static float tempoMensagemAceleracao = 0.0f; // Para mostrar mensagem de aceleração
-    static bool mostrarMensagemAceleracao = false;
     static int direcaoJogador = 0; // -1 = esquerda, 0 = centro, 1 = direita
     static float tempoAnimacao = 0.0f; // Timer para animação de sprites
     static bool frameAnimacao = false; // Alterna entre direito(false) e esquerdo(true)
@@ -416,8 +414,6 @@ void TelaJogo(int *estadoJogo, int screenWidth, int screenHeight, Texture2D back
         tempoDecorrido = 0.0f;
         gameOver = false;
         vitoria = false;
-        tempoMensagemAceleracao = 0.0f;
-        mostrarMensagemAceleracao = false;
         
         // Inicializa sistema progressivo de obstáculos
         framesEntreObstaculos = 180; // Começa com 3 segundos
@@ -480,7 +476,7 @@ void TelaJogo(int *estadoJogo, int screenWidth, int screenHeight, Texture2D back
             direcaoJogador = 1;
         }
         if (IsKeyPressed(KEY_S)) {
-            abaixar(&jogador);
+            deslizar(&jogador);
         }
 
         // atualiza fisica
@@ -500,16 +496,6 @@ void TelaJogo(int *estadoJogo, int screenWidth, int screenHeight, Texture2D back
                 }
                 tempoUltimaAceleracao = tempoDecorrido;
                 // Ativa mensagem de aceleração
-                mostrarMensagemAceleracao = true;
-                tempoMensagemAceleracao = 0.0f;
-            }
-        }
-
-        // Atualiza temporizador da mensagem de aceleração
-        if (mostrarMensagemAceleracao) {
-            tempoMensagemAceleracao += 1.0f / 60.0f;
-            if (tempoMensagemAceleracao >= 2.0f) { // Mostra por 2 segundos
-                mostrarMensagemAceleracao = false;
             }
         }
 
@@ -879,13 +865,13 @@ void TelaJogo(int *estadoJogo, int screenWidth, int screenHeight, Texture2D back
     }
 
     // desenha o jogador com sprites
-    if (jogador.abaixado) {
-        // abaixado - usa sprite correndo mas menor, alterna animação
-        Texture2D spriteAtual = frameAnimacao ? spriteCorrendoEsquerda : spriteCorrendoDireita;
+    if (jogador.deslizando) {
+        // deslizando - usa direção do movimento
+        Texture2D spriteAtual = frameAnimacao ? spriteDeslizandoEsquerda : spriteDeslizandoDireita;
         if (spriteAtual.id > 0) {
             Rectangle source = {0, 0, (float)spriteAtual.width, (float)spriteAtual.height};
             // Sprite 150x75 mas hitbox mantém 40x30
-            Rectangle dest = {jogador.pos_x_real - 75, jogador.pos_y_real - 12.5f, 150, 75};
+            Rectangle dest = {jogador.pos_x_real - 75, jogador.pos_y_real - 60, 150, 150};
             DrawTexturePro(spriteAtual, source, dest, (Vector2){0, 0}, 0.0f, WHITE);
         } else {
             DrawRectangle(jogador.pos_x_real - 20, jogador.pos_y_real + 20, 40, 20, RED);
@@ -917,8 +903,6 @@ void TelaJogo(int *estadoJogo, int screenWidth, int screenHeight, Texture2D back
     if (gameOver) {
         // game over
         DrawRectangle(0, 0, screenWidth, screenHeight, (Color){0, 0, 0, 150});
-        
-        // Título centralizado
         if (vitoria) {
             const char* titulo = "VOCÊ VENCEU!";
             int tituloWidth = MeasureText(titulo, 50);
@@ -1002,7 +986,6 @@ void TelaJogo(int *estadoJogo, int screenWidth, int screenHeight, Texture2D back
             
             // Tempo restante
             int tempoRestante = (int)(intervaloAceleracao - tempoDesdeUltimaAceleracao);
-            DrawText(TextFormat("Próxima aceleração: %ds", tempoRestante), barX + barWidth + 10, barY, 15, BLACK);
         } else {
             DrawText("VELOCIDADE MÁXIMA ATINGIDA!", 10, 72, 15, RED);
         }
@@ -1024,28 +1007,7 @@ void TelaJogo(int *estadoJogo, int screenWidth, int screenHeight, Texture2D back
             DrawText(TextFormat("%d", itensColetados[i]), 15 + (i * 35), 165, 15, itensColetados[i] > 0 ? GREEN : RED);
         }
         
-        // Mensagem de aceleração
-        if (mostrarMensagemAceleracao) {
-            int msgX = screenWidth / 2 - 150;
-            int msgY = screenHeight / 2 - 50;
-            
-            // Fundo semi-transparente
-            DrawRectangle(msgX - 20, msgY - 10, 320, 80, (Color){0, 0, 0, 150});
-            
-            // Texto de aceleração com efeito pulsante
-            float alpha = 1.0f - (tempoMensagemAceleracao / 2.0f); // Fade out gradual
-            Color textColor = (Color){255, 200, 0, (unsigned char)(255 * alpha)};
-            
-            if (velocidadeJogo >= velocidadeMaxima) {
-                DrawText("VELOCIDADE MÁXIMA!", msgX, msgY, 30, textColor);
-                DrawText(TextFormat("%.0f m/s", velocidadeJogo), msgX + 60, msgY + 40, 25, (Color){255, 255, 255, (unsigned char)(255 * alpha)});
-            } else {
-                DrawText("ACELERANDO!", msgX + 30, msgY, 35, textColor);
-                DrawText(TextFormat("Nova velocidade: %.0f m/s", velocidadeJogo), msgX + 10, msgY + 40, 20, (Color){255, 255, 255, (unsigned char)(255 * alpha)});
-            }
-        }
-        
-        DrawText("W=Pular | A=Esq | D=Dir | S=Abaixar", 10, screenHeight - 50, 18, BLACK);
+        DrawText("W=Pular | A=Esq | D=Dir | S=Deslizar", 10, screenHeight - 50, 18, BLACK);
         DrawText("P=Pausar | X=Menu", 10, screenHeight - 28, 18, BLACK);
     }
 

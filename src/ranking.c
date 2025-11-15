@@ -63,7 +63,7 @@ void saveRankingAll(RankingList *r, const char *filepath) {
     if (!f) return;
     RankingNode *cur = r->head;
     while (cur) {
-        fprintf(f, "%s,%.3f", cur->name ? cur->name : "", cur->time);
+        fprintf(f, "%s - %.3f", cur->name ? cur->name : "", cur->time);
         cur = cur->next;
     }
     fclose(f);
