@@ -15,7 +15,7 @@ void DrawTextRec(Font font, const char *text, Rectangle rec, float fontSize, flo
 // Protótipos das funções
 void TelaMenu(int *estadoJogo, int screenWidth, int screenHeight, Texture2D background, Sound somMenu);
 void TelaNickname(int *estadoJogo, int screenWidth, int screenHeight, Texture2D background, char *nickname);
-void TelaJogo(int *estadoJogo, int screenWidth, int screenHeight, Texture2D background_jogo, char *nickname, Sound somMenu, Sound somCorrida, Sound somItemBom, Sound somItemRuim, Sound somColisao, Sound somVitoria);
+void TelaJogo(int *estadoJogo, int screenWidth, int screenHeight, Texture2D background_jogo, char *nickname, Sound somMenu, Sound somCorrida, Sound somItemBom, Sound somItemRuim, Sound somColisao, Sound somVitoria, Sound somMusicaVitoria);
 void TelaRanking(int *estadoJogo, int screenWidth, int screenHeight, Texture2D background);
 void TelaComoJogar(int *estadoJogo, int screenWidth, int screenHeight, Texture2D background);
 
@@ -93,6 +93,7 @@ int main(void) {
     Sound somItemRuim = LoadSound("assets/sound/item_ruim.wav");
     Sound somColisao = LoadSound("assets/sound/ouch.wav");
     Sound somVitoria = LoadSound("assets/sound/vitoria.wav");
+    Sound somMusicaVitoria = LoadSound("assets/sound/musica_vitoria.wav");
     
     // Ajusta volume dos sons (0.0 a 1.0)
     SetSoundVolume(somMenu, 0.3f);
@@ -101,6 +102,7 @@ int main(void) {
     SetSoundVolume(somItemRuim, 0.5f);
     SetSoundVolume(somColisao, 0.6f);
     SetSoundVolume(somVitoria, 0.5f);
+    SetSoundVolume(somMusicaVitoria, 0.3f);
 
     // carrega imagens de fundo
     Texture2D background_menu = {0};
@@ -137,7 +139,7 @@ int main(void) {
         } else if (estadoJogo == 1) {
             TelaNickname(&estadoJogo, screenWidth, screenHeight, background_menu, nickname);
         } else if (estadoJogo == 2) {
-            TelaJogo(&estadoJogo, screenWidth, screenHeight, background_jogo, nickname, somMenu, somCorrida, somItemBom, somItemRuim, somColisao, somVitoria);
+            TelaJogo(&estadoJogo, screenWidth, screenHeight, background_jogo, nickname, somMenu, somCorrida, somItemBom, somItemRuim, somColisao, somVitoria, somMusicaVitoria);
         } else if (estadoJogo == 3) {
             TelaRanking(&estadoJogo, screenWidth, screenHeight, background_menu);
         } else if (estadoJogo == 4) {
@@ -156,6 +158,7 @@ int main(void) {
     UnloadSound(somItemRuim);
     UnloadSound(somColisao);
     UnloadSound(somVitoria);
+    UnloadSound(somMusicaVitoria);
 
     UnloadTexture(background_menu);
     UnloadTexture(background_jogo);
@@ -402,7 +405,7 @@ void TelaNickname(int *estadoJogo, int screenWidth, int screenHeight, Texture2D 
     EndDrawing();
 }
 
-void TelaJogo(int *estadoJogo, int screenWidth, int screenHeight, Texture2D background_jogo, char *nickname, Sound somMenu, Sound somCorrida, Sound somItemBom, Sound somItemRuim, Sound somColisao, Sound somVitoria) {
+void TelaJogo(int *estadoJogo, int screenWidth, int screenHeight, Texture2D background_jogo, char *nickname, Sound somMenu, Sound somCorrida, Sound somItemBom, Sound somItemRuim, Sound somColisao, Sound somVitoria, Sound somMusicaVitoria) {
     static Jogador jogador;
     static Obstaculo obstaculos[MAX_OBSTACULOS];
     static ItemColetavel itens[MAX_ITENS];
@@ -456,6 +459,12 @@ void TelaJogo(int *estadoJogo, int screenWidth, int screenHeight, Texture2D back
     static Texture2D texturaGameOver = {0};
     static bool texturaGameOverCarregada = false;
     
+    // Texturas de vitória
+    static Texture2D texturaVitoria1 = {0};
+    static Texture2D texturaVitoria2 = {0};
+    static bool texturasVitoriaCarregadas = false;
+    static int cenaVitoria = 0; // 0 = tela normal, 1 = scene1, 2 = scene2, 3 = voltou ao normal
+    
     // Perspectiva das lanes - ajustadas para coincidir com as faixas do asfalto
     const float horizon_y = 235.0f;          // linha do horizonte onde a estrada começa
     
@@ -503,6 +512,7 @@ void TelaJogo(int *estadoJogo, int screenWidth, int screenHeight, Texture2D back
         tempoDecorrido = 0.0f;
         gameOver = false;
         vitoria = false;
+        cenaVitoria = 0;
         
         // Inicializa sistema progressivo de obstáculos
         framesEntreObstaculos = 180; // Começa com 3 segundos
@@ -556,6 +566,13 @@ void TelaJogo(int *estadoJogo, int screenWidth, int screenHeight, Texture2D back
     if (!texturaGameOverCarregada) {
         texturaGameOver = LoadTexture("assets/images/game_over.png");
         texturaGameOverCarregada = true;
+    }
+    
+    // Carrega texturas de vitória (apenas uma vez)
+    if (!texturasVitoriaCarregadas) {
+        texturaVitoria1 = LoadTexture("assets/images/vitoria_scene1.png");
+        texturaVitoria2 = LoadTexture("assets/images/vitoria_scene2.png");
+        texturasVitoriaCarregadas = true;
     }
 
     if (!gameOver) {
@@ -736,6 +753,7 @@ void TelaJogo(int *estadoJogo, int screenWidth, int screenHeight, Texture2D back
                 saveRankingAll(&ranking, "ranking_all.csv");
                 rankingInserido = true;
                 gameOver = true; // Termina o jogo
+                cenaVitoria = 1; // Inicia sequência de cenas de vitória
                 PlaySound(somVitoria); // Toca som de vitória
                 StopSound(somCorrida); // Para som de corrida
             }
@@ -771,6 +789,11 @@ void TelaJogo(int *estadoJogo, int screenWidth, int screenHeight, Texture2D back
             }
         }
         
+        // ENTER para avançar entre cenas de vitória
+        if (IsKeyPressed(KEY_ENTER) && vitoria && cenaVitoria > 0 && cenaVitoria < 3) {
+            cenaVitoria++; // Avança para próxima cena
+        }
+        
         // "Game Over" ou "Vitória" - R p reiniciar (mantém tempo e itens coletados)
         if (IsKeyPressed(KEY_R)) {
             // Reinicia o jogador, obstáculos e velocidade
@@ -791,6 +814,8 @@ void TelaJogo(int *estadoJogo, int screenWidth, int screenHeight, Texture2D back
             gameOver = false;
             vitoria = false;
             estadoMorte = 0; // Reseta estado de morte
+            cenaVitoria = 0; // Reseta cenas de vitória
+            StopSound(somMusicaVitoria); // Para música de vitória
             // NÃO reseta tempoDecorrido e itensColetados
         }
     }
@@ -799,6 +824,7 @@ void TelaJogo(int *estadoJogo, int screenWidth, int screenHeight, Texture2D back
     if (IsKeyPressed(KEY_P)) {
         *estadoJogo = 0; // de volta ao menu
         StopSound(somCorrida); // Para som de corrida
+        StopSound(somMusicaVitoria); // Para música de vitória
         // NÃO define inicializado = false, então mantém tempo e itens coletados
     }
 
@@ -806,6 +832,7 @@ void TelaJogo(int *estadoJogo, int screenWidth, int screenHeight, Texture2D back
     if (IsKeyPressed(KEY_X)) {
         *estadoJogo = 0; // de volta ao menu
         StopSound(somCorrida); // Para som de corrida
+        StopSound(somMusicaVitoria); // Para música de vitória
         inicializado = false; // Força reinicialização completa (reseta tempo e itens)
         primeiraVezJogando = false; // Marca que já não é mais a primeira vez (resetou)
     }
@@ -814,6 +841,7 @@ void TelaJogo(int *estadoJogo, int screenWidth, int screenHeight, Texture2D back
     if (IsKeyPressed(KEY_ESCAPE)) {
         *estadoJogo = 0; // de volta ao menu
         StopSound(somCorrida); // Para som de corrida
+        StopSound(somMusicaVitoria); // Para música de vitória
         inicializado = false; // Força reinicialização completa (reseta tempo e itens)
         nickname[0] = '\0'; // Limpa o nickname (fim da run)
         primeiraVezJogando = false; // Marca que já não é mais a primeira vez (resetou)
@@ -999,13 +1027,19 @@ void TelaJogo(int *estadoJogo, int screenWidth, int screenHeight, Texture2D back
             
             // Desenha sprite do item
             if (texturasItens[itens[i].tipo].id > 0) {
-                // Usa a textura se carregada
+                // Usa a textura se carregada, mantendo proporção original
                 Rectangle source = {0, 0, (float)texturasItens[itens[i].tipo].width, (float)texturasItens[itens[i].tipo].height};
+                
+                // Calcula dimensões mantendo aspect ratio
+                float aspectRatio = (float)texturasItens[itens[i].tipo].width / (float)texturasItens[itens[i].tipo].height;
+                float item_width = tamanho_scaled;
+                float item_height = tamanho_scaled / aspectRatio;
+                
                 Rectangle dest = {
-                    item_x - tamanho_scaled / 2, 
+                    item_x - item_width / 2, 
                     itens[i].pos_y, 
-                    tamanho_scaled, 
-                    tamanho_scaled
+                    item_width, 
+                    item_height
                 };
                 DrawTexturePro(texturasItens[itens[i].tipo], source, dest, (Vector2){0, 0}, 0.0f, WHITE);
             } else {
@@ -1053,67 +1087,97 @@ void TelaJogo(int *estadoJogo, int screenWidth, int screenHeight, Texture2D back
     }
 
     if (gameOver) {
-        // Desenha imagem de game over preenchendo toda a tela
-        if (texturaGameOver.id > 0) {
-            Rectangle source = {0, 0, (float)texturaGameOver.width, (float)texturaGameOver.height};
-            Rectangle dest = {0, 0, (float)screenWidth, (float)screenHeight};
-            DrawTexturePro(texturaGameOver, source, dest, (Vector2){0, 0}, 0.0f, WHITE);
-        } else {
-            // Fallback: overlay escuro se a imagem não carregar
-            DrawRectangle(0, 0, screenWidth, screenHeight, (Color){0, 0, 0, 150});
-        }
-        
+        // Toca música de vitória em loop após som de vitória acabar
         if (vitoria) {
-            const char* titulo = "VOCÊ VENCEU!";
-            int tituloWidth = MeasureText(titulo, 50);
-            DrawText(titulo, screenWidth/2 - tituloWidth/2, screenHeight/2 - 80, 50, GREEN);
-            
-            const char* subtitulo = "Coletou todos os tipos de itens!";
-            int subtituloWidth = MeasureText(subtitulo, 20);
-            DrawText(subtitulo, screenWidth/2 - subtituloWidth/2, screenHeight/2 - 30, 20, WHITE);
-        }
-        
-        // Tempo centralizado
-        int minutos = (int)tempoDecorrido / 60;
-        int segundos = (int)tempoDecorrido % 60;
-        const char* textoTempo = TextFormat("Tempo: %02d:%02d", minutos, segundos);
-        int tempoWidth = MeasureText(textoTempo, 30);
-        DrawText(textoTempo, screenWidth/2 - tempoWidth/2, screenHeight/2 + 10, 30, WHITE);
-        
-        // Label "Itens coletados" centralizado
-        const char* labelItens = "Itens coletados:";
-        int labelWidth = MeasureText(labelItens, 20);
-        DrawText(labelItens, screenWidth/2 - labelWidth/2, screenHeight/2 + 50, 20, WHITE);
-        
-        // Ícones dos itens centralizados
-        // Cada ícone: 48px de largura, espaçamento de 60px entre centros
-        // Total: 5 ícones com 4 espaços de 60px = 240px de espaçamento + 48px/2 em cada ponta
-        int totalWidth = (TIPOS_ITENS - 1) * 60 + 48; // Largura total: 4*60 + 48 = 288px
-        int startX = screenWidth/2 - totalWidth/2 + 24; // +24 para começar no centro do primeiro ícone
-        for (int i = 0; i < TIPOS_ITENS; i++) {
-            int icon_x = startX + (i * 60);
-            int icon_y = screenHeight/2 + 75;
-            if (texturasItens[i].id > 0) {
-                Rectangle source = {0, 0, (float)texturasItens[i].width, (float)texturasItens[i].height};
-                Rectangle dest = {icon_x - 24, icon_y, 48, 48};
-                DrawTexturePro(texturasItens[i], source, dest, (Vector2){0, 0}, 0.0f, WHITE);
-            } else {
-                DrawCircle(icon_x, icon_y + 24, 12, coresItens[i]);
+            if (!IsSoundPlaying(somVitoria) && !IsSoundPlaying(somMusicaVitoria)) {
+                PlaySound(somMusicaVitoria);
             }
-            // Quantidade centralizada abaixo da imagem
-            const char* texto = TextFormat("%d", itensColetados[i]);
-            int textWidth = MeasureText(texto, 25);
-            DrawText(texto, icon_x - textWidth/2, icon_y + 55, 25, WHITE);
         }
         
-        // Instruções centralizadas
-        const char* instrucao1 = "Pressione R para reiniciar";
-        int instr1Width = MeasureText(instrucao1, 20);
-        DrawText(instrucao1, screenWidth/2 - instr1Width/2, screenHeight/2 + 165, 20, WHITE);
-        
-        const char* instrucao2 = "P=Pausar | X=Resetar | ESC=Fechar jogo";
-        int instr2Width = MeasureText(instrucao2, 20);
-        DrawText(instrucao2, screenWidth/2 - instr2Width/2, screenHeight/2 + 195, 20, WHITE);
+        // Se for vitória e ainda está nas cenas de vitória (1 ou 2)
+        if (vitoria && cenaVitoria > 0 && cenaVitoria < 3) {
+            // Mostra cena de vitória 1
+            if (cenaVitoria == 1 && texturaVitoria1.id > 0) {
+                Rectangle source = {0, 0, (float)texturaVitoria1.width, (float)texturaVitoria1.height};
+                Rectangle dest = {0, 0, (float)screenWidth, (float)screenHeight};
+                DrawTexturePro(texturaVitoria1, source, dest, (Vector2){0, 0}, 0.0f, WHITE);
+                
+                const char* instrucao = "Pressione ENTER para continuar...";
+                int instrWidth = MeasureText(instrucao, 20);
+                DrawText(instrucao, screenWidth/2 - instrWidth/2, screenHeight - 40, 20, WHITE);
+            }
+            // Mostra cena de vitória 2
+            else if (cenaVitoria == 2 && texturaVitoria2.id > 0) {
+                Rectangle source = {0, 0, (float)texturaVitoria2.width, (float)texturaVitoria2.height};
+                Rectangle dest = {0, 0, (float)screenWidth, (float)screenHeight};
+                DrawTexturePro(texturaVitoria2, source, dest, (Vector2){0, 0}, 0.0f, WHITE);
+                
+                const char* instrucao = "Pressione ENTER para continuar...";
+                int instrWidth = MeasureText(instrucao, 20);
+                DrawText(instrucao, screenWidth/2 - instrWidth/2, screenHeight - 40, 20, WHITE);
+            }
+        } else {
+            // Tela normal de game over (após as cenas ou se não for vitória)
+            // Overlay escuro semi-transparente
+            DrawRectangle(0, 0, screenWidth, screenHeight, (Color){0, 0, 0, 150});
+            
+            if (vitoria) {
+                const char* titulo = "VOCÊ VENCEU!";
+                int tituloWidth = MeasureText(titulo, 50);
+                DrawText(titulo, screenWidth/2 - tituloWidth/2, screenHeight/2 - 80, 50, GREEN);
+                
+                const char* subtitulo = "Coletou todos os tipos de itens!";
+                int subtituloWidth = MeasureText(subtitulo, 20);
+                DrawText(subtitulo, screenWidth/2 - subtituloWidth/2, screenHeight/2 - 30, 20, WHITE);
+            } else {
+                // Título de Game Over quando não for vitória
+                const char* titulo = "GAME OVER!";
+                int tituloWidth = MeasureText(titulo, 50);
+                DrawText(titulo, screenWidth/2 - tituloWidth/2, screenHeight/2 - 80, 50, RED);
+            }
+            
+            // Tempo centralizado
+            int minutos = (int)tempoDecorrido / 60;
+            int segundos = (int)tempoDecorrido % 60;
+            const char* textoTempo = TextFormat("Tempo: %02d:%02d", minutos, segundos);
+            int tempoWidth = MeasureText(textoTempo, 30);
+            DrawText(textoTempo, screenWidth/2 - tempoWidth/2, screenHeight/2 + 10, 30, WHITE);
+            
+            // Label "Itens coletados" centralizado
+            const char* labelItens = "Itens coletados:";
+            int labelWidth = MeasureText(labelItens, 20);
+            DrawText(labelItens, screenWidth/2 - labelWidth/2, screenHeight/2 + 50, 20, WHITE);
+            
+            // Ícones dos itens centralizados
+            // Cada ícone: 48px de largura, espaçamento de 60px entre centros
+            // Total: 5 ícones com 4 espaços de 60px = 240px de espaçamento + 48px/2 em cada ponta
+            int totalWidth = (TIPOS_ITENS - 1) * 60 + 48; // Largura total: 4*60 + 48 = 288px
+            int startX = screenWidth/2 - totalWidth/2 + 24; // +24 para começar no centro do primeiro ícone
+            for (int i = 0; i < TIPOS_ITENS; i++) {
+                int icon_x = startX + (i * 60);
+                int icon_y = screenHeight/2 + 75;
+                if (texturasItens[i].id > 0) {
+                    Rectangle source = {0, 0, (float)texturasItens[i].width, (float)texturasItens[i].height};
+                    Rectangle dest = {icon_x - 24, icon_y, 48, 48};
+                    DrawTexturePro(texturasItens[i], source, dest, (Vector2){0, 0}, 0.0f, WHITE);
+                } else {
+                    DrawCircle(icon_x, icon_y + 24, 12, coresItens[i]);
+                }
+                // Quantidade centralizada abaixo da imagem
+                const char* texto = TextFormat("%d", itensColetados[i]);
+                int textWidth = MeasureText(texto, 25);
+                DrawText(texto, icon_x - textWidth/2, icon_y + 55, 25, WHITE);
+            }
+            
+            // Instruções centralizadas
+            const char* instrucao1 = "Pressione R para reiniciar";
+            int instr1Width = MeasureText(instrucao1, 20);
+            DrawText(instrucao1, screenWidth/2 - instr1Width/2, screenHeight/2 + 165, 20, WHITE);
+            
+            const char* instrucao2 = "P=Pausar | X=Resetar | ESC=Fechar jogo";
+            int instr2Width = MeasureText(instrucao2, 20);
+            DrawText(instrucao2, screenWidth/2 - instr2Width/2, screenHeight/2 + 195, 20, WHITE);
+        }
     } else {
         // debug e HUD
         // Mostra tempo em minutos:segundos
