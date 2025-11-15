@@ -11,7 +11,7 @@
 // Protótipos das funções
 void TelaMenu(int *estadoJogo, int screenWidth, int screenHeight, Texture2D background, Sound somMenu);
 void TelaNickname(int *estadoJogo, int screenWidth, int screenHeight, Texture2D background, char *nickname);
-void TelaJogo(int *estadoJogo, int screenWidth, int screenHeight, Texture2D background_jogo, char *nickname, Sound somCorrida, Sound somItemBom, Sound somItemRuim, Sound somColisao, Sound somVitoria);
+void TelaJogo(int *estadoJogo, int screenWidth, int screenHeight, Texture2D background_jogo, char *nickname, Sound somMenu, Sound somCorrida, Sound somItemBom, Sound somItemRuim, Sound somColisao, Sound somVitoria);
 void TelaRanking(int *estadoJogo, int screenWidth, int screenHeight, Texture2D background);
 
 // Ranking (persistente)
@@ -87,7 +87,7 @@ int main(void) {
         } else if (estadoJogo == 1) {
             TelaNickname(&estadoJogo, screenWidth, screenHeight, background_menu, nickname);
         } else if (estadoJogo == 2) {
-            TelaJogo(&estadoJogo, screenWidth, screenHeight, background_jogo, nickname, somCorrida, somItemBom, somItemRuim, somColisao, somVitoria);
+            TelaJogo(&estadoJogo, screenWidth, screenHeight, background_jogo, nickname, somMenu, somCorrida, somItemBom, somItemRuim, somColisao, somVitoria);
         } else if (estadoJogo == 3) {
             TelaRanking(&estadoJogo, screenWidth, screenHeight, background_menu);
         }
@@ -158,6 +158,7 @@ void TelaMenu(int *estadoJogo, int screenWidth, int screenHeight, Texture2D back
 
     // verifica clique no "PLAY"
     if (hoverPlay && IsMouseButtonPressed(MOUSE_LEFT_BUTTON)) {
+        StopSound(somMenu); // Para música do menu antes de ir para o jogo
         *estadoJogo = 1; // vai p tela nickname
     }
     
@@ -344,7 +345,7 @@ void TelaNickname(int *estadoJogo, int screenWidth, int screenHeight, Texture2D 
     EndDrawing();
 }
 
-void TelaJogo(int *estadoJogo, int screenWidth, int screenHeight, Texture2D background_jogo, char *nickname, Sound somCorrida, Sound somItemBom, Sound somItemRuim, Sound somColisao, Sound somVitoria) {
+void TelaJogo(int *estadoJogo, int screenWidth, int screenHeight, Texture2D background_jogo, char *nickname, Sound somMenu, Sound somCorrida, Sound somItemBom, Sound somItemRuim, Sound somColisao, Sound somVitoria) {
     static Jogador jogador;
     static Obstaculo obstaculos[MAX_OBSTACULOS];
     static ItemColetavel itens[MAX_ITENS];
@@ -376,7 +377,7 @@ void TelaJogo(int *estadoJogo, int screenWidth, int screenHeight, Texture2D back
     static Texture2D spriteOnibusCentro = {0};
     static Texture2D spriteOnibusDireito = {0};
     static Texture2D spriteCatraca = {0};
-    static Texture2D spriteParada = {0};
+    static Texture2D spritePneu = {0};
     static bool spritesCarregadas = false;
     
     // Texturas dos itens colecionáveis (carregadas uma vez)
@@ -391,6 +392,10 @@ void TelaJogo(int *estadoJogo, int screenWidth, int screenHeight, Texture2D back
     static Texture2D spriteDeslizandoDireita = {0};
     static Texture2D spriteDeslizandoEsquerda = {0};
     static bool spritesJogadorCarregadas = false;
+    
+    // Textura de Game Over
+    static Texture2D texturaGameOver = {0};
+    static bool texturaGameOverCarregada = false;
     
     // Perspectiva das lanes - ajustadas para coincidir com as faixas do asfalto
     const float horizon_y = 235.0f;          // linha do horizonte onde a estrada começa
@@ -456,6 +461,7 @@ void TelaJogo(int *estadoJogo, int screenWidth, int screenHeight, Texture2D back
         spriteOnibusCentro = LoadTexture("assets/images/onibus.png");
         spriteOnibusDireito = LoadTexture("assets/images/onibus_direito.png");
         spriteCatraca = LoadTexture("assets/images/catraca.png");
+        spritePneu = LoadTexture("assets/images/pneu.png");
         spritesCarregadas = true;
     }
     
@@ -485,9 +491,20 @@ void TelaJogo(int *estadoJogo, int screenWidth, int screenHeight, Texture2D back
         spriteDeslizandoEsquerda = LoadTexture("assets/images/deslizando_esquerda.png");
         spritesJogadorCarregadas = true;
     }
+    
+    // Carrega textura de Game Over (apenas uma vez)
+    if (!texturaGameOverCarregada) {
+        texturaGameOver = LoadTexture("assets/images/game_over.png");
+        texturaGameOverCarregada = true;
+    }
 
     if (!gameOver) {
-        // Toca som de corrida em loop durante o jogo
+        // Para som do menu e toca som de corrida em loop durante o jogo
+        static bool somInicializado = false;
+        if (!somInicializado) {
+            StopSound(somMenu); // Para música do menu
+            somInicializado = true;
+        }
         if (!IsSoundPlaying(somCorrida)) {
             PlaySound(somCorrida);
         }
@@ -842,29 +859,39 @@ void TelaJogo(int *estadoJogo, int screenWidth, int screenHeight, Texture2D back
                 }
             } else {
                 // parada de onibus com teto = obstaculo alto vazado (abaixar com S)
-                Color cor = PURPLE;
-                float border = 8 * scale;
-                DrawRectangle(
-                    obs_x - largura_scaled / 2, 
-                    obstaculos[i].pos_y, 
-                    largura_scaled, 
-                    border, 
-                    cor
-                );
-                DrawRectangle(
-                    obs_x - largura_scaled / 2, 
-                    obstaculos[i].pos_y, 
-                    border, 
-                    altura_scaled, 
-                    cor
-                );
-                DrawRectangle(
-                    obs_x + largura_scaled / 2 - border, 
-                    obstaculos[i].pos_y, 
-                    border, 
-                    altura_scaled, 
-                    cor
-                );
+                if (spritePneu.id > 0) {
+                    // Sprite visual de pneu (tamanho ajustado com escala)
+                    float sprite_largura_pneu = 120.0f * scale;
+                    float sprite_altura_pneu = 120.0f * scale;
+                    Rectangle source = {0, 0, (float)spritePneu.width, (float)spritePneu.height};
+                    Rectangle dest = {obs_x - sprite_largura_pneu / 2, obstaculos[i].pos_y, sprite_largura_pneu, sprite_altura_pneu};
+                    DrawTexturePro(spritePneu, source, dest, (Vector2){0, 0}, 0.0f, WHITE);
+                } else {
+                    // Fallback: desenha estrutura de parada se a textura não carregar
+                    Color cor = PURPLE;
+                    float border = 8 * scale;
+                    DrawRectangle(
+                        obs_x - largura_scaled / 2, 
+                        obstaculos[i].pos_y, 
+                        largura_scaled, 
+                        border, 
+                        cor
+                    );
+                    DrawRectangle(
+                        obs_x - largura_scaled / 2, 
+                        obstaculos[i].pos_y, 
+                        border, 
+                        altura_scaled, 
+                        cor
+                    );
+                    DrawRectangle(
+                        obs_x + largura_scaled / 2 - border, 
+                        obstaculos[i].pos_y, 
+                        border, 
+                        altura_scaled, 
+                        cor
+                    );
+                }
             }
         }
     }
@@ -942,8 +969,16 @@ void TelaJogo(int *estadoJogo, int screenWidth, int screenHeight, Texture2D back
     }
 
     if (gameOver) {
-        // game over
-        DrawRectangle(0, 0, screenWidth, screenHeight, (Color){0, 0, 0, 150});
+        // Desenha imagem de game over preenchendo toda a tela
+        if (texturaGameOver.id > 0) {
+            Rectangle source = {0, 0, (float)texturaGameOver.width, (float)texturaGameOver.height};
+            Rectangle dest = {0, 0, (float)screenWidth, (float)screenHeight};
+            DrawTexturePro(texturaGameOver, source, dest, (Vector2){0, 0}, 0.0f, WHITE);
+        } else {
+            // Fallback: overlay escuro se a imagem não carregar
+            DrawRectangle(0, 0, screenWidth, screenHeight, (Color){0, 0, 0, 150});
+        }
+        
         if (vitoria) {
             const char* titulo = "VOCÊ VENCEU!";
             int tituloWidth = MeasureText(titulo, 50);
@@ -952,10 +987,6 @@ void TelaJogo(int *estadoJogo, int screenWidth, int screenHeight, Texture2D back
             const char* subtitulo = "Coletou todos os tipos de itens!";
             int subtituloWidth = MeasureText(subtitulo, 20);
             DrawText(subtitulo, screenWidth/2 - subtituloWidth/2, screenHeight/2 - 30, 20, WHITE);
-        } else {
-            const char* titulo = "GAME OVER!";
-            int tituloWidth = MeasureText(titulo, 50);
-            DrawText(titulo, screenWidth/2 - tituloWidth/2, screenHeight/2 - 80, 50, RED);
         }
         
         // Tempo centralizado
@@ -1024,9 +1055,6 @@ void TelaJogo(int *estadoJogo, int screenWidth, int screenHeight, Texture2D back
             DrawRectangle(barX, barY, (int)(barWidth * progressoAceleracao), barHeight, (Color){255, 200, 0, 255});
             // Borda
             DrawRectangleLines(barX, barY, barWidth, barHeight, BLACK);
-            
-            // Tempo restante
-            int tempoRestante = (int)(intervaloAceleracao - tempoDesdeUltimaAceleracao);
         } else {
             DrawText("VELOCIDADE MÁXIMA ATINGIDA!", 10, 72, 15, RED);
         }
@@ -1061,7 +1089,6 @@ void TelaRanking(int *estadoJogo, int screenWidth, int screenHeight, Texture2D b
     Color cyan = (Color){102, 255, 255, 255};      // #66FFFF - azul ciano para título
     Color cyanBorder = (Color){150, 255, 255, 255}; // borda do título
     Color green1 = (Color){150, 255, 100, 255};    // #96FF64 - verde claro para linhas
-    Color green2 = (Color){120, 220, 80, 255};     // verde mais escuro
     Color cyan2 = (Color){120, 240, 240, 255};     // ciano para linhas alternadas
     Color white = (Color){255, 255, 255, 255};
     
