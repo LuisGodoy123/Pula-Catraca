@@ -9,9 +9,9 @@
 #define BASE_ITEM_SIZE 120.0f
 
 // Protótipos das funções
-void TelaMenu(int *estadoJogo, int screenWidth, int screenHeight, Texture2D background);
+void TelaMenu(int *estadoJogo, int screenWidth, int screenHeight, Texture2D background, Sound somMenu);
 void TelaNickname(int *estadoJogo, int screenWidth, int screenHeight, Texture2D background, char *nickname);
-void TelaJogo(int *estadoJogo, int screenWidth, int screenHeight, Texture2D background_jogo, char *nickname);
+void TelaJogo(int *estadoJogo, int screenWidth, int screenHeight, Texture2D background_jogo, char *nickname, Sound somCorrida, Sound somItemBom, Sound somItemRuim, Sound somColisao, Sound somVitoria);
 
 // Ranking (persistente)
 static RankingList ranking;
@@ -23,6 +23,9 @@ int main(void) {
     InitWindow(screenWidth, screenHeight, "Pula-Catraca");
     SetTraceLogLevel(LOG_WARNING); // Desabilita mensagens de INFO e DEBUG
     SetTargetFPS(60);
+    
+    // Inicializa sistema de áudio
+    InitAudioDevice();
 
     // Inicializa e carrega ranking salvo (se existir)
     initRanking(&ranking);
@@ -31,6 +34,22 @@ int main(void) {
     // Inicializa ranking em memória e carrega do disco (arquivo com todos os tempos)
     initRanking(&ranking);
     loadRankingAll(&ranking, "ranking_all.csv");
+    
+    // Carrega sons
+    Sound somMenu = LoadSound("assets/sound/scene_inicial.wav");
+    Sound somCorrida = LoadSound("assets/sound/corrida.wav");
+    Sound somItemBom = LoadSound("assets/sound/item_bom.wav");
+    Sound somItemRuim = LoadSound("assets/sound/item_ruim.wav");
+    Sound somColisao = LoadSound("assets/sound/ouch.wav");
+    Sound somVitoria = LoadSound("assets/sound/vitoria.wav");
+    
+    // Ajusta volume dos sons (0.0 a 1.0)
+    SetSoundVolume(somMenu, 0.3f);
+    SetSoundVolume(somCorrida, 0.2f);
+    SetSoundVolume(somItemBom, 0.5f);
+    SetSoundVolume(somItemRuim, 0.5f);
+    SetSoundVolume(somColisao, 0.6f);
+    SetSoundVolume(somVitoria, 0.5f);
 
     // carrega imagens de fundo
     Texture2D background_menu = {0};
@@ -63,25 +82,39 @@ int main(void) {
     
     while (!WindowShouldClose()) {
         if (estadoJogo == 0) {
-            TelaMenu(&estadoJogo, screenWidth, screenHeight, background_menu);
+            TelaMenu(&estadoJogo, screenWidth, screenHeight, background_menu, somMenu);
         } else if (estadoJogo == 1) {
             TelaNickname(&estadoJogo, screenWidth, screenHeight, background_menu, nickname);
         } else if (estadoJogo == 2) {
-            TelaJogo(&estadoJogo, screenWidth, screenHeight, background_jogo, nickname);
+            TelaJogo(&estadoJogo, screenWidth, screenHeight, background_jogo, nickname, somCorrida, somItemBom, somItemRuim, somColisao, somVitoria);
         }
     }
     // salva ranking completo e top10 antes de sair
     saveRankingAll(&ranking, "ranking_all.csv");
     saveTopCSV(&ranking, "ranking_top10.csv", 10);
     freeRanking(&ranking);
+    
+    // Descarrega sons
+    UnloadSound(somMenu);
+    UnloadSound(somCorrida);
+    UnloadSound(somItemBom);
+    UnloadSound(somItemRuim);
+    UnloadSound(somColisao);
+    UnloadSound(somVitoria);
 
     UnloadTexture(background_menu);
     UnloadTexture(background_jogo);
+    CloseAudioDevice();
     CloseWindow();
     return 0;
 }
 
-void TelaMenu(int *estadoJogo, int screenWidth, int screenHeight, Texture2D background) {
+void TelaMenu(int *estadoJogo, int screenWidth, int screenHeight, Texture2D background, Sound somMenu) {
+    // Toca som do menu em loop (se não estiver tocando)
+    if (!IsSoundPlaying(somMenu)) {
+        PlaySound(somMenu);
+    }
+    
     // fonte texto
     Font titleFont = GetFontDefault();
     // paleta
@@ -320,7 +353,7 @@ void TelaNickname(int *estadoJogo, int screenWidth, int screenHeight, Texture2D 
     EndDrawing();
 }
 
-void TelaJogo(int *estadoJogo, int screenWidth, int screenHeight, Texture2D background_jogo, char *nickname) {
+void TelaJogo(int *estadoJogo, int screenWidth, int screenHeight, Texture2D background_jogo, char *nickname, Sound somCorrida, Sound somItemBom, Sound somItemRuim, Sound somColisao, Sound somVitoria) {
     static Jogador jogador;
     static Obstaculo obstaculos[MAX_OBSTACULOS];
     static ItemColetavel itens[MAX_ITENS];
@@ -467,6 +500,11 @@ void TelaJogo(int *estadoJogo, int screenWidth, int screenHeight, Texture2D back
     }
 
     if (!gameOver) {
+        // Toca som de corrida em loop durante o jogo
+        if (!IsSoundPlaying(somCorrida)) {
+            PlaySound(somCorrida);
+        }
+        
         // inputs do jogador
         if (IsKeyPressed(KEY_W)) {
             pular(&jogador);
@@ -585,6 +623,7 @@ void TelaJogo(int *estadoJogo, int screenWidth, int screenHeight, Texture2D back
                     // incrementa apenas se ainda não atingiu o limite de 5
                     if (itensColetados[tipo] < 5) {
                         itensColetados[tipo]++;
+                        PlaySound(somItemBom); // Toca som de item bom
                     }
                 }
                 // Itens RUINS (tipos 5-7)
@@ -593,6 +632,7 @@ void TelaJogo(int *estadoJogo, int screenWidth, int screenHeight, Texture2D back
                     tempoDecorrido += 5.0f;
                     // Marca como coletado para mostrar mensagem customizada
                     itensColetados[tipo]++;
+                    PlaySound(somItemRuim); // Toca som de item ruim
                 }
                 else if (tipo == 6) {
                     // BALACLAVA: "você foi assaltado e perdeu seus itens" - perde TODOS os itens
@@ -600,6 +640,7 @@ void TelaJogo(int *estadoJogo, int screenWidth, int screenHeight, Texture2D back
                         itensColetados[j] = 0;
                     }
                     itensColetados[tipo]++;
+                    PlaySound(somItemRuim); // Toca som de item ruim
                 }
                 else if (tipo == 7) {
                     // IDOSA: "você cedeu o assento e ficou em pé" - perde 1 item aleatório
@@ -617,7 +658,9 @@ void TelaJogo(int *estadoJogo, int screenWidth, int screenHeight, Texture2D back
                         int indiceAleatorio = rand() % quantidadeDisponiveis;
                         int itemRemovido = itensDisponiveis[indiceAleatorio];
                         itensColetados[itemRemovido]--;
-                    }itensColetados[tipo]++;
+                    }
+                    itensColetados[tipo]++;
+                    PlaySound(somItemRuim); // Toca som de item ruim
                 }
             }
         }
@@ -639,12 +682,16 @@ void TelaJogo(int *estadoJogo, int screenWidth, int screenHeight, Texture2D back
                 saveRankingAll(&ranking, "ranking_all.csv");
                 rankingInserido = true;
                 gameOver = true; // Termina o jogo
+                PlaySound(somVitoria); // Toca som de vitória
+                StopSound(somCorrida); // Para som de corrida
             }
         }
         // colisões (posição sem perspectiva p cálculo)
         for (int i = 0; i < MAX_OBSTACULOS; i++) {
             if (verificarColisao(&jogador, &obstaculos[i], lane_width_bottom, lane_offset_bottom, horizon_y, screenHeight)) {
                 gameOver = true;
+                PlaySound(somColisao); // Toca som de colisão
+                StopSound(somCorrida); // Para som de corrida
                 break;
             }
         }
@@ -675,18 +722,21 @@ void TelaJogo(int *estadoJogo, int screenWidth, int screenHeight, Texture2D back
     // Tecla P para voltar ao menu sem resetar progresso (pausa)
     if (IsKeyPressed(KEY_P)) {
         *estadoJogo = 0; // de volta ao menu
+        StopSound(somCorrida); // Para som de corrida
         // NÃO define inicializado = false, então mantém tempo e itens coletados
     }
 
     // Tecla X para resetar a pontuação e voltar ao menu
     if (IsKeyPressed(KEY_X)) {
         *estadoJogo = 0; // de volta ao menu
+        StopSound(somCorrida); // Para som de corrida
         inicializado = false; // Força reinicialização completa (reseta tempo e itens)
     }
 
     // Tecla ESC para voltar ao menu e resetar tudo (incluindo nickname)
     if (IsKeyPressed(KEY_ESCAPE)) {
         *estadoJogo = 0; // de volta ao menu
+        StopSound(somCorrida); // Para som de corrida
         inicializado = false; // Força reinicialização completa (reseta tempo e itens)
         nickname[0] = '\0'; // Limpa o nickname (fim da run)
     }
