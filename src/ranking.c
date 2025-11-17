@@ -63,7 +63,7 @@ void saveRankingAll(RankingList *r, const char *filepath) {
     if (!f) return;
     RankingNode *cur = r->head;
     while (cur) {
-        fprintf(f, "%s - %.3f", cur->name ? cur->name : "", cur->time);
+        fprintf(f, "%s,%.3f\n", cur->name ? cur->name : "", cur->time);
         cur = cur->next;
     }
     fclose(f);
@@ -76,7 +76,7 @@ void saveTopCSV(RankingList *r, const char *filepath, int topN) {
     RankingNode *cur = r->head;
     int i = 0;
     while (cur && i < topN) {
-        fprintf(f, "%s,%.3f", cur->name ? cur->name : "", cur->time);
+        fprintf(f, "%s,%.3f\n", cur->name ? cur->name : "", cur->time);
         cur = cur->next; i++;
     }
     fclose(f);
