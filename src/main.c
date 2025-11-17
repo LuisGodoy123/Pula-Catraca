@@ -13,7 +13,7 @@ void DrawTextRec(Font font, const char *text, Rectangle rec, float fontSize, flo
 #define BASE_ITEM_SIZE 120.0f
 
 // Protótipos das funções
-void TelaMenu(int *estadoJogo, int screenWidth, int screenHeight, Texture2D background, Sound somMenu);
+void TelaMenu(int *estadoJogo, int screenWidth, int screenHeight, Texture2D background, Sound somMenu, Sound somMusicaVitoria);
 void TelaNickname(int *estadoJogo, int screenWidth, int screenHeight, Texture2D background, char *nickname);
 void TelaJogo(int *estadoJogo, int screenWidth, int screenHeight, Texture2D background_jogo, char *nickname, Sound somMenu, Sound somCorrida, Sound somItemBom, Sound somItemRuim, Sound somColisao, Sound somVitoria, Sound somMusicaVitoria);
 void TelaRanking(int *estadoJogo, int screenWidth, int screenHeight, Texture2D background);
@@ -93,7 +93,7 @@ int main(void) {
     Sound somItemRuim = LoadSound("assets/sound/item_ruim.wav");
     Sound somColisao = LoadSound("assets/sound/ouch.wav");
     Sound somVitoria = LoadSound("assets/sound/vitoria.wav");
-    Sound somMusicaVitoria = LoadSound("assets/sound/musica_vitoria.wav");
+    Sound somMusicaVitoria = LoadSound("assets/sound/musica_vitoria.mp3");
     
     // Ajusta volume dos sons (0.0 a 1.0)
     SetSoundVolume(somMenu, 0.3f);
@@ -135,7 +135,7 @@ int main(void) {
     
     while (!WindowShouldClose()) {
         if (estadoJogo == 0) {
-            TelaMenu(&estadoJogo, screenWidth, screenHeight, background_menu, somMenu);
+            TelaMenu(&estadoJogo, screenWidth, screenHeight, background_menu, somMenu, somMusicaVitoria);
         } else if (estadoJogo == 1) {
             TelaNickname(&estadoJogo, screenWidth, screenHeight, background_menu, nickname);
         } else if (estadoJogo == 2) {
@@ -167,8 +167,11 @@ int main(void) {
     return 0;
 }
 
-void TelaMenu(int *estadoJogo, int screenWidth, int screenHeight, Texture2D background, Sound somMenu) {
+void TelaMenu(int *estadoJogo, int screenWidth, int screenHeight, Texture2D background, Sound somMenu, Sound somMusicaVitoria) {
     // Toca som do menu em loop (se não estiver tocando)
+    if (IsSoundPlaying(somMusicaVitoria)) {
+        StopSound(somMusicaVitoria);
+    }
     if (!IsSoundPlaying(somMenu)) {
         PlaySound(somMenu);
     }
@@ -277,6 +280,7 @@ void TelaNickname(int *estadoJogo, int screenWidth, int screenHeight, Texture2D 
     Color yellow = (Color){254, 255, 153, 255}; // #feff99
     Color blue = (Color){175, 218, 225, 255};   // #afdae1
     Color green = (Color){87, 183, 33, 255};    // #57b721
+    Color cyan = (Color){102, 255, 255, 255};   // #66FFFF - azul ciano para título
 
     // caixa de texto
     float boxWidth = screenWidth * 0.4f;
@@ -402,6 +406,33 @@ void TelaNickname(int *estadoJogo, int screenWidth, int screenHeight, Texture2D 
                    fontSize * 0.5f, 2, DARKGRAY);
     }
 
+    // Botão de voltar
+    btnWidth = screenWidth * 0.2f;
+    btnHeight = screenHeight * 0.08f;
+    Rectangle backBtn = {
+        screenWidth / 2 - btnWidth / 2,
+        screenHeight * 0.9f,
+        btnWidth,
+        btnHeight
+    };
+    
+    mousePos = GetMousePosition();
+    bool hoverBack = CheckCollisionPointRec(mousePos, backBtn);
+    
+    if (hoverBack && IsMouseButtonPressed(MOUSE_LEFT_BUTTON)) {
+        *estadoJogo = 0; // Volta ao menu
+    }
+
+    // Desenha botão voltar
+    DrawRectangleRounded(backBtn, 0.3f, 10, hoverBack ? (Color){254, 255, 153, 255} : cyan);
+    float btnTextSize = screenWidth * 0.04f;
+    const char* backText = "VOLTAR";
+    Vector2 backMeasure = MeasureTextEx(GetFontDefault(), backText, btnTextSize, 2);
+    DrawTextEx(GetFontDefault(), backText,
+               (Vector2){backBtn.x + btnWidth / 2 - backMeasure.x / 2,
+                        backBtn.y + btnHeight / 2 - btnTextSize / 2},
+               btnTextSize, 2, hoverBack ? pink : (Color){0, 0, 0, 255});
+    
     EndDrawing();
 }
 
@@ -413,11 +444,12 @@ void TelaJogo(int *estadoJogo, int screenWidth, int screenHeight, Texture2D back
     static bool inicializado = false;
     static int frameCount = 0;
     static int frameCountItens = 0;
+    static int frameCountItensInicial = -90; // Começa em -90 para dar 1.5seg de delay (90 frames = 1.5seg)
     static float velocidadeJogo = 3.0f; // Velocidade inicial: 3.0 m/s
-    static float velocidadeMaxima = 30.0f; // Velocidade máxima: 30 m/s
+    static float velocidadeMaxima = 8.0f; // Velocidade máxima: 8 m/s
     static float intervaloAceleracao = 30.0f; // Acelera a cada 30 segundos
     static float tempoUltimaAceleracao = 0.0f; // Controla quando acelerar
-    static float incrementoVelocidade = 2.0f; // Aumenta 2 m/s a cada intervalo
+    static float incrementoVelocidade = 1.0f; // Aumenta 1 m/s a cada intervalo
     static float tempoDecorrido = 0.0f; // Tempo em segundos
     static bool gameOver = false;
     static bool vitoria = false;
@@ -433,6 +465,8 @@ void TelaJogo(int *estadoJogo, int screenWidth, int screenHeight, Texture2D back
     static int framesMinimos = 40; // Mínimo de 0.66 segundo (~40 frames)
     static float tempoUltimoAumentoFrequencia = 0.0f; // Controla quando aumentar frequência
     static float intervaloAumentoFrequencia = 10.0f; // Aumenta frequência a cada 10 segundos
+    static int framesEntreItens = 120; // Começa com 2 segundos
+    static bool primeiraAceleracaoFeita = false; // Controla se já acelerou uma vez
     
     // Texturas dos obstáculos
     static Texture2D spriteOnibusEsquerdo = {0};
@@ -466,7 +500,7 @@ void TelaJogo(int *estadoJogo, int screenWidth, int screenHeight, Texture2D back
     static int cenaVitoria = 0; // 0 = tela normal, 1 = scene1, 2 = scene2, 3 = voltou ao normal
     
     // Perspectiva das lanes - ajustadas para coincidir com as faixas do asfalto
-    const float horizon_y = 200.0f;          // linha do horizonte onde a estrada começa
+    const float horizon_y = 150.0f;          // linha do horizonte onde a estrada começa
     // Medidas calibradas para coincidir com a imagem de fundo (800x600)
     // No topo (horizonte): as 3 lanes ocupam aproximadamente 25% da largura da tela
     // Na base: ocupam mais que a largura da tela para coincidir com as faixas
@@ -500,11 +534,12 @@ void TelaJogo(int *estadoJogo, int screenWidth, int screenHeight, Texture2D back
         
         frameCount = 0;
         frameCountItens = 0;
+        frameCountItensInicial = -90; // Reseta o delay de 1.5seg para itens
         velocidadeJogo = 3.0f; // Velocidade inicial
-        velocidadeMaxima = 30.0f;
+        velocidadeMaxima = 8.0f;
         intervaloAceleracao = 30.0f;
         tempoUltimaAceleracao = 0.0f;
-        incrementoVelocidade = 2.0f;
+        incrementoVelocidade = 1.0f;
         tempoDecorrido = 0.0f;
         gameOver = false;
         vitoria = false;
@@ -512,6 +547,8 @@ void TelaJogo(int *estadoJogo, int screenWidth, int screenHeight, Texture2D back
         
         // Inicializa sistema progressivo de obstáculos
         framesEntreObstaculos = 180; // Começa com 3 segundos
+        framesEntreItens = 180; // Começa com 3 segundos
+        primeiraAceleracaoFeita = false; // Reseta flag de primeira aceleração
         tempoUltimoAumentoFrequencia = 0.0f;
         
         // Cria obstáculos iniciais imediatamente
@@ -614,7 +651,13 @@ void TelaJogo(int *estadoJogo, int screenWidth, int screenHeight, Texture2D back
                     velocidadeJogo = velocidadeMaxima;
                 }
                 tempoUltimaAceleracao = tempoDecorrido;
-                // Ativa mensagem de aceleração
+                
+                // Na primeira aceleração, aumenta frequência para 2seg (120 frames)
+                if (!primeiraAceleracaoFeita) {
+                    framesEntreObstaculos = 120;
+                    framesEntreItens = 120;
+                    primeiraAceleracaoFeita = true;
+                }
             }
         }
 
@@ -647,11 +690,14 @@ void TelaJogo(int *estadoJogo, int screenWidth, int screenHeight, Texture2D back
 
         
 
-        // gerar itens colecionáveis a cada 180 frames (3 seg)
-        frameCountItens++;
-        if (frameCountItens >= 90) {
-            criarItem(itens, MAX_ITENS, screenHeight, obstaculos, MAX_OBSTACULOS, horizon_y, itensColetados);
-            frameCountItens = 0;
+        // gerar itens colecionáveis (frequência variável), mas só após 1.5seg do primeiro obstáculo
+        frameCountItensInicial++;
+        if (frameCountItensInicial >= 0) {
+            frameCountItens++;
+            if (frameCountItens >= framesEntreItens) {
+                criarItem(itens, MAX_ITENS, screenHeight, obstaculos, MAX_OBSTACULOS, horizon_y, itensColetados);
+                frameCountItens = 0;
+            }
         }
 
         float dt = GetFrameTime();
@@ -697,7 +743,6 @@ void TelaJogo(int *estadoJogo, int screenWidth, int screenHeight, Texture2D back
                 else if (tipo == 5) {
                     // SONO: "você dormiu e perdeu a parada" - aumenta 5 segundos no tempo
                     tempoDecorrido += 5.0f;
-                    // Marca como coletado para mostrar mensagem customizada
                     itensColetados[tipo]++;
                     PlaySound(somItemRuim); // Toca som de item ruim
                 }
@@ -727,7 +772,7 @@ void TelaJogo(int *estadoJogo, int screenWidth, int screenHeight, Texture2D back
                         itensColetados[itemRemovido]--;
                     }
                     itensColetados[tipo]++;
-                    PlaySound(somItemRuim); // Toca som de item ruim
+                    PlaySound(somItemRuim);
                 }
             }
         }
@@ -791,9 +836,9 @@ void TelaJogo(int *estadoJogo, int screenWidth, int screenHeight, Texture2D back
             }
         }
         
-        // ENTER para avançar entre cenas de vitória
-        if (IsKeyPressed(KEY_ENTER) && vitoria && cenaVitoria > 0 && cenaVitoria < 3) {
-            cenaVitoria++; // Avança para próxima cena
+        // ENTER para avançar da cena 1 direto para tela de game over
+        if (IsKeyPressed(KEY_ENTER) && vitoria && cenaVitoria == 1) {
+            cenaVitoria = 3; // Pula direto para tela de game over com fundo da cena 2
         }
         
         // "Game Over" ou "Vitória" - R p reiniciar (mantém tempo e itens coletados)
@@ -907,10 +952,6 @@ void TelaJogo(int *estadoJogo, int screenWidth, int screenHeight, Texture2D back
         (Color){100, 100, 100, 100}
     );
     
-    // divisórias das lanes
-    DrawLine(lane_offset_bottom + lane_width_bottom, screenHeight, lane_offset_top + lane_width_top, horizon_y, DARKGRAY);
-    DrawLine(lane_offset_bottom + lane_width_bottom * 2, screenHeight, lane_offset_top + lane_width_top * 2, horizon_y, DARKGRAY);
-
     // caminho dos obstaculos com perspectiva
     for (int i = 0; i < MAX_OBSTACULOS; i++) {
         if (obstaculos[i].ativo) {
@@ -975,8 +1016,8 @@ void TelaJogo(int *estadoJogo, int screenWidth, int screenHeight, Texture2D back
                 // parada de onibus com teto = obstaculo alto vazado (abaixar com S)
                 if (spritePneu.id > 0) {
                     // Sprite visual de pneu (tamanho ajustado com escala)
-                    float sprite_largura_pneu = 120.0f * scale;
-                    float sprite_altura_pneu = 120.0f * scale;
+                    float sprite_largura_pneu = 150.0f * scale;
+                    float sprite_altura_pneu = 150.0f * scale;
                     Rectangle source = {0, 0, (float)spritePneu.width, (float)spritePneu.height};
                     Rectangle dest = {obs_x - sprite_largura_pneu / 2, obstaculos[i].pos_y, sprite_largura_pneu, sprite_altura_pneu};
                     DrawTexturePro(spritePneu, source, dest, (Vector2){0, 0}, 0.0f, WHITE);
@@ -1094,25 +1135,18 @@ void TelaJogo(int *estadoJogo, int screenWidth, int screenHeight, Texture2D back
             if (!IsSoundPlaying(somVitoria) && !IsSoundPlaying(somMusicaVitoria)) {
                 PlaySound(somMusicaVitoria);
             }
-        }
-        
-        // Se for vitória e ainda está nas cenas de vitória (1 ou 2)
-        if (vitoria && cenaVitoria > 0 && cenaVitoria < 3) {
-            // Mostra cena de vitória 1
+
+            // Se está na cena de vitória 1
             if (cenaVitoria == 1 && texturaVitoria1.id > 0) {
-                Rectangle source = {0, 0, (float)texturaVitoria1.width, (float)texturaVitoria1.height};
-                Rectangle dest = {0, 0, (float)screenWidth, (float)screenHeight};
-                DrawTexturePro(texturaVitoria1, source, dest, (Vector2){0, 0}, 0.0f, WHITE);
-                
-                const char* instrucao = "Pressione ENTER para continuar...";
-                int instrWidth = MeasureText(instrucao, 20);
-                DrawText(instrucao, screenWidth/2 - instrWidth/2, screenHeight - 40, 20, WHITE);
-            }
-        } else {
-            // Tela normal de game over (após as cenas ou se não for vitória)
-            // Desenha imagem de fundo conforme o resultado
-            if (vitoria) {
-                // Usa vitoria_scene2 como fundo da tela de vitória
+                    Rectangle source = {0, 0, (float)texturaVitoria1.width, (float)texturaVitoria1.height};
+                    Rectangle dest = {0, 0, (float)screenWidth, (float)screenHeight};
+                    DrawTexturePro(texturaVitoria1, source, dest, (Vector2){0, 0}, 0.0f, WHITE);
+                    
+                    const char* instrucao = "Pressione ENTER para continuar...";
+                    int instrWidth = MeasureText(instrucao, 20);
+                    DrawText(instrucao, screenWidth/2 - instrWidth/2, screenHeight - 40, 20, WHITE);
+            } else {
+                // cena de vitoria 2 (com tempo e itens coletados)
                 if (texturaVitoria2.id > 0) {
                     Rectangle source = {0, 0, (float)texturaVitoria2.width, (float)texturaVitoria2.height};
                     Rectangle dest = {0, 0, (float)screenWidth, (float)screenHeight};
@@ -1121,25 +1155,12 @@ void TelaJogo(int *estadoJogo, int screenWidth, int screenHeight, Texture2D back
                     // Fallback: overlay escuro se a imagem não carregar
                     DrawRectangle(0, 0, screenWidth, screenHeight, (Color){0, 0, 0, 150});
                 }
-            } else {
-                // Usa gameOver.png como fundo quando perde
-                if (texturaGameOver.id > 0) {
-                    Rectangle source = {0, 0, (float)texturaGameOver.width, (float)texturaGameOver.height};
-                    Rectangle dest = {0, 0, (float)screenWidth, (float)screenHeight};
-                    DrawTexturePro(texturaGameOver, source, dest, (Vector2){0, 0}, 0.0f, WHITE);
-                } else {
-                    // Fallback: overlay escuro se a imagem não carregar
-                    DrawRectangle(0, 0, screenWidth, screenHeight, (Color){0, 0, 0, 150});
-                }
-            }
-            
-            // Overlay semi-transparente para melhorar legibilidade dos textos
-            DrawRectangle(0, 0, screenWidth, screenHeight, (Color){0, 0, 0, 100});
-            
-            // Offset de 57 pixels (aproximadamente 1.5cm considerando DPI padrão)
-            int offsetY = -57;
-            
-            if (vitoria) {
+
+                // Overlay semi-transparente para melhorar legibilidade dos textos
+                DrawRectangle(0, 0, screenWidth, screenHeight, (Color){0, 0, 0, 100});
+                
+                // Offset de 57 pixels (aproximadamente 1.5cm considerando DPI padrão)
+                int offsetY = -57;
                 const char* titulo = "VOCÊ VENCEU!";
                 int tituloWidth = MeasureText(titulo, 70);
                 // Sombra do texto para melhor contraste
@@ -1150,105 +1171,111 @@ void TelaJogo(int *estadoJogo, int screenWidth, int screenHeight, Texture2D back
                 int subtituloWidth = MeasureText(subtitulo, 25);
                 DrawText(subtitulo, screenWidth/2 - subtituloWidth/2 + 2, screenHeight/2 - 47 + offsetY, 25, BLACK);
                 DrawText(subtitulo, screenWidth/2 - subtituloWidth/2, screenHeight/2 - 45 + offsetY, 25, WHITE);
+                
+                // Tempo centralizado
+                int minutos = (int)tempoDecorrido / 60;
+                int segundos = (int)tempoDecorrido % 60;
+                const char* textoTempo = TextFormat("Tempo: %02d:%02d", minutos, segundos);
+                int tempoWidth = MeasureText(textoTempo, 40);
+                DrawText(textoTempo, screenWidth/2 - tempoWidth/2 + 2, screenHeight/2 + 12 + offsetY, 40, BLACK);
+                DrawText(textoTempo, screenWidth/2 - tempoWidth/2, screenHeight/2 + 10 + offsetY, 40, WHITE);
+                
+                // Label "Itens coletados" centralizado
+                const char* labelItens = "Itens coletados:";
+                int labelWidth = MeasureText(labelItens, 28);
+                DrawText(labelItens, screenWidth/2 - labelWidth/2 + 2, screenHeight/2 + 62 + offsetY, 28, BLACK);
+                DrawText(labelItens, screenWidth/2 - labelWidth/2, screenHeight/2 + 60 + offsetY, 28, WHITE);
+                
+                // Ícones dos itens centralizados
+                // Cada ícone: 48px de largura, espaçamento de 60px entre centros
+                // Total: 5 ícones com 4 espaços de 60px = 240px de espaçamento + 48px/2 em cada ponta
+                int totalWidth = (TIPOS_ITENS - 1) * 60 + 48; // Largura total: 4*60 + 48 = 288px
+                int startX = screenWidth/2 - totalWidth/2 + 24; // +24 para começar no centro do primeiro ícone
+                for (int i = 0; i < TIPOS_ITENS; i++) {
+                    int icon_x = startX + (i * 60);
+                    int icon_y = screenHeight/2 + 75 + offsetY;
+                    if (texturasItens[i].id > 0) {
+                        Rectangle source = {0, 0, (float)texturasItens[i].width, (float)texturasItens[i].height};
+                        Rectangle dest = {icon_x - 24, icon_y, 48, 48};
+                        DrawTexturePro(texturasItens[i], source, dest, (Vector2){0, 0}, 0.0f, WHITE);
+                    } else {
+                        DrawCircle(icon_x, icon_y + 24, 12, coresItens[i]);
+                    }
+                    // Quantidade centralizada abaixo da imagem
+                    const char* texto = TextFormat("%d", itensColetados[i]);
+                    int textWidth = MeasureText(texto, 30);
+                    DrawText(texto, icon_x - textWidth/2 + 2, icon_y + 57, 30, BLACK);
+                    DrawText(texto, icon_x - textWidth/2, icon_y + 55, 30, WHITE);
+                }
+                
+                // Instruções centralizadas
+                const char* instrucao1 = "R = Continuar | X = Resetar";
+                int instr1Width = MeasureText(instrucao1, 25);
+                DrawText(instrucao1, screenWidth/2 - instr1Width/2 + 2, screenHeight/2 + 172 + offsetY, 25, BLACK);
+                DrawText(instrucao1, screenWidth/2 - instr1Width/2, screenHeight/2 + 170 + offsetY, 25, WHITE);
+                
+                const char* instrucao2 = "P = Pausar | ESC = Fechar jogo";
+                int instr2Width = MeasureText(instrucao2, 25);
+                DrawText(instrucao2, screenWidth/2 - instr2Width/2 + 2, screenHeight/2 + 207 + offsetY, 25, BLACK);
+                DrawText(instrucao2, screenWidth/2 - instr2Width/2, screenHeight/2 + 205 + offsetY, 25, WHITE);
             }
-            
-            // Tempo centralizado
+        } else { // perdeu
+            if (texturaGameOver.id > 0) {
+                Rectangle source = {0, 0, (float)texturaGameOver.width, (float)texturaGameOver.height};
+                Rectangle dest = {0, 0, (float)screenWidth, (float)screenHeight};
+                DrawTexturePro(texturaGameOver, source, dest, (Vector2){0, 0}, 0.0f, WHITE);
+            } else { // Fallback: overlay escuro se a imagem não carregar
+                DrawRectangle(0, 0, screenWidth, screenHeight, (Color){0, 0, 0, 150});
+            }
+            // debug e HUD
+            // Mostra tempo em minutos:segundos
             int minutos = (int)tempoDecorrido / 60;
             int segundos = (int)tempoDecorrido % 60;
-            const char* textoTempo = TextFormat("Tempo: %02d:%02d", minutos, segundos);
-            int tempoWidth = MeasureText(textoTempo, 40);
-            DrawText(textoTempo, screenWidth/2 - tempoWidth/2 + 2, screenHeight/2 + 12 + offsetY, 40, BLACK);
-            DrawText(textoTempo, screenWidth/2 - tempoWidth/2, screenHeight/2 + 10 + offsetY, 40, WHITE);
+            DrawText(TextFormat("Tempo: %02d:%02d", minutos, segundos), 10, 10, 30, BLACK);
+            DrawText(TextFormat("Velocidade: %.1f m/s", velocidadeJogo), 10, 45, 20, BLACK);
             
-            // Label "Itens coletados" centralizado
-            const char* labelItens = "Itens coletados:";
-            int labelWidth = MeasureText(labelItens, 28);
-            DrawText(labelItens, screenWidth/2 - labelWidth/2 + 2, screenHeight/2 + 62 + offsetY, 28, BLACK);
-            DrawText(labelItens, screenWidth/2 - labelWidth/2, screenHeight/2 + 60 + offsetY, 28, WHITE);
+            // Barra de progresso para próxima aceleração
+            if (velocidadeJogo < velocidadeMaxima) {
+                float tempoDesdeUltimaAceleracao = tempoDecorrido - tempoUltimaAceleracao;
+                float progressoAceleracao = tempoDesdeUltimaAceleracao / intervaloAceleracao;
+                if (progressoAceleracao > 1.0f) progressoAceleracao = 1.0f;
+                
+                int barWidth = 200;
+                int barHeight = 15;
+                int barX = 10;
+                int barY = 72;
+                
+                // Fundo da barra
+                DrawRectangle(barX, barY, barWidth, barHeight, (Color){50, 50, 50, 200});
+                // Progresso
+                DrawRectangle(barX, barY, (int)(barWidth * progressoAceleracao), barHeight, (Color){255, 200, 0, 255});
+                // Borda
+                DrawRectangleLines(barX, barY, barWidth, barHeight, BLACK);
+            } else {
+                DrawText("VELOCIDADE MÁXIMA ATINGIDA!", 10, 72, 15, RED);
+            }
             
-            // Ícones dos itens centralizados
-            // Cada ícone: 48px de largura, espaçamento de 60px entre centros
-            // Total: 5 ícones com 4 espaços de 60px = 240px de espaçamento + 48px/2 em cada ponta
-            int totalWidth = (TIPOS_ITENS - 1) * 60 + 48; // Largura total: 4*60 + 48 = 288px
-            int startX = screenWidth/2 - totalWidth/2 + 24; // +24 para começar no centro do primeiro ícone
+            DrawText(TextFormat("Lane: %d", jogador.lane), 10, 95, 20, BLACK);
+            
+            // Mostra itens coletados durante o jogo
+            DrawText("Itens:", 10, 120, 20, BLACK);
             for (int i = 0; i < TIPOS_ITENS; i++) {
-                int icon_x = startX + (i * 60);
-                int icon_y = screenHeight/2 + 75 + offsetY;
+                int icon_x = 20 + (i * 35);
+                int icon_y = 140;
                 if (texturasItens[i].id > 0) {
                     Rectangle source = {0, 0, (float)texturasItens[i].width, (float)texturasItens[i].height};
-                    Rectangle dest = {icon_x - 24, icon_y, 48, 48};
+                    Rectangle dest = {icon_x - 24, icon_y, 48, 48}; // Aumentado de 24x24 para 48x48
                     DrawTexturePro(texturasItens[i], source, dest, (Vector2){0, 0}, 0.0f, WHITE);
                 } else {
-                    DrawCircle(icon_x, icon_y + 24, 12, coresItens[i]);
+                    DrawCircle(icon_x, icon_y + 10, 12, coresItens[i]);
                 }
-                // Quantidade centralizada abaixo da imagem
-                const char* texto = TextFormat("%d", itensColetados[i]);
-                int textWidth = MeasureText(texto, 30);
-                DrawText(texto, icon_x - textWidth/2 + 2, icon_y + 57, 30, BLACK);
-                DrawText(texto, icon_x - textWidth/2, icon_y + 55, 30, WHITE);
+                DrawText(TextFormat("%d", itensColetados[i]), 15 + (i * 35), 165, 15, itensColetados[i] > 0 ? GREEN : RED);
             }
             
-            // Instruções centralizadas
-            const char* instrucao1 = "Pressione R para reiniciar";
-            int instr1Width = MeasureText(instrucao1, 25);
-            DrawText(instrucao1, screenWidth/2 - instr1Width/2 + 2, screenHeight/2 + 172 + offsetY, 25, BLACK);
-            DrawText(instrucao1, screenWidth/2 - instr1Width/2, screenHeight/2 + 170 + offsetY, 25, WHITE);
-            
-            const char* instrucao2 = "P=Pausar | X=Resetar | ESC=Fechar jogo";
-            int instr2Width = MeasureText(instrucao2, 25);
-            DrawText(instrucao2, screenWidth/2 - instr2Width/2 + 2, screenHeight/2 + 207 + offsetY, 25, BLACK);
-            DrawText(instrucao2, screenWidth/2 - instr2Width/2, screenHeight/2 + 205 + offsetY, 25, WHITE);
+            DrawText("W = Pular | A = Esq | D = Dir | S = Deslizar", 10, screenHeight - 50, 18, BLACK);
+            DrawText("P = Pausar | X = Menu", 10, screenHeight - 28, 18, BLACK);
         }
-    } else {
-        // debug e HUD
-        // Mostra tempo em minutos:segundos
-        int minutos = (int)tempoDecorrido / 60;
-        int segundos = (int)tempoDecorrido % 60;
-        DrawText(TextFormat("Tempo: %02d:%02d", minutos, segundos), 10, 10, 30, BLACK);
-        DrawText(TextFormat("Velocidade: %.1f m/s", velocidadeJogo), 10, 45, 20, BLACK);
-        
-        // Barra de progresso para próxima aceleração
-        if (velocidadeJogo < velocidadeMaxima) {
-            float tempoDesdeUltimaAceleracao = tempoDecorrido - tempoUltimaAceleracao;
-            float progressoAceleracao = tempoDesdeUltimaAceleracao / intervaloAceleracao;
-            if (progressoAceleracao > 1.0f) progressoAceleracao = 1.0f;
-            
-            int barWidth = 200;
-            int barHeight = 15;
-            int barX = 10;
-            int barY = 72;
-            
-            // Fundo da barra
-            DrawRectangle(barX, barY, barWidth, barHeight, (Color){50, 50, 50, 200});
-            // Progresso
-            DrawRectangle(barX, barY, (int)(barWidth * progressoAceleracao), barHeight, (Color){255, 200, 0, 255});
-            // Borda
-            DrawRectangleLines(barX, barY, barWidth, barHeight, BLACK);
-        } else {
-            DrawText("VELOCIDADE MÁXIMA ATINGIDA!", 10, 72, 15, RED);
-        }
-        
-        DrawText(TextFormat("Lane: %d", jogador.lane), 10, 95, 20, BLACK);
-        
-        // Mostra itens coletados durante o jogo
-        DrawText("Itens:", 10, 120, 20, BLACK);
-        for (int i = 0; i < TIPOS_ITENS; i++) {
-            int icon_x = 20 + (i * 35);
-            int icon_y = 140;
-            if (texturasItens[i].id > 0) {
-                Rectangle source = {0, 0, (float)texturasItens[i].width, (float)texturasItens[i].height};
-                Rectangle dest = {icon_x - 24, icon_y, 48, 48}; // Aumentado de 24x24 para 48x48
-                DrawTexturePro(texturasItens[i], source, dest, (Vector2){0, 0}, 0.0f, WHITE);
-            } else {
-                DrawCircle(icon_x, icon_y + 10, 12, coresItens[i]);
-            }
-            DrawText(TextFormat("%d", itensColetados[i]), 15 + (i * 35), 165, 15, itensColetados[i] > 0 ? GREEN : RED);
-        }
-        
-        DrawText("W=Pular | A=Esq | D=Dir | S=Deslizar", 10, screenHeight - 50, 18, BLACK);
-        DrawText("P=Pausar | X=Menu", 10, screenHeight - 28, 18, BLACK);
     }
-
     EndDrawing();
 }
 
@@ -1367,34 +1394,6 @@ void TelaRanking(int *estadoJogo, int screenWidth, int screenHeight, Texture2D b
         rank++;
     }
     
-    // Exibe o último score do jogador (se houver)
-    if (ultimoTempoJogador > 0.0f && ultimoNicknameJogador[0] != '\0') {
-        float yourScoreY = rowY + 30;
-        float yourScoreSize = screenWidth * 0.035f;
-        
-        // Box de destaque para o score do jogador
-        float yourScoreBoxHeight = 50;
-        DrawRectangleRounded((Rectangle){tableX + 5, yourScoreY - 10, tableWidth - 10, yourScoreBoxHeight}, 0.1f, 10, (Color){255, 215, 0, 150}); // dourado transparente
-        DrawRectangleLinesEx((Rectangle){tableX + 5, yourScoreY - 10, tableWidth - 10, yourScoreBoxHeight}, 2.0f, (Color){255, 215, 0, 255});
-        
-        // Texto "SEU SCORE:"
-        DrawTextEx(GetFontDefault(), "SEU SCORE:", 
-                   (Vector2){colRankX, yourScoreY}, yourScoreSize, 2, (Color){0, 0, 0, 255});
-        
-        // Nome do jogador
-        char playerName[21];
-        strncpy(playerName, ultimoNicknameJogador, 20);
-        playerName[20] = '\0';
-        DrawTextEx(GetFontDefault(), playerName, 
-                   (Vector2){colPlayerX, yourScoreY}, yourScoreSize, 2, (Color){0, 0, 0, 255});
-        
-        // Tempo formatado
-        int minutos = (int)ultimoTempoJogador / 60;
-        float segundos = ultimoTempoJogador - (minutos * 60);
-        DrawTextEx(GetFontDefault(), TextFormat("%02d:%05.2f", minutos, segundos), 
-                   (Vector2){colScoreX, yourScoreY}, yourScoreSize, 2, (Color){0, 0, 0, 255});
-    }
-    
     // Botão de voltar
     float btnWidth = screenWidth * 0.2f;
     float btnHeight = screenHeight * 0.08f;
@@ -1421,15 +1420,6 @@ void TelaRanking(int *estadoJogo, int screenWidth, int screenHeight, Texture2D b
                (Vector2){backBtn.x + btnWidth / 2 - backMeasure.x / 2,
                         backBtn.y + btnHeight / 2 - btnTextSize / 2},
                btnTextSize, 2, hoverBack ? pink : (Color){0, 0, 0, 255});
-    
-    // Instruções
-    DrawTextEx(GetFontDefault(), "Pressione ESC para voltar ao menu", 
-               (Vector2){10, screenHeight - 30}, 18, 1, white);
-    
-    // Permite voltar com ESC
-    if (IsKeyPressed(KEY_ESCAPE)) {
-        *estadoJogo = 0;
-    }
     
     EndDrawing();
 }
@@ -1608,15 +1598,6 @@ void TelaComoJogar(int *estadoJogo, int screenWidth, int screenHeight, Texture2D
                (Vector2){backBtn.x + btnWidth / 2 - backMeasure.x / 2,
                         backBtn.y + btnHeight / 2 - btnTextSize / 2},
                btnTextSize, 2, hoverBack ? pink : (Color){0, 0, 0, 255});
-    
-    // Instruções
-    DrawTextEx(GetFontDefault(), "Pressione ESC para voltar ao menu", 
-               (Vector2){10, screenHeight - 30}, 18, 1, white);
-    
-    // Permite voltar com ESC
-    if (IsKeyPressed(KEY_ESCAPE)) {
-        *estadoJogo = 0;
-    }
     
     EndDrawing();
 }
