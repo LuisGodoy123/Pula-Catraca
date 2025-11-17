@@ -22,6 +22,10 @@ void TelaComoJogar(int *estadoJogo, int screenWidth, int screenHeight, Texture2D
 // Ranking (persistente)
 static RankingList ranking;
 
+// Último score do jogador (para exibir na tela de ranking)
+static float ultimoTempoJogador = 0.0f;
+static char ultimoNicknameJogador[50] = "";
+
 // Helper: desenha texto com quebra por largura (word wrap) e retorna a altura ocupada
 static float DrawWrappedText(Font font, const char *text, Vector2 pos, float fontSize, float spacing, float wrapWidth, Color tint) {
     // Copia o texto para poder tokenizar
@@ -752,6 +756,12 @@ void TelaJogo(int *estadoJogo, int screenWidth, int screenHeight, Texture2D back
                 saveTopCSV(&ranking, "ranking_top10.csv", 10);
                 saveRankingAll(&ranking, "ranking_all.csv");
                 rankingInserido = true;
+                
+                // Salva o último tempo e nickname do jogador para exibir no ranking
+                ultimoTempoJogador = tempoDecorrido;
+                strncpy(ultimoNicknameJogador, nickname, sizeof(ultimoNicknameJogador) - 1);
+                ultimoNicknameJogador[sizeof(ultimoNicknameJogador) - 1] = '\0';
+                
                 gameOver = true; // Termina o jogo
                 cenaVitoria = 1; // Inicia sequência de cenas de vitória
                 PlaySound(somVitoria); // Toca som de vitória
@@ -1322,7 +1332,7 @@ void TelaRanking(int *estadoJogo, int screenWidth, int screenHeight, Texture2D b
     float lineY = headerY + headerSize + 10;
     DrawRectangle(tableX, lineY, tableWidth, 3, white);
     
-    // Desenha top 10 do ranking
+    // Desenha top 5 do ranking
     float rowHeight = 45;
     float rowY = lineY + 15;
     float rowSize = screenWidth * 0.035f;
@@ -1330,7 +1340,7 @@ void TelaRanking(int *estadoJogo, int screenWidth, int screenHeight, Texture2D b
     RankingNode* current = ranking.head;
     int rank = 1;
     
-    while (current != NULL && rank <= 10) {
+    while (current != NULL && rank <= 5) {
         // Alterna cores das linhas (verde e ciano)
         Color rowColor = (rank % 2 == 1) ? green1 : cyan2;
         
@@ -1359,8 +1369,8 @@ void TelaRanking(int *estadoJogo, int screenWidth, int screenHeight, Texture2D b
         rank++;
     }
     
-    // Preenche linhas vazias se houver menos de 10
-    while (rank <= 10) {
+    // Preenche linhas vazias se houver menos de 5
+    while (rank <= 5) {
         Color rowColor = (rank % 2 == 1) ? green1 : cyan2;
         DrawRectangle(tableX + 5, rowY - 5, tableWidth - 10, rowHeight - 5, rowColor);
         
@@ -1373,6 +1383,34 @@ void TelaRanking(int *estadoJogo, int screenWidth, int screenHeight, Texture2D b
         
         rowY += rowHeight;
         rank++;
+    }
+    
+    // Exibe o último score do jogador (se houver)
+    if (ultimoTempoJogador > 0.0f && ultimoNicknameJogador[0] != '\0') {
+        float yourScoreY = rowY + 30;
+        float yourScoreSize = screenWidth * 0.035f;
+        
+        // Box de destaque para o score do jogador
+        float yourScoreBoxHeight = 50;
+        DrawRectangleRounded((Rectangle){tableX + 5, yourScoreY - 10, tableWidth - 10, yourScoreBoxHeight}, 0.1f, 10, (Color){255, 215, 0, 150}); // dourado transparente
+        DrawRectangleLinesEx((Rectangle){tableX + 5, yourScoreY - 10, tableWidth - 10, yourScoreBoxHeight}, 2.0f, (Color){255, 215, 0, 255});
+        
+        // Texto "SEU SCORE:"
+        DrawTextEx(GetFontDefault(), "SEU SCORE:", 
+                   (Vector2){colRankX, yourScoreY}, yourScoreSize, 2, (Color){0, 0, 0, 255});
+        
+        // Nome do jogador
+        char playerName[21];
+        strncpy(playerName, ultimoNicknameJogador, 20);
+        playerName[20] = '\0';
+        DrawTextEx(GetFontDefault(), playerName, 
+                   (Vector2){colPlayerX, yourScoreY}, yourScoreSize, 2, (Color){0, 0, 0, 255});
+        
+        // Tempo formatado
+        int minutos = (int)ultimoTempoJogador / 60;
+        float segundos = ultimoTempoJogador - (minutos * 60);
+        DrawTextEx(GetFontDefault(), TextFormat("%02d:%05.2f", minutos, segundos), 
+                   (Vector2){colScoreX, yourScoreY}, yourScoreSize, 2, (Color){0, 0, 0, 255});
     }
     
     // Botão de voltar
