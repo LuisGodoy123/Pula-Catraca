@@ -84,11 +84,7 @@ int main(void) {
 
     // Inicializa e carrega ranking salvo (se existir)
     initRanking(&ranking);
-    loadRankingAll(&ranking, "ranking_all.csv");
-
-    // Inicializa ranking em memória e carrega do disco (arquivo com todos os tempos)
-    initRanking(&ranking);
-    loadRankingAll(&ranking, "ranking_all.csv");
+    loadRankingAll(&ranking, "ranking_all.txt");
     
     // Carrega sons
     Sound somMenu = LoadSound("assets/sound/scene_inicial.wav");
@@ -151,8 +147,8 @@ int main(void) {
         }
     }
     // salva ranking completo e top10 antes de sair
-    saveRankingAll(&ranking, "ranking_all.csv");
-    saveTopCSV(&ranking, "ranking_top10.csv", 10);
+    saveRankingAll(&ranking, "ranking_all.txt");
+    saveTopTXT(&ranking, "ranking_top10.txt", 10);
     freeRanking(&ranking);
     
     // Descarrega sons
@@ -438,7 +434,7 @@ void TelaJogo(int *estadoJogo, int screenWidth, int screenHeight, Texture2D back
     static float tempoUltimoAumentoFrequencia = 0.0f; // Controla quando aumentar frequência
     static float intervaloAumentoFrequencia = 10.0f; // Aumenta frequência a cada 10 segundos
     
-    // Texturas dos obstáculos (carregadas uma vez)
+    // Texturas dos obstáculos
     static Texture2D spriteOnibusEsquerdo = {0};
     static Texture2D spriteOnibusCentro = {0};
     static Texture2D spriteOnibusDireito = {0};
@@ -446,7 +442,7 @@ void TelaJogo(int *estadoJogo, int screenWidth, int screenHeight, Texture2D back
     static Texture2D spritePneu = {0};
     static bool spritesCarregadas = false;
     
-    // Texturas dos itens colecionáveis (carregadas uma vez)
+    // Texturas dos itens colecionáveis
     static Texture2D texturasItens[TIPOS_ITENS] = {0};
     static bool texturasCarregadas = false;
     
@@ -470,18 +466,14 @@ void TelaJogo(int *estadoJogo, int screenWidth, int screenHeight, Texture2D back
     static int cenaVitoria = 0; // 0 = tela normal, 1 = scene1, 2 = scene2, 3 = voltou ao normal
     
     // Perspectiva das lanes - ajustadas para coincidir com as faixas do asfalto
-    const float horizon_y = 235.0f;          // linha do horizonte onde a estrada começa
-    
+    const float horizon_y = 200.0f;          // linha do horizonte onde a estrada começa
     // Medidas calibradas para coincidir com a imagem de fundo (800x600)
     // No topo (horizonte): as 3 lanes ocupam aproximadamente 25% da largura da tela
     // Na base: ocupam mais que a largura da tela para coincidir com as faixas
-    
     float lane_width_top = screenWidth * 0.083f;      // ~66px por lane no topo (3 lanes = 25% da tela)
     float lane_offset_top = screenWidth * 0.375f;     // começa em 37.5% da tela (centralizado)
     float lane_width_bottom = screenWidth * 0.45f;    // ~360px por lane na base (3 lanes = 135% da tela)
     float lane_offset_bottom = -screenWidth * 0.175f; // começa antes da borda esquerda (-17.5%)
-
-    int cont = 0;
 
     BeginDrawing();
     ClearBackground(RAYWHITE);
@@ -753,8 +745,8 @@ void TelaJogo(int *estadoJogo, int screenWidth, int screenHeight, Texture2D back
             // Se o jogador acabou de vencer, insere no ranking (apenas uma vez)
             if (vitoria && !rankingInserido && nickname[0] != '\0') {
                 insertRanking(&ranking, nickname, tempoDecorrido);
-                saveTopCSV(&ranking, "ranking_top10.csv", 10);
-                saveRankingAll(&ranking, "ranking_all.csv");
+                saveTopTXT(&ranking, "ranking_top10.txt", 10);
+                saveRankingAll(&ranking, "ranking_all.txt");
                 rankingInserido = true;
                 
                 // Salva o último tempo e nickname do jogador para exibir no ranking
@@ -1116,16 +1108,6 @@ void TelaJogo(int *estadoJogo, int screenWidth, int screenHeight, Texture2D back
                 int instrWidth = MeasureText(instrucao, 20);
                 DrawText(instrucao, screenWidth/2 - instrWidth/2, screenHeight - 40, 20, WHITE);
             }
-            // Mostra cena de vitória 2
-            else if (cenaVitoria == 2 && texturaVitoria2.id > 0) {
-                Rectangle source = {0, 0, (float)texturaVitoria2.width, (float)texturaVitoria2.height};
-                Rectangle dest = {0, 0, (float)screenWidth, (float)screenHeight};
-                DrawTexturePro(texturaVitoria2, source, dest, (Vector2){0, 0}, 0.0f, WHITE);
-                
-                const char* instrucao = "Pressione ENTER para continuar...";
-                int instrWidth = MeasureText(instrucao, 20);
-                DrawText(instrucao, screenWidth/2 - instrWidth/2, screenHeight - 40, 20, WHITE);
-            }
         } else {
             // Tela normal de game over (após as cenas ou se não for vitória)
             // Desenha imagem de fundo conforme o resultado
@@ -1291,9 +1273,9 @@ void TelaRanking(int *estadoJogo, int screenWidth, int screenHeight, Texture2D b
     
     // Dimensões da tabela
     float tableWidth = screenWidth * 0.8f;
-    float tableHeight = screenHeight * 0.65f;
+    float tableHeight = screenHeight * 0.7f;
     float tableX = (screenWidth - tableWidth) / 2;
-    float tableY = screenHeight * 0.2f;
+    float tableY = screenHeight * 0.15f;
     
     // Borda externa branca/ciano
     DrawRectangleLinesEx((Rectangle){tableX - 5, tableY - 80, tableWidth + 10, tableHeight + 90}, 4, cyanBorder);
@@ -1332,15 +1314,15 @@ void TelaRanking(int *estadoJogo, int screenWidth, int screenHeight, Texture2D b
     float lineY = headerY + headerSize + 10;
     DrawRectangle(tableX, lineY, tableWidth, 3, white);
     
-    // Desenha top 5 do ranking
-    float rowHeight = 45;
+    // Desenha top 10 do ranking
+    float rowHeight = 40;
     float rowY = lineY + 15;
-    float rowSize = screenWidth * 0.035f;
+    float rowSize = screenWidth * 0.03f;
     
     RankingNode* current = ranking.head;
     int rank = 1;
     
-    while (current != NULL && rank <= 5) {
+    while (current != NULL && rank <= 10) {
         // Alterna cores das linhas (verde e ciano)
         Color rowColor = (rank % 2 == 1) ? green1 : cyan2;
         
@@ -1369,8 +1351,8 @@ void TelaRanking(int *estadoJogo, int screenWidth, int screenHeight, Texture2D b
         rank++;
     }
     
-    // Preenche linhas vazias se houver menos de 5
-    while (rank <= 5) {
+    // Preenche linhas vazias se houver menos de 10
+    while (rank <= 10) {
         Color rowColor = (rank % 2 == 1) ? green1 : cyan2;
         DrawRectangle(tableX + 5, rowY - 5, tableWidth - 10, rowHeight - 5, rowColor);
         
