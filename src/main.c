@@ -1118,14 +1118,27 @@ void TelaJogo(int *estadoJogo, int screenWidth, int screenHeight, Texture2D back
             }
         } else {
             // Tela normal de game over (após as cenas ou se não for vitória)
-            // Desenha imagem de fundo do game over
-            if (texturaGameOver.id > 0) {
-                Rectangle source = {0, 0, (float)texturaGameOver.width, (float)texturaGameOver.height};
-                Rectangle dest = {0, 0, (float)screenWidth, (float)screenHeight};
-                DrawTexturePro(texturaGameOver, source, dest, (Vector2){0, 0}, 0.0f, WHITE);
+            // Desenha imagem de fundo conforme o resultado
+            if (vitoria) {
+                // Usa vitoria_scene2 como fundo da tela de vitória
+                if (texturaVitoria2.id > 0) {
+                    Rectangle source = {0, 0, (float)texturaVitoria2.width, (float)texturaVitoria2.height};
+                    Rectangle dest = {0, 0, (float)screenWidth, (float)screenHeight};
+                    DrawTexturePro(texturaVitoria2, source, dest, (Vector2){0, 0}, 0.0f, WHITE);
+                } else {
+                    // Fallback: overlay escuro se a imagem não carregar
+                    DrawRectangle(0, 0, screenWidth, screenHeight, (Color){0, 0, 0, 150});
+                }
             } else {
-                // Fallback: overlay escuro se a imagem não carregar
-                DrawRectangle(0, 0, screenWidth, screenHeight, (Color){0, 0, 0, 150});
+                // Usa gameOver.png como fundo quando perde
+                if (texturaGameOver.id > 0) {
+                    Rectangle source = {0, 0, (float)texturaGameOver.width, (float)texturaGameOver.height};
+                    Rectangle dest = {0, 0, (float)screenWidth, (float)screenHeight};
+                    DrawTexturePro(texturaGameOver, source, dest, (Vector2){0, 0}, 0.0f, WHITE);
+                } else {
+                    // Fallback: overlay escuro se a imagem não carregar
+                    DrawRectangle(0, 0, screenWidth, screenHeight, (Color){0, 0, 0, 150});
+                }
             }
             
             // Overlay semi-transparente para melhorar legibilidade dos textos
@@ -1138,13 +1151,13 @@ void TelaJogo(int *estadoJogo, int screenWidth, int screenHeight, Texture2D back
                 const char* titulo = "VOCÊ VENCEU!";
                 int tituloWidth = MeasureText(titulo, 70);
                 // Sombra do texto para melhor contraste
-                DrawText(titulo, screenWidth/2 - tituloWidth/2 + 3, screenHeight/2 - 83 + offsetY, 70, BLACK);
-                DrawText(titulo, screenWidth/2 - tituloWidth/2, screenHeight/2 - 80 + offsetY, 70, GREEN);
+                DrawText(titulo, screenWidth/2 - tituloWidth/2 + 3, screenHeight/2 - 120 + offsetY, 70, BLACK);
+                DrawText(titulo, screenWidth/2 - tituloWidth/2, screenHeight/2 - 117 + offsetY, 70, GREEN);
                 
                 const char* subtitulo = "Coletou todos os tipos de itens!";
                 int subtituloWidth = MeasureText(subtitulo, 25);
-                DrawText(subtitulo, screenWidth/2 - subtituloWidth/2 + 2, screenHeight/2 - 22 + offsetY, 25, BLACK);
-                DrawText(subtitulo, screenWidth/2 - subtituloWidth/2, screenHeight/2 - 20 + offsetY, 25, WHITE);
+                DrawText(subtitulo, screenWidth/2 - subtituloWidth/2 + 2, screenHeight/2 - 47 + offsetY, 25, BLACK);
+                DrawText(subtitulo, screenWidth/2 - subtituloWidth/2, screenHeight/2 - 45 + offsetY, 25, WHITE);
             }
             
             // Tempo centralizado
