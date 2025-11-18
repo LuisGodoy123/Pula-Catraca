@@ -979,12 +979,11 @@ void TelaJogo(int *estadoJogo, int screenWidth, int screenHeight, Texture2D back
                         GREEN
                     );
                 }
-            } else {
-                // parada de onibus com teto = obstaculo alto vazado (abaixar com S)
+            } else { // pneu = obstaculo vazado (abaixar com S)
                 if (spritePneu.id > 0) {
                     // Sprite visual de pneu (tamanho ajustado com escala)
-                    float sprite_largura_pneu = 120.0f * scale;
-                    float sprite_altura_pneu = 120.0f * scale;
+                    float sprite_largura_pneu = 220.0f * scale;
+                    float sprite_altura_pneu = 220.0f * scale;
                     Rectangle source = {0, 0, (float)spritePneu.width, (float)spritePneu.height};
                     Rectangle dest = {obs_x - sprite_largura_pneu / 2, obstaculos[i].pos_y, sprite_largura_pneu, sprite_altura_pneu};
                     DrawTexturePro(spritePneu, source, dest, (Vector2){0, 0}, 0.0f, WHITE);
