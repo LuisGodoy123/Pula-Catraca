@@ -501,17 +501,17 @@ void TelaJogo(int *estadoJogo, int screenWidth, int screenHeight, Texture2D back
         frameCount = 0;
         frameCountItens = 0;
         velocidadeJogo = 3.0f; // Velocidade inicial
-        velocidadeMaxima = 30.0f;
+        velocidadeMaxima = 8.0f;
         intervaloAceleracao = 30.0f;
         tempoUltimaAceleracao = 0.0f;
-        incrementoVelocidade = 2.0f;
+        incrementoVelocidade = 1.0f;
         tempoDecorrido = 0.0f;
         gameOver = false;
         vitoria = false;
         cenaVitoria = 0;
         
         // Inicializa sistema progressivo de obstáculos
-        framesEntreObstaculos = 180; // Começa com 3 segundos
+        framesEntreObstaculos = 120; // Começa com 3 segundos
         tempoUltimoAumentoFrequencia = 0.0f;
         
         // Cria obstáculos iniciais imediatamente
@@ -645,11 +645,9 @@ void TelaJogo(int *estadoJogo, int screenWidth, int screenHeight, Texture2D back
             tempoAnimacao = 0.0f;
         }
 
-        
-
-        // gerar itens colecionáveis a cada 180 frames (3 seg)
+        // gerar itens colecionáveis a cada 2seg
         frameCountItens++;
-        if (frameCountItens >= 90) {
+        if (frameCountItens >= 120) {
             criarItem(itens, MAX_ITENS, screenHeight, obstaculos, MAX_OBSTACULOS, horizon_y, itensColetados);
             frameCountItens = 0;
         }
