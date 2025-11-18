@@ -1388,34 +1388,6 @@ void TelaRanking(int *estadoJogo, int screenWidth, int screenHeight, Texture2D b
         rank++;
     }
     
-    // Exibe o último score do jogador (se houver)
-    if (ultimoTempoJogador > 0.0f && ultimoNicknameJogador[0] != '\0') {
-        float yourScoreY = rowY + 30;
-        float yourScoreSize = screenWidth * 0.035f;
-        
-        // Box de destaque para o score do jogador
-        float yourScoreBoxHeight = 50;
-        DrawRectangleRounded((Rectangle){tableX + 5, yourScoreY - 10, tableWidth - 10, yourScoreBoxHeight}, 0.1f, 10, (Color){255, 215, 0, 150}); // dourado transparente
-        DrawRectangleLinesEx((Rectangle){tableX + 5, yourScoreY - 10, tableWidth - 10, yourScoreBoxHeight}, 2.0f, (Color){255, 215, 0, 255});
-        
-        // Texto "SEU SCORE:"
-        DrawTextEx(GetFontDefault(), "SEU SCORE:", 
-                   (Vector2){colRankX, yourScoreY}, yourScoreSize, 2, (Color){0, 0, 0, 255});
-        
-        // Nome do jogador
-        char playerName[21];
-        strncpy(playerName, ultimoNicknameJogador, 20);
-        playerName[20] = '\0';
-        DrawTextEx(GetFontDefault(), playerName, 
-                   (Vector2){colPlayerX, yourScoreY}, yourScoreSize, 2, (Color){0, 0, 0, 255});
-        
-        // Tempo formatado
-        int minutos = (int)ultimoTempoJogador / 60;
-        float segundos = ultimoTempoJogador - (minutos * 60);
-        DrawTextEx(GetFontDefault(), TextFormat("%02d:%05.2f", minutos, segundos), 
-                   (Vector2){colScoreX, yourScoreY}, yourScoreSize, 2, (Color){0, 0, 0, 255});
-    }
-    
     // Botão de voltar
     float btnWidth = screenWidth * 0.2f;
     float btnHeight = screenHeight * 0.08f;
