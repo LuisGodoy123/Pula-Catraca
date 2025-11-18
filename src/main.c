@@ -645,23 +645,21 @@ void TelaJogo(int *estadoJogo, int screenWidth, int screenHeight, Texture2D back
             }
         }
 
-        // novos obstaculos com frequencia progressiva
-        frameCount++;
-        if (frameCount >= framesEntreObstaculos) {
-            // Escolhe aleatoriamente: 1, 2 ou 3 obstáculos
-            int quantidade = (rand() % 3) + 1; // 1, 2 ou 3
-            criarMultiplosObstaculos(obstaculos, MAX_OBSTACULOS, screenHeight, quantidade, horizon_y);
-            frameCount = 0;
-        }
-
         // Timer para animação das sprites do jogador (alterna a cada 0.5s)
         tempoAnimacao += GetFrameTime();
         if (tempoAnimacao >= 0.25f) {
             frameAnimacao = !frameAnimacao;
             tempoAnimacao = 0.0f;
         }
-
-        // gerar itens colecionáveis a cada 2seg
+        
+        // novos obstaculos a cada 2seg
+        frameCount++;
+        if (frameCount >= 120) {
+            int quantidade = (rand() % 3) + 1; // aleatorio 1, 2 ou 3
+            criarMultiplosObstaculos(obstaculos, MAX_ITENS, screenHeight, quantidade, horizon_y);
+            frameCount = 0;
+        }
+        // novos itens a cada 2seg
         frameCountItens++;
         if (frameCountItens >= 120) {
             criarItem(itens, MAX_ITENS, screenHeight, obstaculos, MAX_OBSTACULOS, horizon_y, itensColetados);
@@ -1242,7 +1240,7 @@ void TelaJogo(int *estadoJogo, int screenWidth, int screenHeight, Texture2D back
 }
 
 void TelaRanking(int *estadoJogo, int screenWidth, int screenHeight, Texture2D background) {
-    // Paleta de cores inspirada na imagem
+    // Paleta de cores
     Color pink = (Color){215, 50, 133, 255};      // #d73285 - fundo rosa/magenta
     Color cyan = (Color){102, 255, 255, 255};      // #66FFFF - azul ciano para título
     Color cyanBorder = (Color){150, 255, 255, 255}; // borda do título
@@ -1275,7 +1273,7 @@ void TelaRanking(int *estadoJogo, int screenWidth, int screenHeight, Texture2D b
     const char* titleText = "RANKING";
     Vector2 titleMeasure = MeasureTextEx(GetFontDefault(), titleText, titleSize, 4);
     float titleX = screenWidth / 2 - titleMeasure.x / 2;
-    float titleY = tableY - 70;
+    float titleY = tableY - 40;
     
     // Sombra do título
     DrawTextEx(GetFontDefault(), titleText, (Vector2){titleX + 4, titleY + 4}, titleSize, 4, (Color){0, 0, 0, 100});
@@ -1288,7 +1286,7 @@ void TelaRanking(int *estadoJogo, int screenWidth, int screenHeight, Texture2D b
     DrawTextEx(GetFontDefault(), titleText, (Vector2){titleX, titleY}, titleSize, 4, cyan);
     
     // Cabeçalhos das colunas
-    float headerY = tableY + 10;
+    float headerY = tableY + 75;
     float headerSize = screenWidth * 0.04f;
     float colRankX = tableX + 40;
     float colPlayerX = tableX + tableWidth * 0.25f;
@@ -1311,7 +1309,7 @@ void TelaRanking(int *estadoJogo, int screenWidth, int screenHeight, Texture2D b
     RankingNode* current = ranking.head;
     int rank = 1;
     
-    while (current != NULL && rank <= 10) {
+    while (current != NULL && rank <= 5) {
         // Alterna cores das linhas (verde e ciano)
         Color rowColor = (rank % 2 == 1) ? green1 : cyan2;
         
@@ -1340,8 +1338,8 @@ void TelaRanking(int *estadoJogo, int screenWidth, int screenHeight, Texture2D b
         rank++;
     }
     
-    // Preenche linhas vazias se houver menos de 10
-    while (rank <= 10) {
+    // Preenche linhas vazias se houver menos de 5
+    while (rank <= 5) {
         Color rowColor = (rank % 2 == 1) ? green1 : cyan2;
         DrawRectangle(tableX + 5, rowY - 5, tableWidth - 10, rowHeight - 5, rowColor);
         
