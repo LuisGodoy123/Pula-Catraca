@@ -941,10 +941,9 @@ void TelaJogo(int *estadoJogo, int screenWidth, int screenHeight, Texture2D back
             float x_bottom = lane_offset_bottom + lane_width_bottom * obstaculos[i].lane + lane_width_bottom / 2;
             float obs_x = x_top + (x_bottom - x_top) * progress;
             
-            if (obstaculos[i].tipo == 0) {
-                // Ônibus alto cheio = obstaculo padrão (desviar com A e D)
+            if (obstaculos[i].tipo == 0) { // Ônibus = obstaculo padrão (desviar com A e D)
                 // Seleciona a sprite correta baseada na lane
-                Texture2D spriteOnibusAtual = spriteOnibusCentro; // Padrão para lane central (1)
+                Texture2D spriteOnibusAtual = spriteOnibusCentro; // Padrão para lane central (= 1)
                 if (obstaculos[i].lane == 0) {
                     spriteOnibusAtual = spriteOnibusEsquerdo;
                 } else if (obstaculos[i].lane == 2) {
@@ -962,17 +961,14 @@ void TelaJogo(int *estadoJogo, int screenWidth, int screenHeight, Texture2D back
                     // Fallback se a textura não carregar
                     DrawRectangle(obs_x - largura_scaled / 2, obstaculos[i].pos_y, largura_scaled, altura_scaled, ORANGE);
                 }
-            } else if (obstaculos[i].tipo == 1) {
-                // catraca de onibus (apenas parte inferior) = obstaculo baixo (pular com W)
-                if (spriteCatraca.id > 0) {
-                    // Sprite visual de 80px
+            } else if (obstaculos[i].tipo == 1) { // catraca = obstaculo baixo (pular com W)
+                if (spriteCatraca.id > 0) { // Sprite 80px por 80px
                     float sprite_largura_catraca = 80.0f * scale;
                     float sprite_altura_catraca = 80.0f * scale;
                     Rectangle source = {0, 0, (float)spriteCatraca.width, (float)spriteCatraca.height};
                     Rectangle dest = {obs_x - sprite_largura_catraca / 2, obstaculos[i].pos_y, sprite_largura_catraca, sprite_altura_catraca};
                     DrawTexturePro(spriteCatraca, source, dest, (Vector2){0, 0}, 0.0f, WHITE);
-                } else {
-                    // Fallback se a textura não carregar
+                } else { // Fallback se a textura não carregar
                     DrawRectangle(
                         obs_x - largura_scaled / 2, 
                         obstaculos[i].pos_y, 
@@ -981,17 +977,14 @@ void TelaJogo(int *estadoJogo, int screenWidth, int screenHeight, Texture2D back
                         GREEN
                     );
                 }
-            } else {
-                // parada de onibus com teto = obstaculo alto vazado (abaixar com S)
-                if (spritePneu.id > 0) {
-                    // Sprite visual de pneu (tamanho ajustado com escala)
-                    float sprite_largura_pneu = 120.0f * scale;
-                    float sprite_altura_pneu = 120.0f * scale;
+            } else { // pneu = obstaculo vazado (abaixar com S)
+                if (spritePneu.id > 0) { // Sprite 170px por 170px
+                    float sprite_largura_pneu = 170.0f * scale;
+                    float sprite_altura_pneu = 170.0f * scale;
                     Rectangle source = {0, 0, (float)spritePneu.width, (float)spritePneu.height};
                     Rectangle dest = {obs_x - sprite_largura_pneu / 2, obstaculos[i].pos_y, sprite_largura_pneu, sprite_altura_pneu};
                     DrawTexturePro(spritePneu, source, dest, (Vector2){0, 0}, 0.0f, WHITE);
-                } else {
-                    // Fallback: desenha estrutura de parada se a textura não carregar
+                } else { // Fallback: desenha estrutura vazada se a textura não carregar
                     Color cor = PURPLE;
                     float border = 8 * scale;
                     DrawRectangle(
@@ -1063,8 +1056,7 @@ void TelaJogo(int *estadoJogo, int screenWidth, int screenHeight, Texture2D back
     }
 
     // desenha o jogador com sprites
-    if (jogador.deslizando) {
-        // deslizando - usa direção do movimento
+    if (jogador.deslizando) { // deslizando - usa direção do movimento
         Texture2D spriteAtual = (direcaoJogador < 0) ? spriteDeslizandoDireita : spriteDeslizandoEsquerda;
         if (spriteAtual.id > 0) {
             Rectangle source = {0, 0, (float)spriteAtual.width, (float)spriteAtual.height};
@@ -1074,8 +1066,7 @@ void TelaJogo(int *estadoJogo, int screenWidth, int screenHeight, Texture2D back
         } else {
             DrawRectangle(jogador.pos_x_real - 20, jogador.pos_y_real + 20, 40, 20, RED);
         }
-    } else if (jogador.pulando) {
-        // pulando - usa direção do movimento
+    } else if (jogador.pulando) { // pulando - usa direção do movimento
         Texture2D spriteAtual = (direcaoJogador < 0) ? spritePulandoDireita : spritePulandoEsquerda;
         if (spriteAtual.id > 0) {
             Rectangle source = {0, 0, (float)spriteAtual.width, (float)spriteAtual.height};
@@ -1085,8 +1076,7 @@ void TelaJogo(int *estadoJogo, int screenWidth, int screenHeight, Texture2D back
         } else {
             DrawRectangle(jogador.pos_x_real - 20, jogador.pos_y_real - 20, 40, 40, RED);
         }
-    } else {
-        // correndo - alterna entre direita e esquerda a cada 0.5s
+    } else { // correndo - alterna entre direita e esquerda a cada 0.5s
         Texture2D spriteAtual = frameAnimacao ? spriteCorrendoEsquerda : spriteCorrendoDireita;
         if (spriteAtual.id > 0) {
             Rectangle source = {0, 0, (float)spriteAtual.width, (float)spriteAtual.height};
@@ -1099,11 +1089,9 @@ void TelaJogo(int *estadoJogo, int screenWidth, int screenHeight, Texture2D back
     }
 
     if (gameOver) {
-        // Se está na cena de vitória 1
-        if (vitoria && cenaVitoria == 1 && texturaVitoria1.id > 0) {
-            // Toca música de vitória em loop após som de vitória acabar
+        if (vitoria && cenaVitoria == 1 && texturaVitoria1.id > 0) { // Se está na cena de vitória 1
             if (!IsSoundPlaying(somVitoria) && !IsSoundPlaying(somMusicaVitoria)) {
-                PlaySound(somMusicaVitoria);
+                PlaySound(somMusicaVitoria); // Toca música de vitória em loop após som de vitória acabar
             }
             // Mostra cena de vitória 1
             Rectangle source = {0, 0, (float)texturaVitoria1.width, (float)texturaVitoria1.height};
@@ -1113,8 +1101,12 @@ void TelaJogo(int *estadoJogo, int screenWidth, int screenHeight, Texture2D back
             const char* instrucao = "Pressione ENTER para continuar...";
             int instrWidth = MeasureText(instrucao, 20);
             DrawText(instrucao, screenWidth/2 - instrWidth/2, screenHeight - 40, 20, WHITE);
-        } else {
-            // Tela normal de game over (após as cenas ou se não for vitória)
+        } else { // Tela normal de game over (após as cenas ou se não for vitória)
+            // Overlay semi-transparente para melhorar legibilidade dos textos
+            DrawRectangle(0, 0, screenWidth, screenHeight, (Color){0, 0, 0, 100});
+            // Offset de 57 pixels (aproximadamente 1.5cm considerando DPI padrão)
+            int offsetY = -57;
+
             // Desenha imagem de fundo conforme o resultado
             if (vitoria) {
                 // Usa vitoria_scene2 como fundo da tela de vitória
@@ -1126,25 +1118,6 @@ void TelaJogo(int *estadoJogo, int screenWidth, int screenHeight, Texture2D back
                     // Fallback: overlay escuro se a imagem não carregar
                     DrawRectangle(0, 0, screenWidth, screenHeight, (Color){0, 0, 0, 150});
                 }
-            } else {
-                // Usa gameOver.png como fundo quando perde
-                if (texturaGameOver.id > 0) {
-                    Rectangle source = {0, 0, (float)texturaGameOver.width, (float)texturaGameOver.height};
-                    Rectangle dest = {0, 0, (float)screenWidth, (float)screenHeight};
-                    DrawTexturePro(texturaGameOver, source, dest, (Vector2){0, 0}, 0.0f, WHITE);
-                } else {
-                    // Fallback: overlay escuro se a imagem não carregar
-                    DrawRectangle(0, 0, screenWidth, screenHeight, (Color){0, 0, 0, 150});
-                }
-            }
-            
-            // Overlay semi-transparente para melhorar legibilidade dos textos
-            DrawRectangle(0, 0, screenWidth, screenHeight, (Color){0, 0, 0, 100});
-            
-            // Offset de 57 pixels (aproximadamente 1.5cm considerando DPI padrão)
-            int offsetY = -57;
-            
-            if (vitoria) {
                 const char* titulo = "VOCÊ VENCEU!";
                 int tituloWidth = MeasureText(titulo, 70);
                 // Sombra do texto para melhor contraste
@@ -1155,6 +1128,17 @@ void TelaJogo(int *estadoJogo, int screenWidth, int screenHeight, Texture2D back
                 int subtituloWidth = MeasureText(subtitulo, 25);
                 DrawText(subtitulo, screenWidth/2 - subtituloWidth/2 + 2, screenHeight/2 - 47 + offsetY, 25, BLACK);
                 DrawText(subtitulo, screenWidth/2 - subtituloWidth/2, screenHeight/2 - 45 + offsetY, 25, WHITE);
+
+            } else {
+                // Usa gameOver.png como fundo quando perde
+                if (texturaGameOver.id > 0) {
+                    Rectangle source = {0, 0, (float)texturaGameOver.width, (float)texturaGameOver.height};
+                    Rectangle dest = {0, 0, (float)screenWidth, (float)screenHeight};
+                    DrawTexturePro(texturaGameOver, source, dest, (Vector2){0, 0}, 0.0f, WHITE);
+                } else {
+                    // Fallback: overlay escuro se a imagem não carregar
+                    DrawRectangle(0, 0, screenWidth, screenHeight, (Color){0, 0, 0, 150});
+                }
             }
             
             // Tempo centralizado
