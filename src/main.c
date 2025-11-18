@@ -1411,15 +1411,6 @@ void TelaRanking(int *estadoJogo, int screenWidth, int screenHeight, Texture2D b
                         backBtn.y + btnHeight / 2 - btnTextSize / 2},
                btnTextSize, 2, hoverBack ? pink : (Color){0, 0, 0, 255});
     
-    // Instruções
-    DrawTextEx(GetFontDefault(), "Pressione ESC para voltar ao menu", 
-               (Vector2){10, screenHeight - 30}, 18, 1, white);
-    
-    // Permite voltar com ESC
-    if (IsKeyPressed(KEY_ESCAPE)) {
-        *estadoJogo = 0;
-    }
-    
     EndDrawing();
 }
 
@@ -1597,15 +1588,6 @@ void TelaComoJogar(int *estadoJogo, int screenWidth, int screenHeight, Texture2D
                (Vector2){backBtn.x + btnWidth / 2 - backMeasure.x / 2,
                         backBtn.y + btnHeight / 2 - btnTextSize / 2},
                btnTextSize, 2, hoverBack ? pink : (Color){0, 0, 0, 255});
-    
-    // Instruções
-    DrawTextEx(GetFontDefault(), "Pressione ESC para voltar ao menu", 
-               (Vector2){10, screenHeight - 30}, 18, 1, white);
-    
-    // Permite voltar com ESC
-    if (IsKeyPressed(KEY_ESCAPE)) {
-        *estadoJogo = 0;
-    }
     
     EndDrawing();
 }
