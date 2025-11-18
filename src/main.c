@@ -446,10 +446,10 @@ void TelaJogo(int *estadoJogo, int screenWidth, int screenHeight, Texture2D back
     static int frameCount = 0;
     static int frameCountItens = 0;
     static float velocidadeJogo = 3.0f; // Velocidade inicial: 3.0 m/s
-    static float velocidadeMaxima = 30.0f; // Velocidade máxima: 30 m/s
+    static float velocidadeMaxima = 8.0f; // Velocidade máxima: 8 m/s
     static float intervaloAceleracao = 30.0f; // Acelera a cada 30 segundos
     static float tempoUltimaAceleracao = 0.0f; // Controla quando acelerar
-    static float incrementoVelocidade = 2.0f; // Aumenta 2 m/s a cada intervalo
+    static float incrementoVelocidade = 1.0f; // Aumenta 1 m/s a cada intervalo
     static float tempoDecorrido = 0.0f; // Tempo em segundos
     static bool gameOver = false;
     static bool vitoria = false;
@@ -461,7 +461,7 @@ void TelaJogo(int *estadoJogo, int screenWidth, int screenHeight, Texture2D back
     static bool frameAnimacao = false; // Alterna entre direito(false) e esquerdo(true)
     
     // Sistema progressivo de obstáculos
-    static int framesEntreObstaculos = 180; // Começa com 3 segundos (180 frames)
+    static int framesEntreObstaculos = 120; // Começa com 2 segundos (120 frames)
     static int framesMinimos = 40; // Mínimo de 0.66 segundo (~40 frames)
     static float tempoUltimoAumentoFrequencia = 0.0f; // Controla quando aumentar frequência
     static float intervaloAumentoFrequencia = 10.0f; // Aumenta frequência a cada 10 segundos
@@ -503,7 +503,7 @@ void TelaJogo(int *estadoJogo, int screenWidth, int screenHeight, Texture2D back
     // No topo (horizonte): as 3 lanes ocupam aproximadamente 25% da largura da tela
     // Na base: ocupam mais que a largura da tela para coincidir com as faixas
     float lane_width_top = screenWidth * 0.083f;      // ~66px por lane no topo (3 lanes = 25% da tela)
-    float lane_offset_top = screenWidth * 0.375f;     // começa em 37.5% da tela (centralizado)
+    float lane_offset_top = screenWidth * 0.385f;     // começa em 38.5% da tela (centralizado)
     float lane_width_bottom = screenWidth * 0.45f;    // ~360px por lane na base (3 lanes = 135% da tela)
     float lane_offset_bottom = -screenWidth * 0.175f; // começa antes da borda esquerda (-17.5%)
 
@@ -529,22 +529,6 @@ void TelaJogo(int *estadoJogo, int screenWidth, int screenHeight, Texture2D back
         for (int i = 0; i < TIPOS_ITENS; i++) {
             itensColetados[i] = 0;
         }
-        
-        frameCount = 0;
-        frameCountItens = 0;
-        velocidadeJogo = 3.0f; // Velocidade inicial
-        velocidadeMaxima = 8.0f;
-        intervaloAceleracao = 30.0f;
-        tempoUltimaAceleracao = 0.0f;
-        incrementoVelocidade = 1.0f;
-        tempoDecorrido = 0.0f;
-        gameOver = false;
-        vitoria = false;
-        cenaVitoria = 0;
-        
-        // Inicializa sistema progressivo de obstáculos
-        framesEntreObstaculos = 120; // Começa com 3 segundos
-        tempoUltimoAumentoFrequencia = 0.0f;
         
         // Cria obstáculos iniciais imediatamente
         int quantidade_inicial = (rand() % 3) + 1; // 1, 2 ou 3
