@@ -14,7 +14,7 @@ void DrawTextRec(Font font, const char *text, Rectangle rec, float fontSize, flo
 
 // Protótipos das funções
 void TelaMenu(int *estadoJogo, int screenWidth, int screenHeight, Texture2D background, Sound somMenu);
-void TelaNickname(int *estadoJogo, int screenWidth, int screenHeight, Texture2D background, char *nickname);
+void TelaNickname(int *estadoJogo, int screenWidth, int screenHeight, Texture2D background, char *nickname, Sound somMenu);
 void TelaJogo(int *estadoJogo, int screenWidth, int screenHeight, Texture2D background_jogo, char *nickname, Sound somMenu, Sound somCorrida, Sound somItemBom, Sound somItemRuim, Sound somColisao, Sound somVitoria, Sound somMusicaVitoria);
 void TelaRanking(int *estadoJogo, int screenWidth, int screenHeight, Texture2D background);
 void TelaComoJogar(int *estadoJogo, int screenWidth, int screenHeight, Texture2D background);
@@ -137,7 +137,7 @@ int main(void) {
         if (estadoJogo == 0) {
             TelaMenu(&estadoJogo, screenWidth, screenHeight, background_menu, somMenu);
         } else if (estadoJogo == 1) {
-            TelaNickname(&estadoJogo, screenWidth, screenHeight, background_menu, nickname);
+            TelaNickname(&estadoJogo, screenWidth, screenHeight, background_menu, nickname, somMenu);
         } else if (estadoJogo == 2) {
             TelaJogo(&estadoJogo, screenWidth, screenHeight, background_jogo, nickname, somMenu, somCorrida, somItemBom, somItemRuim, somColisao, somVitoria, somMusicaVitoria);
         } else if (estadoJogo == 3) {
@@ -269,7 +269,11 @@ void TelaMenu(int *estadoJogo, int screenWidth, int screenHeight, Texture2D back
     EndDrawing();
 }
 
-void TelaNickname(int *estadoJogo, int screenWidth, int screenHeight, Texture2D background, char *nickname) {
+void TelaNickname(int *estadoJogo, int screenWidth, int screenHeight, Texture2D background, char *nickname, Sound somMenu) {
+    if (!IsSoundPlaying(somMenu)) {
+        PlaySound(somMenu); // Para música do menu antes de ir para o jogo
+    }
+    
     // fonte texto
     Font titleFont = GetFontDefault();
     // paleta
@@ -277,6 +281,7 @@ void TelaNickname(int *estadoJogo, int screenWidth, int screenHeight, Texture2D 
     Color yellow = (Color){254, 255, 153, 255}; // #feff99
     Color blue = (Color){175, 218, 225, 255};   // #afdae1
     Color green = (Color){87, 183, 33, 255};    // #57b721
+    Color cyan = (Color){102, 255, 255, 255};   // #66FFFF
 
     // caixa de texto
     float boxWidth = screenWidth * 0.4f;
@@ -402,6 +407,33 @@ void TelaNickname(int *estadoJogo, int screenWidth, int screenHeight, Texture2D 
                    fontSize * 0.5f, 2, DARKGRAY);
     }
 
+    // Botão de voltar
+    btnWidth = screenWidth * 0.2f;
+    btnHeight = screenHeight * 0.08f;
+    Rectangle backBtn = {
+        screenWidth / 2 - btnWidth / 2,
+        screenHeight * 0.9f,
+        btnWidth,
+        btnHeight
+    };
+    
+    mousePos = GetMousePosition();
+    bool hoverBack = CheckCollisionPointRec(mousePos, backBtn);
+    
+    if (hoverBack && IsMouseButtonPressed(MOUSE_LEFT_BUTTON)) {
+        *estadoJogo = 0; // Volta ao menu
+    }
+    
+    // Desenha botão voltar
+    DrawRectangleRounded(backBtn, 0.3f, 10, hoverBack ? (Color){254, 255, 153, 255} : cyan);
+    float btnTextSize = screenWidth * 0.04f;
+    const char* backText = "VOLTAR";
+    Vector2 backMeasure = MeasureTextEx(GetFontDefault(), backText, btnTextSize, 2);
+    DrawTextEx(GetFontDefault(), backText,
+               (Vector2){backBtn.x + btnWidth / 2 - backMeasure.x / 2,
+                        backBtn.y + btnHeight / 2 - btnTextSize / 2},
+               btnTextSize, 2, hoverBack ? pink : (Color){0, 0, 0, 255});
+    
     EndDrawing();
 }
 
