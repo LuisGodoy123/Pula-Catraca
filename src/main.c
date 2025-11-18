@@ -1051,10 +1051,10 @@ void TelaJogo(int *estadoJogo, int screenWidth, int screenHeight, Texture2D back
     // desenha o jogador com sprites
     if (jogador.deslizando) {
         // deslizando - usa direção do movimento
-        Texture2D spriteAtual = frameAnimacao ? spriteDeslizandoEsquerda : spriteDeslizandoDireita;
+        Texture2D spriteAtual = (direcaoJogador < 0) ? spriteDeslizandoDireita : spriteDeslizandoEsquerda;
         if (spriteAtual.id > 0) {
             Rectangle source = {0, 0, (float)spriteAtual.width, (float)spriteAtual.height};
-            // Sprite 150x75 mas hitbox mantém 40x30
+            // Sprite 150x150 mas hitbox = 40x30
             Rectangle dest = {jogador.pos_x_real - 75, jogador.pos_y_real - 60, 150, 150};
             DrawTexturePro(spriteAtual, source, dest, (Vector2){0, 0}, 0.0f, WHITE);
         } else {
@@ -1062,7 +1062,7 @@ void TelaJogo(int *estadoJogo, int screenWidth, int screenHeight, Texture2D back
         }
     } else if (jogador.pulando) {
         // pulando - usa direção do movimento
-        Texture2D spriteAtual = (direcaoJogador < 0) ? spritePulandoEsquerda : spritePulandoDireita;
+        Texture2D spriteAtual = (direcaoJogador < 0) ? spritePulandoDireita : spritePulandoEsquerda;
         if (spriteAtual.id > 0) {
             Rectangle source = {0, 0, (float)spriteAtual.width, (float)spriteAtual.height};
             // Sprite 150x150 mas hitbox mantém 40x50
