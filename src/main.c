@@ -1083,25 +1083,20 @@ void TelaJogo(int *estadoJogo, int screenWidth, int screenHeight, Texture2D back
     }
 
     if (gameOver) {
-        // Toca música de vitória em loop após som de vitória acabar
-        if (vitoria) {
+        // Se está na cena de vitória 1
+        if (vitoria && cenaVitoria == 1 && texturaVitoria1.id > 0) {
+            // Toca música de vitória em loop após som de vitória acabar
             if (!IsSoundPlaying(somVitoria) && !IsSoundPlaying(somMusicaVitoria)) {
                 PlaySound(somMusicaVitoria);
             }
-        }
-        
-        // Se for vitória e ainda está nas cenas de vitória (1 ou 2)
-        if (vitoria && cenaVitoria > 0 && cenaVitoria < 3) {
             // Mostra cena de vitória 1
-            if (cenaVitoria == 1 && texturaVitoria1.id > 0) {
-                Rectangle source = {0, 0, (float)texturaVitoria1.width, (float)texturaVitoria1.height};
-                Rectangle dest = {0, 0, (float)screenWidth, (float)screenHeight};
-                DrawTexturePro(texturaVitoria1, source, dest, (Vector2){0, 0}, 0.0f, WHITE);
-                
-                const char* instrucao = "Pressione ENTER para continuar...";
-                int instrWidth = MeasureText(instrucao, 20);
-                DrawText(instrucao, screenWidth/2 - instrWidth/2, screenHeight - 40, 20, WHITE);
-            }
+            Rectangle source = {0, 0, (float)texturaVitoria1.width, (float)texturaVitoria1.height};
+            Rectangle dest = {0, 0, (float)screenWidth, (float)screenHeight};
+            DrawTexturePro(texturaVitoria1, source, dest, (Vector2){0, 0}, 0.0f, WHITE);
+            
+            const char* instrucao = "Pressione ENTER para continuar...";
+            int instrWidth = MeasureText(instrucao, 20);
+            DrawText(instrucao, screenWidth/2 - instrWidth/2, screenHeight - 40, 20, WHITE);
         } else {
             // Tela normal de game over (após as cenas ou se não for vitória)
             // Desenha imagem de fundo conforme o resultado
