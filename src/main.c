@@ -645,23 +645,21 @@ void TelaJogo(int *estadoJogo, int screenWidth, int screenHeight, Texture2D back
             }
         }
 
-        // novos obstaculos com frequencia progressiva
-        frameCount++;
-        if (frameCount >= framesEntreObstaculos) {
-            // Escolhe aleatoriamente: 1, 2 ou 3 obstáculos
-            int quantidade = (rand() % 3) + 1; // 1, 2 ou 3
-            criarMultiplosObstaculos(obstaculos, MAX_OBSTACULOS, screenHeight, quantidade, horizon_y);
-            frameCount = 0;
-        }
-
         // Timer para animação das sprites do jogador (alterna a cada 0.5s)
         tempoAnimacao += GetFrameTime();
         if (tempoAnimacao >= 0.25f) {
             frameAnimacao = !frameAnimacao;
             tempoAnimacao = 0.0f;
         }
-
-        // gerar itens colecionáveis a cada 2seg
+        
+        // novos obstaculos a cada 2seg
+        frameCount++;
+        if (frameCount >= 120) {
+            int quantidade = (rand() % 3) + 1; // aleatorio 1, 2 ou 3
+            criarMultiplosObstaculos(obstaculos, MAX_ITENS, screenHeight, quantidade, horizon_y);
+            frameCount = 0;
+        }
+        // novos itens a cada 2seg
         frameCountItens++;
         if (frameCountItens >= 120) {
             criarItem(itens, MAX_ITENS, screenHeight, obstaculos, MAX_OBSTACULOS, horizon_y, itensColetados);
