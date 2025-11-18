@@ -314,8 +314,11 @@ void criarItem(ItemColetavel itens[], int tamanho, float screenHeight, Obstaculo
                         // Calcula distância em Y entre o item e o obstáculo
                         float distancia_y = obstaculos[j].pos_y - pos_y_item;
                         
-                        // Se estiver muito próximo (dentro de 80 pixels), invalida
-                        if (distancia_y >= -80.0f && distancia_y <= 80.0f) {
+                        // Distância de segurança maior para ônibus (tipo 0)
+                        float distancia_seguranca = (obstaculos[j].tipo == 0) ? 150.0f : 80.0f;
+                        
+                        // Se estiver muito próximo, invalida
+                        if (distancia_y >= -distancia_seguranca && distancia_y <= distancia_seguranca) {
                             lane_valida = 0;
                             break;
                         }

@@ -23,10 +23,10 @@ void freeRanking(RankingList *r);
 // Insert a new entry sorted ascending by time
 void insertRanking(RankingList *r, const char *name, float time);
 
-// Persistence: load/save the full list (all entries) in CSV text format (name,time)
-// and export the top N to a separate CSV file.
+// Persistence: load/save the full list (all entries) in TXT text format (name,time)
+// and export the top N to a separate TXT file.
 void loadRankingAll(RankingList *r, const char *filepath);
 void saveRankingAll(RankingList *r, const char *filepath);
-void saveTopCSV(RankingList *r, const char *filepath, int topN);
+void saveTopTXT(RankingList *r, const char *filepath, int topN);
 
 #endif

@@ -124,20 +124,13 @@ Pula-Catraca/
 
 ## 🏆 Sistema de Ranking
 O jogo salva automaticamente:
-- **ranking_top10.csv**: Os 10 melhores tempos
+- **ranking_top5.csv**: Os 5 melhores tempos
 - **ranking_all.csv**: Histórico completo de todas as partidas
 
-Formato: `Nickname,Tempo (segundos)`
-
-## 🎵 Áudio
-- Música ambiente no menu
-- Som de corrida durante o jogo
-- Efeitos sonoros para colisões e coleta de itens
-- Música especial de vitória
-- Todos os sons com volume ajustável
-
 ## 👥 Equipe
-Projeto desenvolvido para a disciplina de Programação Imperativa Funcional
+Luis Antonio Godoy 
+Louise Pessoa
+Marília Liz
 
 ## 📝 Licença
 Este projeto é de código aberto para fins educacionais.

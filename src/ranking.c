@@ -69,7 +69,7 @@ void saveRankingAll(RankingList *r, const char *filepath) {
     fclose(f);
 }
 
-void saveTopCSV(RankingList *r, const char *filepath, int topN) {
+void saveTopTXT(RankingList *r, const char *filepath, int topN) {
     if (!r || !filepath) return;
     FILE *f = fopen(filepath, "w");
     if (!f) return;

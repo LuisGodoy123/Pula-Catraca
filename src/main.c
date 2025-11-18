@@ -14,7 +14,7 @@ void DrawTextRec(Font font, const char *text, Rectangle rec, float fontSize, flo
 
 // Protótipos das funções
 void TelaMenu(int *estadoJogo, int screenWidth, int screenHeight, Texture2D background, Sound somMenu);
-void TelaNickname(int *estadoJogo, int screenWidth, int screenHeight, Texture2D background, char *nickname);
+void TelaNickname(int *estadoJogo, int screenWidth, int screenHeight, Texture2D background, char *nickname, Sound somMenu);
 void TelaJogo(int *estadoJogo, int screenWidth, int screenHeight, Texture2D background_jogo, char *nickname, Sound somMenu, Sound somCorrida, Sound somItemBom, Sound somItemRuim, Sound somColisao, Sound somVitoria, Sound somMusicaVitoria);
 void TelaRanking(int *estadoJogo, int screenWidth, int screenHeight, Texture2D background);
 void TelaComoJogar(int *estadoJogo, int screenWidth, int screenHeight, Texture2D background);
@@ -84,11 +84,7 @@ int main(void) {
 
     // Inicializa e carrega ranking salvo (se existir)
     initRanking(&ranking);
-    loadRankingAll(&ranking, "ranking_all.csv");
-
-    // Inicializa ranking em memória e carrega do disco (arquivo com todos os tempos)
-    initRanking(&ranking);
-    loadRankingAll(&ranking, "ranking_all.csv");
+    loadRankingAll(&ranking, "ranking_all.txt");
     
     // Carrega sons
     Sound somMenu = LoadSound("assets/sound/scene_inicial.wav");
@@ -97,7 +93,7 @@ int main(void) {
     Sound somItemRuim = LoadSound("assets/sound/item_ruim.wav");
     Sound somColisao = LoadSound("assets/sound/ouch.wav");
     Sound somVitoria = LoadSound("assets/sound/vitoria.wav");
-    Sound somMusicaVitoria = LoadSound("assets/sound/musica_vitoria.wav");
+    Sound somMusicaVitoria = LoadSound("assets/sound/musica_vitoria.mp3");
     
     // Ajusta volume dos sons (0.0 a 1.0)
     SetSoundVolume(somMenu, 0.3f);
@@ -141,7 +137,7 @@ int main(void) {
         if (estadoJogo == 0) {
             TelaMenu(&estadoJogo, screenWidth, screenHeight, background_menu, somMenu);
         } else if (estadoJogo == 1) {
-            TelaNickname(&estadoJogo, screenWidth, screenHeight, background_menu, nickname);
+            TelaNickname(&estadoJogo, screenWidth, screenHeight, background_menu, nickname, somMenu);
         } else if (estadoJogo == 2) {
             TelaJogo(&estadoJogo, screenWidth, screenHeight, background_jogo, nickname, somMenu, somCorrida, somItemBom, somItemRuim, somColisao, somVitoria, somMusicaVitoria);
         } else if (estadoJogo == 3) {
@@ -151,8 +147,8 @@ int main(void) {
         }
     }
     // salva ranking completo e top10 antes de sair
-    saveRankingAll(&ranking, "ranking_all.csv");
-    saveTopCSV(&ranking, "ranking_top10.csv", 10);
+    saveRankingAll(&ranking, "ranking_all.txt");
+    saveTopTXT(&ranking, "ranking_top10.txt", 10);
     freeRanking(&ranking);
     
     // Descarrega sons
@@ -273,7 +269,11 @@ void TelaMenu(int *estadoJogo, int screenWidth, int screenHeight, Texture2D back
     EndDrawing();
 }
 
-void TelaNickname(int *estadoJogo, int screenWidth, int screenHeight, Texture2D background, char *nickname) {
+void TelaNickname(int *estadoJogo, int screenWidth, int screenHeight, Texture2D background, char *nickname, Sound somMenu) {
+    if (!IsSoundPlaying(somMenu)) {
+        PlaySound(somMenu); // Para música do menu antes de ir para o jogo
+    }
+    
     // fonte texto
     Font titleFont = GetFontDefault();
     // paleta
@@ -281,6 +281,7 @@ void TelaNickname(int *estadoJogo, int screenWidth, int screenHeight, Texture2D 
     Color yellow = (Color){254, 255, 153, 255}; // #feff99
     Color blue = (Color){175, 218, 225, 255};   // #afdae1
     Color green = (Color){87, 183, 33, 255};    // #57b721
+    Color cyan = (Color){102, 255, 255, 255};   // #66FFFF
 
     // caixa de texto
     float boxWidth = screenWidth * 0.4f;
@@ -406,6 +407,33 @@ void TelaNickname(int *estadoJogo, int screenWidth, int screenHeight, Texture2D 
                    fontSize * 0.5f, 2, DARKGRAY);
     }
 
+    // Botão de voltar
+    btnWidth = screenWidth * 0.2f;
+    btnHeight = screenHeight * 0.08f;
+    Rectangle backBtn = {
+        screenWidth / 2 - btnWidth / 2,
+        screenHeight * 0.9f,
+        btnWidth,
+        btnHeight
+    };
+    
+    mousePos = GetMousePosition();
+    bool hoverBack = CheckCollisionPointRec(mousePos, backBtn);
+    
+    if (hoverBack && IsMouseButtonPressed(MOUSE_LEFT_BUTTON)) {
+        *estadoJogo = 0; // Volta ao menu
+    }
+    
+    // Desenha botão voltar
+    DrawRectangleRounded(backBtn, 0.3f, 10, hoverBack ? (Color){254, 255, 153, 255} : cyan);
+    float btnTextSize = screenWidth * 0.04f;
+    const char* backText = "VOLTAR";
+    Vector2 backMeasure = MeasureTextEx(GetFontDefault(), backText, btnTextSize, 2);
+    DrawTextEx(GetFontDefault(), backText,
+               (Vector2){backBtn.x + btnWidth / 2 - backMeasure.x / 2,
+                        backBtn.y + btnHeight / 2 - btnTextSize / 2},
+               btnTextSize, 2, hoverBack ? pink : (Color){0, 0, 0, 255});
+    
     EndDrawing();
 }
 
@@ -418,10 +446,10 @@ void TelaJogo(int *estadoJogo, int screenWidth, int screenHeight, Texture2D back
     static int frameCount = 0;
     static int frameCountItens = 0;
     static float velocidadeJogo = 3.0f; // Velocidade inicial: 3.0 m/s
-    static float velocidadeMaxima = 30.0f; // Velocidade máxima: 30 m/s
+    static float velocidadeMaxima = 8.0f; // Velocidade máxima: 8 m/s
     static float intervaloAceleracao = 30.0f; // Acelera a cada 30 segundos
     static float tempoUltimaAceleracao = 0.0f; // Controla quando acelerar
-    static float incrementoVelocidade = 2.0f; // Aumenta 2 m/s a cada intervalo
+    static float incrementoVelocidade = 1.0f; // Aumenta 1 m/s a cada intervalo
     static float tempoDecorrido = 0.0f; // Tempo em segundos
     static bool gameOver = false;
     static bool vitoria = false;
@@ -433,12 +461,12 @@ void TelaJogo(int *estadoJogo, int screenWidth, int screenHeight, Texture2D back
     static bool frameAnimacao = false; // Alterna entre direito(false) e esquerdo(true)
     
     // Sistema progressivo de obstáculos
-    static int framesEntreObstaculos = 180; // Começa com 3 segundos (180 frames)
+    static int framesEntreObstaculos = 120; // Começa com 2 segundos (120 frames)
     static int framesMinimos = 40; // Mínimo de 0.66 segundo (~40 frames)
     static float tempoUltimoAumentoFrequencia = 0.0f; // Controla quando aumentar frequência
     static float intervaloAumentoFrequencia = 10.0f; // Aumenta frequência a cada 10 segundos
     
-    // Texturas dos obstáculos (carregadas uma vez)
+    // Texturas dos obstáculos
     static Texture2D spriteOnibusEsquerdo = {0};
     static Texture2D spriteOnibusCentro = {0};
     static Texture2D spriteOnibusDireito = {0};
@@ -446,7 +474,7 @@ void TelaJogo(int *estadoJogo, int screenWidth, int screenHeight, Texture2D back
     static Texture2D spritePneu = {0};
     static bool spritesCarregadas = false;
     
-    // Texturas dos itens colecionáveis (carregadas uma vez)
+    // Texturas dos itens colecionáveis
     static Texture2D texturasItens[TIPOS_ITENS] = {0};
     static bool texturasCarregadas = false;
     
@@ -470,18 +498,14 @@ void TelaJogo(int *estadoJogo, int screenWidth, int screenHeight, Texture2D back
     static int cenaVitoria = 0; // 0 = tela normal, 1 = scene1, 2 = scene2, 3 = voltou ao normal
     
     // Perspectiva das lanes - ajustadas para coincidir com as faixas do asfalto
-    const float horizon_y = 235.0f;          // linha do horizonte onde a estrada começa
-    
+    const float horizon_y = 180.0f;          // linha do horizonte onde a estrada começa
     // Medidas calibradas para coincidir com a imagem de fundo (800x600)
     // No topo (horizonte): as 3 lanes ocupam aproximadamente 25% da largura da tela
     // Na base: ocupam mais que a largura da tela para coincidir com as faixas
-    
     float lane_width_top = screenWidth * 0.083f;      // ~66px por lane no topo (3 lanes = 25% da tela)
-    float lane_offset_top = screenWidth * 0.375f;     // começa em 37.5% da tela (centralizado)
+    float lane_offset_top = screenWidth * 0.385f;     // começa em 38.5% da tela (centralizado)
     float lane_width_bottom = screenWidth * 0.45f;    // ~360px por lane na base (3 lanes = 135% da tela)
     float lane_offset_bottom = -screenWidth * 0.175f; // começa antes da borda esquerda (-17.5%)
-
-    int cont = 0;
 
     BeginDrawing();
     ClearBackground(RAYWHITE);
@@ -505,22 +529,6 @@ void TelaJogo(int *estadoJogo, int screenWidth, int screenHeight, Texture2D back
         for (int i = 0; i < TIPOS_ITENS; i++) {
             itensColetados[i] = 0;
         }
-        
-        frameCount = 0;
-        frameCountItens = 0;
-        velocidadeJogo = 3.0f; // Velocidade inicial
-        velocidadeMaxima = 30.0f;
-        intervaloAceleracao = 30.0f;
-        tempoUltimaAceleracao = 0.0f;
-        incrementoVelocidade = 2.0f;
-        tempoDecorrido = 0.0f;
-        gameOver = false;
-        vitoria = false;
-        cenaVitoria = 0;
-        
-        // Inicializa sistema progressivo de obstáculos
-        framesEntreObstaculos = 180; // Começa com 3 segundos
-        tempoUltimoAumentoFrequencia = 0.0f;
         
         // Cria obstáculos iniciais imediatamente
         int quantidade_inicial = (rand() % 3) + 1; // 1, 2 ou 3
@@ -653,11 +661,9 @@ void TelaJogo(int *estadoJogo, int screenWidth, int screenHeight, Texture2D back
             tempoAnimacao = 0.0f;
         }
 
-        
-
-        // gerar itens colecionáveis a cada 180 frames (3 seg)
+        // gerar itens colecionáveis a cada 2seg
         frameCountItens++;
-        if (frameCountItens >= 90) {
+        if (frameCountItens >= 120) {
             criarItem(itens, MAX_ITENS, screenHeight, obstaculos, MAX_OBSTACULOS, horizon_y, itensColetados);
             frameCountItens = 0;
         }
@@ -753,8 +759,8 @@ void TelaJogo(int *estadoJogo, int screenWidth, int screenHeight, Texture2D back
             // Se o jogador acabou de vencer, insere no ranking (apenas uma vez)
             if (vitoria && !rankingInserido && nickname[0] != '\0') {
                 insertRanking(&ranking, nickname, tempoDecorrido);
-                saveTopCSV(&ranking, "ranking_top10.csv", 10);
-                saveRankingAll(&ranking, "ranking_all.csv");
+                saveTopTXT(&ranking, "ranking_top10.txt", 10);
+                saveRankingAll(&ranking, "ranking_all.txt");
                 rankingInserido = true;
                 
                 // Salva o último tempo e nickname do jogador para exibir no ranking
@@ -914,10 +920,6 @@ void TelaJogo(int *estadoJogo, int screenWidth, int screenHeight, Texture2D back
         (Vector2){lane_offset_bottom + lane_width_bottom * 3, screenHeight},  // inferior direito
         (Color){100, 100, 100, 100}
     );
-    
-    // divisórias das lanes
-    DrawLine(lane_offset_bottom + lane_width_bottom, screenHeight, lane_offset_top + lane_width_top, horizon_y, DARKGRAY);
-    DrawLine(lane_offset_bottom + lane_width_bottom * 2, screenHeight, lane_offset_top + lane_width_top * 2, horizon_y, DARKGRAY);
 
     // caminho dos obstaculos com perspectiva
     for (int i = 0; i < MAX_OBSTACULOS; i++) {
@@ -1063,10 +1065,10 @@ void TelaJogo(int *estadoJogo, int screenWidth, int screenHeight, Texture2D back
     // desenha o jogador com sprites
     if (jogador.deslizando) {
         // deslizando - usa direção do movimento
-        Texture2D spriteAtual = frameAnimacao ? spriteDeslizandoEsquerda : spriteDeslizandoDireita;
+        Texture2D spriteAtual = (direcaoJogador < 0) ? spriteDeslizandoDireita : spriteDeslizandoEsquerda;
         if (spriteAtual.id > 0) {
             Rectangle source = {0, 0, (float)spriteAtual.width, (float)spriteAtual.height};
-            // Sprite 150x75 mas hitbox mantém 40x30
+            // Sprite 150x150 mas hitbox = 40x30
             Rectangle dest = {jogador.pos_x_real - 75, jogador.pos_y_real - 60, 150, 150};
             DrawTexturePro(spriteAtual, source, dest, (Vector2){0, 0}, 0.0f, WHITE);
         } else {
@@ -1074,7 +1076,7 @@ void TelaJogo(int *estadoJogo, int screenWidth, int screenHeight, Texture2D back
         }
     } else if (jogador.pulando) {
         // pulando - usa direção do movimento
-        Texture2D spriteAtual = (direcaoJogador < 0) ? spritePulandoEsquerda : spritePulandoDireita;
+        Texture2D spriteAtual = (direcaoJogador < 0) ? spritePulandoDireita : spritePulandoEsquerda;
         if (spriteAtual.id > 0) {
             Rectangle source = {0, 0, (float)spriteAtual.width, (float)spriteAtual.height};
             // Sprite 150x150 mas hitbox mantém 40x50
@@ -1097,35 +1099,20 @@ void TelaJogo(int *estadoJogo, int screenWidth, int screenHeight, Texture2D back
     }
 
     if (gameOver) {
-        // Toca música de vitória em loop após som de vitória acabar
-        if (vitoria) {
+        // Se está na cena de vitória 1
+        if (vitoria && cenaVitoria == 1 && texturaVitoria1.id > 0) {
+            // Toca música de vitória em loop após som de vitória acabar
             if (!IsSoundPlaying(somVitoria) && !IsSoundPlaying(somMusicaVitoria)) {
                 PlaySound(somMusicaVitoria);
             }
-        }
-        
-        // Se for vitória e ainda está nas cenas de vitória (1 ou 2)
-        if (vitoria && cenaVitoria > 0 && cenaVitoria < 3) {
             // Mostra cena de vitória 1
-            if (cenaVitoria == 1 && texturaVitoria1.id > 0) {
-                Rectangle source = {0, 0, (float)texturaVitoria1.width, (float)texturaVitoria1.height};
-                Rectangle dest = {0, 0, (float)screenWidth, (float)screenHeight};
-                DrawTexturePro(texturaVitoria1, source, dest, (Vector2){0, 0}, 0.0f, WHITE);
-                
-                const char* instrucao = "Pressione ENTER para continuar...";
-                int instrWidth = MeasureText(instrucao, 20);
-                DrawText(instrucao, screenWidth/2 - instrWidth/2, screenHeight - 40, 20, WHITE);
-            }
-            // Mostra cena de vitória 2
-            else if (cenaVitoria == 2 && texturaVitoria2.id > 0) {
-                Rectangle source = {0, 0, (float)texturaVitoria2.width, (float)texturaVitoria2.height};
-                Rectangle dest = {0, 0, (float)screenWidth, (float)screenHeight};
-                DrawTexturePro(texturaVitoria2, source, dest, (Vector2){0, 0}, 0.0f, WHITE);
-                
-                const char* instrucao = "Pressione ENTER para continuar...";
-                int instrWidth = MeasureText(instrucao, 20);
-                DrawText(instrucao, screenWidth/2 - instrWidth/2, screenHeight - 40, 20, WHITE);
-            }
+            Rectangle source = {0, 0, (float)texturaVitoria1.width, (float)texturaVitoria1.height};
+            Rectangle dest = {0, 0, (float)screenWidth, (float)screenHeight};
+            DrawTexturePro(texturaVitoria1, source, dest, (Vector2){0, 0}, 0.0f, WHITE);
+            
+            const char* instrucao = "Pressione ENTER para continuar...";
+            int instrWidth = MeasureText(instrucao, 20);
+            DrawText(instrucao, screenWidth/2 - instrWidth/2, screenHeight - 40, 20, WHITE);
         } else {
             // Tela normal de game over (após as cenas ou se não for vitória)
             // Desenha imagem de fundo conforme o resultado
@@ -1291,9 +1278,9 @@ void TelaRanking(int *estadoJogo, int screenWidth, int screenHeight, Texture2D b
     
     // Dimensões da tabela
     float tableWidth = screenWidth * 0.8f;
-    float tableHeight = screenHeight * 0.65f;
+    float tableHeight = screenHeight * 0.7f;
     float tableX = (screenWidth - tableWidth) / 2;
-    float tableY = screenHeight * 0.2f;
+    float tableY = screenHeight * 0.15f;
     
     // Borda externa branca/ciano
     DrawRectangleLinesEx((Rectangle){tableX - 5, tableY - 80, tableWidth + 10, tableHeight + 90}, 4, cyanBorder);
@@ -1332,15 +1319,15 @@ void TelaRanking(int *estadoJogo, int screenWidth, int screenHeight, Texture2D b
     float lineY = headerY + headerSize + 10;
     DrawRectangle(tableX, lineY, tableWidth, 3, white);
     
-    // Desenha top 5 do ranking
-    float rowHeight = 45;
+    // Desenha top 10 do ranking
+    float rowHeight = 40;
     float rowY = lineY + 15;
-    float rowSize = screenWidth * 0.035f;
+    float rowSize = screenWidth * 0.03f;
     
     RankingNode* current = ranking.head;
     int rank = 1;
     
-    while (current != NULL && rank <= 5) {
+    while (current != NULL && rank <= 10) {
         // Alterna cores das linhas (verde e ciano)
         Color rowColor = (rank % 2 == 1) ? green1 : cyan2;
         
@@ -1369,8 +1356,8 @@ void TelaRanking(int *estadoJogo, int screenWidth, int screenHeight, Texture2D b
         rank++;
     }
     
-    // Preenche linhas vazias se houver menos de 5
-    while (rank <= 5) {
+    // Preenche linhas vazias se houver menos de 10
+    while (rank <= 10) {
         Color rowColor = (rank % 2 == 1) ? green1 : cyan2;
         DrawRectangle(tableX + 5, rowY - 5, tableWidth - 10, rowHeight - 5, rowColor);
         
@@ -1383,34 +1370,6 @@ void TelaRanking(int *estadoJogo, int screenWidth, int screenHeight, Texture2D b
         
         rowY += rowHeight;
         rank++;
-    }
-    
-    // Exibe o último score do jogador (se houver)
-    if (ultimoTempoJogador > 0.0f && ultimoNicknameJogador[0] != '\0') {
-        float yourScoreY = rowY + 30;
-        float yourScoreSize = screenWidth * 0.035f;
-        
-        // Box de destaque para o score do jogador
-        float yourScoreBoxHeight = 50;
-        DrawRectangleRounded((Rectangle){tableX + 5, yourScoreY - 10, tableWidth - 10, yourScoreBoxHeight}, 0.1f, 10, (Color){255, 215, 0, 150}); // dourado transparente
-        DrawRectangleLinesEx((Rectangle){tableX + 5, yourScoreY - 10, tableWidth - 10, yourScoreBoxHeight}, 2.0f, (Color){255, 215, 0, 255});
-        
-        // Texto "SEU SCORE:"
-        DrawTextEx(GetFontDefault(), "SEU SCORE:", 
-                   (Vector2){colRankX, yourScoreY}, yourScoreSize, 2, (Color){0, 0, 0, 255});
-        
-        // Nome do jogador
-        char playerName[21];
-        strncpy(playerName, ultimoNicknameJogador, 20);
-        playerName[20] = '\0';
-        DrawTextEx(GetFontDefault(), playerName, 
-                   (Vector2){colPlayerX, yourScoreY}, yourScoreSize, 2, (Color){0, 0, 0, 255});
-        
-        // Tempo formatado
-        int minutos = (int)ultimoTempoJogador / 60;
-        float segundos = ultimoTempoJogador - (minutos * 60);
-        DrawTextEx(GetFontDefault(), TextFormat("%02d:%05.2f", minutos, segundos), 
-                   (Vector2){colScoreX, yourScoreY}, yourScoreSize, 2, (Color){0, 0, 0, 255});
     }
     
     // Botão de voltar
@@ -1439,15 +1398,6 @@ void TelaRanking(int *estadoJogo, int screenWidth, int screenHeight, Texture2D b
                (Vector2){backBtn.x + btnWidth / 2 - backMeasure.x / 2,
                         backBtn.y + btnHeight / 2 - btnTextSize / 2},
                btnTextSize, 2, hoverBack ? pink : (Color){0, 0, 0, 255});
-    
-    // Instruções
-    DrawTextEx(GetFontDefault(), "Pressione ESC para voltar ao menu", 
-               (Vector2){10, screenHeight - 30}, 18, 1, white);
-    
-    // Permite voltar com ESC
-    if (IsKeyPressed(KEY_ESCAPE)) {
-        *estadoJogo = 0;
-    }
     
     EndDrawing();
 }
@@ -1626,15 +1576,6 @@ void TelaComoJogar(int *estadoJogo, int screenWidth, int screenHeight, Texture2D
                (Vector2){backBtn.x + btnWidth / 2 - backMeasure.x / 2,
                         backBtn.y + btnHeight / 2 - btnTextSize / 2},
                btnTextSize, 2, hoverBack ? pink : (Color){0, 0, 0, 255});
-    
-    // Instruções
-    DrawTextEx(GetFontDefault(), "Pressione ESC para voltar ao menu", 
-               (Vector2){10, screenHeight - 30}, 18, 1, white);
-    
-    // Permite voltar com ESC
-    if (IsKeyPressed(KEY_ESCAPE)) {
-        *estadoJogo = 0;
-    }
     
     EndDrawing();
 }
