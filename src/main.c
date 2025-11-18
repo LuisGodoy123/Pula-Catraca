@@ -1116,16 +1116,20 @@ void TelaJogo(int *estadoJogo, int screenWidth, int screenHeight, Texture2D back
                     // Fallback: overlay escuro se a imagem não carregar
                     DrawRectangle(0, 0, screenWidth, screenHeight, (Color){0, 0, 0, 150});
                 }
+                
+                // Overlay semi-transparente para melhorar legibilidade dos textos
+                DrawRectangle(0, 0, screenWidth, screenHeight, (Color){0, 0, 0, 100});
+                
                 const char* titulo = "VOCÊ VENCEU!";
                 int tituloWidth = MeasureText(titulo, 70);
-                // Sombra do texto para melhor contraste
-                DrawText(titulo, screenWidth/2 - tituloWidth/2 + 3, screenHeight/2 - 120 + offsetY, 70, BLACK);
-                DrawText(titulo, screenWidth/2 - tituloWidth/2, screenHeight/2 - 117 + offsetY, 70, GREEN);
+                // Sombra do texto para melhor contraste - sobe mais 30 pixels
+                DrawText(titulo, screenWidth/2 - tituloWidth/2 + 3, screenHeight/2 - 150 + offsetY, 70, BLACK);
+                DrawText(titulo, screenWidth/2 - tituloWidth/2, screenHeight/2 - 147 + offsetY, 70, GREEN);
                 
                 const char* subtitulo = "Coletou todos os tipos de itens!";
                 int subtituloWidth = MeasureText(subtitulo, 25);
-                DrawText(subtitulo, screenWidth/2 - subtituloWidth/2 + 2, screenHeight/2 - 47 + offsetY, 25, BLACK);
-                DrawText(subtitulo, screenWidth/2 - subtituloWidth/2, screenHeight/2 - 45 + offsetY, 25, WHITE);
+                DrawText(subtitulo, screenWidth/2 - subtituloWidth/2 + 2, screenHeight/2 - 77 + offsetY, 25, BLACK);
+                DrawText(subtitulo, screenWidth/2 - subtituloWidth/2, screenHeight/2 - 75 + offsetY, 25, WHITE);
 
             } else {
                 // Usa gameOver.png como fundo quando perde
@@ -1137,6 +1141,9 @@ void TelaJogo(int *estadoJogo, int screenWidth, int screenHeight, Texture2D back
                     // Fallback: overlay escuro se a imagem não carregar
                     DrawRectangle(0, 0, screenWidth, screenHeight, (Color){0, 0, 0, 150});
                 }
+                
+                // Overlay semi-transparente para melhorar legibilidade dos textos
+                DrawRectangle(0, 0, screenWidth, screenHeight, (Color){0, 0, 0, 100});
             }
             
             // Tempo centralizado
@@ -1147,20 +1154,20 @@ void TelaJogo(int *estadoJogo, int screenWidth, int screenHeight, Texture2D back
             DrawText(textoTempo, screenWidth/2 - tempoWidth/2 + 2, screenHeight/2 + 12 + offsetY, 40, BLACK);
             DrawText(textoTempo, screenWidth/2 - tempoWidth/2, screenHeight/2 + 10 + offsetY, 40, WHITE);
             
-            // Label "Itens coletados" centralizado
+            // Label "Itens coletados" centralizado - desce mais 30 pixels
             const char* labelItens = "Itens coletados:";
             int labelWidth = MeasureText(labelItens, 28);
-            DrawText(labelItens, screenWidth/2 - labelWidth/2 + 2, screenHeight/2 + 62 + offsetY, 28, BLACK);
-            DrawText(labelItens, screenWidth/2 - labelWidth/2, screenHeight/2 + 60 + offsetY, 28, WHITE);
+            DrawText(labelItens, screenWidth/2 - labelWidth/2 + 2, screenHeight/2 + 92 + offsetY, 28, BLACK);
+            DrawText(labelItens, screenWidth/2 - labelWidth/2, screenHeight/2 + 90 + offsetY, 28, WHITE);
             
-            // Ícones dos itens centralizados
+            // Ícones dos itens centralizados - desce mais 30 pixels
             // Cada ícone: 48px de largura, espaçamento de 60px entre centros
             // Total: 5 ícones com 4 espaços de 60px = 240px de espaçamento + 48px/2 em cada ponta
             int totalWidth = (TIPOS_ITENS - 1) * 60 + 48; // Largura total: 4*60 + 48 = 288px
             int startX = screenWidth/2 - totalWidth/2 + 24; // +24 para começar no centro do primeiro ícone
             for (int i = 0; i < TIPOS_ITENS; i++) {
                 int icon_x = startX + (i * 60);
-                int icon_y = screenHeight/2 + 75 + offsetY;
+                int icon_y = screenHeight/2 + 105 + offsetY;
                 if (texturasItens[i].id > 0) {
                     Rectangle source = {0, 0, (float)texturasItens[i].width, (float)texturasItens[i].height};
                     Rectangle dest = {icon_x - 24, icon_y, 48, 48};
@@ -1175,16 +1182,16 @@ void TelaJogo(int *estadoJogo, int screenWidth, int screenHeight, Texture2D back
                 DrawText(texto, icon_x - textWidth/2, icon_y + 55, 30, WHITE);
             }
             
-            // Instruções centralizadas
+            // Instruções centralizadas - desce mais 30 pixels
             const char* instrucao1 = "Pressione R para reiniciar";
             int instr1Width = MeasureText(instrucao1, 25);
-            DrawText(instrucao1, screenWidth/2 - instr1Width/2 + 2, screenHeight/2 + 172 + offsetY, 25, BLACK);
-            DrawText(instrucao1, screenWidth/2 - instr1Width/2, screenHeight/2 + 170 + offsetY, 25, WHITE);
+            DrawText(instrucao1, screenWidth/2 - instr1Width/2 + 2, screenHeight/2 + 202 + offsetY, 25, BLACK);
+            DrawText(instrucao1, screenWidth/2 - instr1Width/2, screenHeight/2 + 200 + offsetY, 25, WHITE);
             
             const char* instrucao2 = "P=Pausar | X=Resetar | ESC=Fechar jogo";
             int instr2Width = MeasureText(instrucao2, 25);
-            DrawText(instrucao2, screenWidth/2 - instr2Width/2 + 2, screenHeight/2 + 207 + offsetY, 25, BLACK);
-            DrawText(instrucao2, screenWidth/2 - instr2Width/2, screenHeight/2 + 205 + offsetY, 25, WHITE);
+            DrawText(instrucao2, screenWidth/2 - instr2Width/2 + 2, screenHeight/2 + 237 + offsetY, 25, BLACK);
+            DrawText(instrucao2, screenWidth/2 - instr2Width/2, screenHeight/2 + 235 + offsetY, 25, WHITE);
         }
     } else {
         // HUD do jogo - Caixa estilizada com tempo e itens (canto superior esquerdo)
