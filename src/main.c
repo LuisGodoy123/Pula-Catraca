@@ -93,7 +93,7 @@ int main(void) {
     Sound somItemRuim = LoadSound("assets/sound/item_ruim.wav");
     Sound somColisao = LoadSound("assets/sound/ouch.wav");
     Sound somVitoria = LoadSound("assets/sound/vitoria.wav");
-    Sound somMusicaVitoria = LoadSound("assets/sound/musica_vitoria.wav");
+    Sound somMusicaVitoria = LoadSound("assets/sound/musica_vitoria.mp3");
     
     // Ajusta volume dos sons (0.0 a 1.0)
     SetSoundVolume(somMenu, 0.3f);
