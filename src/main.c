@@ -1187,53 +1187,78 @@ void TelaJogo(int *estadoJogo, int screenWidth, int screenHeight, Texture2D back
             DrawText(instrucao2, screenWidth/2 - instr2Width/2, screenHeight/2 + 205 + offsetY, 25, WHITE);
         }
     } else {
-        // debug e HUD
-        // Mostra tempo em minutos:segundos
+        // HUD do jogo - Caixa estilizada com tempo e itens (canto superior esquerdo)
+        // Cores da caixa
+        Color cyanBorder = (Color){102, 255, 255, 255};  // Ciano para bordas
+        Color darkPink = (Color){180, 50, 120, 220};      // Rosa escuro para fundo da caixa
+        Color yellow = (Color){255, 255, 100, 255};       // Amarelo para ícones
+        
+        // Dimensões da caixa (reduzidas)
+        float boxWidth = 350.0f;  // Largura fixa menor
+        float boxHeight = 70.0f;  // Altura reduzida
+        float boxX = 20.0f;  // 20px da borda esquerda
+        float boxY = 20.0f;  // 20px do topo
+        
+        // Desenha caixa principal com bordas arredondadas
+        DrawRectangleRounded((Rectangle){boxX, boxY, boxWidth, boxHeight}, 0.2f, 8, darkPink);
+        
+        // Bordas externas (múltiplas camadas para efeito 3D)
+        DrawRectangleRoundedLines((Rectangle){boxX - 3, boxY - 3, boxWidth + 6, boxHeight + 6}, 0.2f, 8, cyanBorder);
+        DrawRectangleRoundedLines((Rectangle){boxX - 1, boxY - 1, boxWidth + 2, boxHeight + 2}, 0.2f, 8, (Color){80, 200, 200, 255});
+        
+        // Linha divisória vertical no meio
+        float middleX = boxX + boxWidth / 2;
+        DrawLineEx((Vector2){middleX, boxY + 10}, (Vector2){middleX, boxY + boxHeight - 10}, 3, cyanBorder);
+        
+        // Listras diagonais decorativas (canto superior direito da caixa)
+        for (int i = 0; i < 5; i++) {
+            float stripeX = boxX + boxWidth * 0.65f + (i * 12);
+            DrawLineEx(
+                (Vector2){stripeX, boxY + 5}, 
+                (Vector2){stripeX + 25, boxY + 30}, 
+                2, (Color){cyanBorder.r, cyanBorder.g, cyanBorder.b, 80}
+            );
+        }
+        
+        // SEÇÃO ESQUERDA - TEMPO
+        float leftSectionX = boxX + 15;
+        float leftSectionY = boxY + boxHeight / 2;
+        
+        // Ícone de relógio (representação simples)
+        float clockCenterX = leftSectionX + 18;
+        float clockCenterY = leftSectionY;
+        DrawCircle(clockCenterX, clockCenterY, 14, yellow);
+        DrawCircle(clockCenterX, clockCenterY, 12, darkPink);
+        DrawLineEx((Vector2){clockCenterX, clockCenterY}, (Vector2){clockCenterX, clockCenterY - 8}, 2, yellow);
+        DrawLineEx((Vector2){clockCenterX, clockCenterY}, (Vector2){clockCenterX + 5, clockCenterY}, 2, yellow);
+        
+        // Tempo em formato MM:SS
         int minutos = (int)tempoDecorrido / 60;
         int segundos = (int)tempoDecorrido % 60;
-        DrawText(TextFormat("Tempo: %02d:%02d", minutos, segundos), 10, 10, 30, BLACK);
-        DrawText(TextFormat("Velocidade: %.1f m/s", velocidadeJogo), 10, 45, 20, BLACK);
+        const char* tempoTexto = TextFormat("%02d:%02d", minutos, segundos);
+        DrawText(tempoTexto, leftSectionX + 42, leftSectionY - 14, 28, cyanBorder);
         
-        // Barra de progresso para próxima aceleração
-        if (velocidadeJogo < velocidadeMaxima) {
-            float tempoDesdeUltimaAceleracao = tempoDecorrido - tempoUltimaAceleracao;
-            float progressoAceleracao = tempoDesdeUltimaAceleracao / intervaloAceleracao;
-            if (progressoAceleracao > 1.0f) progressoAceleracao = 1.0f;
-            
-            int barWidth = 200;
-            int barHeight = 15;
-            int barX = 10;
-            int barY = 72;
-            
-            // Fundo da barra
-            DrawRectangle(barX, barY, barWidth, barHeight, (Color){50, 50, 50, 200});
-            // Progresso
-            DrawRectangle(barX, barY, (int)(barWidth * progressoAceleracao), barHeight, (Color){255, 200, 0, 255});
-            // Borda
-            DrawRectangleLines(barX, barY, barWidth, barHeight, BLACK);
-        } else {
-            DrawText("VELOCIDADE MÁXIMA ATINGIDA!", 10, 72, 15, RED);
+        // SEÇÃO DIREITA - ITENS
+        float rightSectionX = middleX + 10;
+        float rightSectionY = boxY + boxHeight / 2;
+        
+        // Ícone de mochila (representação simples)
+        float bagCenterX = rightSectionX + 15;
+        float bagCenterY = rightSectionY;
+        DrawRectangle(bagCenterX - 10, bagCenterY - 8, 20, 16, yellow);
+        DrawRectangle(bagCenterX - 6, bagCenterY - 12, 12, 6, yellow);
+        
+        // Texto "ITENS X/5" (ajustado para caber na caixa)
+        int itensColetadosTotal = 0;
+        for (int i = 0; i < 5; i++) {  // Conta apenas itens bons (0-4)
+            if (itensColetados[i] > 0) itensColetadosTotal++;
         }
+        const char* itensTexto = TextFormat("ITENS %d/5", itensColetadosTotal);
+        DrawText(itensTexto, rightSectionX + 35, rightSectionY - 12, 22, cyanBorder);
         
-        DrawText(TextFormat("Lane: %d", jogador.lane), 10, 95, 20, BLACK);
-        
-        // Mostra itens coletados durante o jogo
-        DrawText("Itens:", 10, 120, 20, BLACK);
-        for (int i = 0; i < TIPOS_ITENS; i++) {
-            int icon_x = 20 + (i * 35);
-            int icon_y = 140;
-            if (texturasItens[i].id > 0) {
-                Rectangle source = {0, 0, (float)texturasItens[i].width, (float)texturasItens[i].height};
-                Rectangle dest = {icon_x - 24, icon_y, 48, 48}; // Aumentado de 24x24 para 48x48
-                DrawTexturePro(texturasItens[i], source, dest, (Vector2){0, 0}, 0.0f, WHITE);
-            } else {
-                DrawCircle(icon_x, icon_y + 10, 12, coresItens[i]);
-            }
-            DrawText(TextFormat("%d", itensColetados[i]), 15 + (i * 35), 165, 15, itensColetados[i] > 0 ? GREEN : RED);
-        }
-        
-        DrawText("W=Pular | A=Esq | D=Dir | S=Deslizar", 10, screenHeight - 50, 18, BLACK);
-        DrawText("P=Pausar | X=Menu", 10, screenHeight - 28, 18, BLACK);
+        // Instruções de controle no canto inferior
+        DrawText("W=Pular | A=Esq | D=Dir | S=Deslizar", 10, screenHeight - 50, 18, WHITE);
+        DrawText("P=Pausar | X=Menu", 10, screenHeight - 28, 18, WHITE);
     }
 
     EndDrawing();
