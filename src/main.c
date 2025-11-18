@@ -1327,7 +1327,7 @@ void TelaRanking(int *estadoJogo, int screenWidth, int screenHeight, Texture2D b
     RankingNode* current = ranking.head;
     int rank = 1;
     
-    while (current != NULL && rank <= 10) {
+    while (current != NULL && rank <= 5) {
         // Alterna cores das linhas (verde e ciano)
         Color rowColor = (rank % 2 == 1) ? green1 : cyan2;
         
@@ -1357,7 +1357,7 @@ void TelaRanking(int *estadoJogo, int screenWidth, int screenHeight, Texture2D b
     }
     
     // Preenche linhas vazias se houver menos de 10
-    while (rank <= 10) {
+    while (rank <= 5) {
         Color rowColor = (rank % 2 == 1) ? green1 : cyan2;
         DrawRectangle(tableX + 5, rowY - 5, tableWidth - 10, rowHeight - 5, rowColor);
         
