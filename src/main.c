@@ -466,7 +466,7 @@ void TelaJogo(int *estadoJogo, int screenWidth, int screenHeight, Texture2D back
     static int cenaVitoria = 0; // 0 = tela normal, 1 = scene1, 2 = scene2, 3 = voltou ao normal
     
     // Perspectiva das lanes - ajustadas para coincidir com as faixas do asfalto
-    const float horizon_y = 200.0f;          // linha do horizonte onde a estrada começa
+    const float horizon_y = 180.0f;          // linha do horizonte onde a estrada começa
     // Medidas calibradas para coincidir com a imagem de fundo (800x600)
     // No topo (horizonte): as 3 lanes ocupam aproximadamente 25% da largura da tela
     // Na base: ocupam mais que a largura da tela para coincidir com as faixas
@@ -906,10 +906,6 @@ void TelaJogo(int *estadoJogo, int screenWidth, int screenHeight, Texture2D back
         (Vector2){lane_offset_bottom + lane_width_bottom * 3, screenHeight},  // inferior direito
         (Color){100, 100, 100, 100}
     );
-    
-    // divisórias das lanes
-    DrawLine(lane_offset_bottom + lane_width_bottom, screenHeight, lane_offset_top + lane_width_top, horizon_y, DARKGRAY);
-    DrawLine(lane_offset_bottom + lane_width_bottom * 2, screenHeight, lane_offset_top + lane_width_top * 2, horizon_y, DARKGRAY);
 
     // caminho dos obstaculos com perspectiva
     for (int i = 0; i < MAX_OBSTACULOS; i++) {
