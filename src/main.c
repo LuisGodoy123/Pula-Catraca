@@ -1060,8 +1060,7 @@ void TelaJogo(int *estadoJogo, int screenWidth, int screenHeight, Texture2D back
     }
 
     // desenha o jogador com sprites
-    if (jogador.deslizando) {
-        // deslizando - usa direção do movimento
+    if (jogador.deslizando) { // deslizando - usa direção do movimento
         Texture2D spriteAtual = (direcaoJogador < 0) ? spriteDeslizandoDireita : spriteDeslizandoEsquerda;
         if (spriteAtual.id > 0) {
             Rectangle source = {0, 0, (float)spriteAtual.width, (float)spriteAtual.height};
@@ -1071,8 +1070,7 @@ void TelaJogo(int *estadoJogo, int screenWidth, int screenHeight, Texture2D back
         } else {
             DrawRectangle(jogador.pos_x_real - 20, jogador.pos_y_real + 20, 40, 20, RED);
         }
-    } else if (jogador.pulando) {
-        // pulando - usa direção do movimento
+    } else if (jogador.pulando) { // pulando - usa direção do movimento
         Texture2D spriteAtual = (direcaoJogador < 0) ? spritePulandoDireita : spritePulandoEsquerda;
         if (spriteAtual.id > 0) {
             Rectangle source = {0, 0, (float)spriteAtual.width, (float)spriteAtual.height};
@@ -1082,8 +1080,7 @@ void TelaJogo(int *estadoJogo, int screenWidth, int screenHeight, Texture2D back
         } else {
             DrawRectangle(jogador.pos_x_real - 20, jogador.pos_y_real - 20, 40, 40, RED);
         }
-    } else {
-        // correndo - alterna entre direita e esquerda a cada 0.5s
+    } else { // correndo - alterna entre direita e esquerda a cada 0.5s
         Texture2D spriteAtual = frameAnimacao ? spriteCorrendoEsquerda : spriteCorrendoDireita;
         if (spriteAtual.id > 0) {
             Rectangle source = {0, 0, (float)spriteAtual.width, (float)spriteAtual.height};
