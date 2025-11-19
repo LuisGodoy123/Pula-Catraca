@@ -702,6 +702,10 @@ void TelaJogo(int *estadoJogo, int screenWidth, int screenHeight, Texture2D back
                     // incrementa apenas se ainda não atingiu o limite de 5
                     if (itensColetados[tipo] < 5) {
                         itensColetados[tipo]++;
+                        if (tipo == 1) { // Moeda: reduz 2 segundos do tempo (mínimo 0)
+                            tempoDecorrido -= 2.0f;
+                            if (tempoDecorrido < 0.0f) tempoDecorrido = 0.0f;
+                        }
                         PlaySound(somItemBom); // Toca som de item bom
                     }
                 }
@@ -975,7 +979,7 @@ void TelaJogo(int *estadoJogo, int screenWidth, int screenHeight, Texture2D back
                         GREEN
                     );
                 }
-            } else { // IGUAL AO SUBWAY SURFERS: cerca de obra alta = obstaculo alto (abaixar com S)
+            } else { // cerca de obra alta = obstaculo alto (abaixar com S)
                 if (spriteLaranja.id > 0) {
                     float sprite_largura_laranja = 220.0f * scale;
                     float sprite_altura_laranja = 220.0f * scale;
@@ -1244,6 +1248,7 @@ void TelaJogo(int *estadoJogo, int screenWidth, int screenHeight, Texture2D back
         int segundos = (int)tempoDecorrido % 60;
         const char* tempoTexto = TextFormat("%02d:%02d", minutos, segundos);
         DrawText(tempoTexto, leftSectionX + 42, leftSectionY - 14, 28, cyanBorder);
+       
         
         // SEÇÃO DIREITA - ITENS
         float rightSectionX = middleX + 10;
