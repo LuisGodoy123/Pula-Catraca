@@ -471,7 +471,7 @@ void TelaJogo(int *estadoJogo, int screenWidth, int screenHeight, Texture2D back
     static Texture2D spriteOnibusCentro = {0};
     static Texture2D spriteOnibusDireito = {0};
     static Texture2D spriteCatraca = {0};
-    static Texture2D spritePneu = {0};
+    static Texture2D spriteLaranja = {0};
     static bool spritesCarregadas = false;
     
     // Texturas dos itens colecionáveis
@@ -543,7 +543,7 @@ void TelaJogo(int *estadoJogo, int screenWidth, int screenHeight, Texture2D back
         spriteOnibusCentro = LoadTexture("assets/images/onibus.png");
         spriteOnibusDireito = LoadTexture("assets/images/onibus_direito.png");
         spriteCatraca = LoadTexture("assets/images/catraca.png");
-        spritePneu = LoadTexture("assets/images/pneu.png");
+        spriteLaranja = LoadTexture("assets/images/laranja.png");
         spritesCarregadas = true;
     }
     
@@ -976,12 +976,12 @@ void TelaJogo(int *estadoJogo, int screenWidth, int screenHeight, Texture2D back
                     );
                 }
             } else { // IGUAL AO SUBWAY SURFERS: cerca de obra alta = obstaculo alto (abaixar com S)
-                if (spritePneu.id > 0) {
-                    float sprite_largura_pneu = 220.0f * scale;
-                    float sprite_altura_pneu = 220.0f * scale;
-                    Rectangle source = {0, 0, (float)spritePneu.width, (float)spritePneu.height};
-                    Rectangle dest = {obs_x - sprite_largura_pneu / 2, obstaculos[i].pos_y, sprite_largura_pneu, sprite_altura_pneu};
-                    DrawTexturePro(spritePneu, source, dest, (Vector2){0, 0}, 0.0f, WHITE);
+                if (spriteLaranja.id > 0) {
+                    float sprite_largura_laranja = 220.0f * scale;
+                    float sprite_altura_laranja = 220.0f * scale;
+                    Rectangle source = {0, 0, (float)spriteLaranja.width, (float)spriteLaranja.height};
+                    Rectangle dest = {obs_x - sprite_largura_laranja / 2, obstaculos[i].pos_y, sprite_largura_laranja, sprite_altura_laranja};
+                    DrawTexturePro(spriteLaranja, source, dest, (Vector2){0, 0}, 0.0f, WHITE);
                 } else { // Fallback: desenha estrutura vazada se a textura não carregar
                     Color cor = PURPLE;
                     float border = 8 * scale;
@@ -1183,7 +1183,7 @@ void TelaJogo(int *estadoJogo, int screenWidth, int screenHeight, Texture2D back
             }
             
             // Instruções centralizadas - desce mais 30 pixels
-            const char* instrucao1 = "Pressione R para reiniciar";
+            const char* instrucao1 = "Pressione R para continuar";
             int instr1Width = MeasureText(instrucao1, 25);
             DrawText(instrucao1, screenWidth/2 - instr1Width/2 + 2, screenHeight/2 + 202 + offsetY, 25, BLACK);
             DrawText(instrucao1, screenWidth/2 - instr1Width/2, screenHeight/2 + 200 + offsetY, 25, WHITE);
