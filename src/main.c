@@ -15,7 +15,7 @@ void DrawTextRec(Font font, const char *text, Rectangle rec, float fontSize, flo
 // Protótipos das funções
 void TelaMenu(int *estadoJogo, int screenWidth, int screenHeight, Texture2D background, Sound somMenu);
 void TelaNickname(int *estadoJogo, int screenWidth, int screenHeight, Texture2D background, char *nickname, Sound somMenu);
-void TelaJogo(int *estadoJogo, int screenWidth, int screenHeight, Texture2D background_jogo, char *nickname, Sound somMenu, Sound somCorrida, Sound somItemBom, Sound somItemRuim, Sound somColisao, Sound somVitoria, Sound somMusicaVitoria);
+void TelaJogo(int *estadoJogo, int screenWidth, int screenHeight, Texture2D background_jogo, char *nickname, Sound somMenu, Sound somCorrida, Sound somItemBom, Sound somItemRuim, Sound somColisao, Sound somVitoria, Sound somMusicaVitoria, Sound somMusicaCalma);
 void TelaRanking(int *estadoJogo, int screenWidth, int screenHeight, Texture2D background);
 void TelaComoJogar(int *estadoJogo, int screenWidth, int screenHeight, Texture2D background);
 
@@ -103,6 +103,9 @@ int main(void) {
     SetSoundVolume(somColisao, 0.6f);
     SetSoundVolume(somVitoria, 0.5f);
     SetSoundVolume(somMusicaVitoria, 0.3f);
+    
+    Sound somMusicaCalma = LoadSound("assets/sound/musica_calma.mp3");
+    SetSoundVolume(somMusicaCalma, 0.25f);
 
     // carrega imagens de fundo
     Texture2D background_menu = {0};
@@ -139,7 +142,7 @@ int main(void) {
         } else if (estadoJogo == 1) {
             TelaNickname(&estadoJogo, screenWidth, screenHeight, background_menu, nickname, somMenu);
         } else if (estadoJogo == 2) {
-            TelaJogo(&estadoJogo, screenWidth, screenHeight, background_jogo, nickname, somMenu, somCorrida, somItemBom, somItemRuim, somColisao, somVitoria, somMusicaVitoria);
+            TelaJogo(&estadoJogo, screenWidth, screenHeight, background_jogo, nickname, somMenu, somCorrida, somItemBom, somItemRuim, somColisao, somVitoria, somMusicaVitoria, somMusicaCalma);
         } else if (estadoJogo == 3) {
             TelaRanking(&estadoJogo, screenWidth, screenHeight, background_menu);
         } else if (estadoJogo == 4) {
@@ -437,7 +440,7 @@ void TelaNickname(int *estadoJogo, int screenWidth, int screenHeight, Texture2D 
     EndDrawing();
 }
 
-void TelaJogo(int *estadoJogo, int screenWidth, int screenHeight, Texture2D background_jogo, char *nickname, Sound somMenu, Sound somCorrida, Sound somItemBom, Sound somItemRuim, Sound somColisao, Sound somVitoria, Sound somMusicaVitoria) {
+void TelaJogo(int *estadoJogo, int screenWidth, int screenHeight, Texture2D background_jogo, char *nickname, Sound somMenu, Sound somCorrida, Sound somItemBom, Sound somItemRuim, Sound somColisao, Sound somVitoria, Sound somMusicaVitoria, Sound somMusicaCalma) {
     static Jogador jogador;
     static Obstaculo obstaculos[MAX_OBSTACULOS];
     static ItemColetavel itens[MAX_ITENS];
@@ -454,6 +457,9 @@ void TelaJogo(int *estadoJogo, int screenWidth, int screenHeight, Texture2D back
     static bool gameOver = false;
     static bool vitoria = false;
     static bool rankingInserido = false;
+    static bool efeitoFoneAtivo = false; // Efeito do fone de ouvido ativo
+    static float tempoEfeitoFone = 0.0f; // Contador de tempo do efeito
+    static float duracaoEfeitoFone = 4.0f; // Duração de 4 segundos
     static bool primeiraVezJogando = true; // Flag para controlar se é a primeira vez jogando (nunca resetou com X)
     static int estadoMorte = 0; // 0 = jogo normal, 1 = mostra morte_1, 2 = mostra morte_2, 3 = tela game over
     static int direcaoJogador = 0; // -1 = esquerda, 0 = centro, 1 = direita
@@ -530,6 +536,10 @@ void TelaJogo(int *estadoJogo, int screenWidth, int screenHeight, Texture2D back
             itensColetados[i] = 0;
         }
         
+        // Reseta efeito do fone
+        efeitoFoneAtivo = false;
+        tempoEfeitoFone = 0.0f;
+        
         // Cria obstáculos iniciais imediatamente
         int quantidade_inicial = (rand() % 3) + 1; // 1, 2 ou 3
         criarMultiplosObstaculos(obstaculos, MAX_OBSTACULOS, screenHeight, quantidade_inicial, horizon_y);
@@ -594,7 +604,8 @@ void TelaJogo(int *estadoJogo, int screenWidth, int screenHeight, Texture2D back
             StopSound(somMenu); // Para música do menu
             somInicializado = true;
         }
-        if (!IsSoundPlaying(somCorrida)) {
+        // Só toca corrida se o efeito do fone não estiver ativo
+        if (!efeitoFoneAtivo && !IsSoundPlaying(somCorrida)) {
             PlaySound(somCorrida);
         }
         
@@ -619,6 +630,17 @@ void TelaJogo(int *estadoJogo, int screenWidth, int screenHeight, Texture2D back
 
         // incrementa o tempo (60 FPS = 1/60 segundo por frame)
         tempoDecorrido += 1.0f / 60.0f;
+
+        // Efeito do fone: reduz velocidade temporariamente
+        if (efeitoFoneAtivo) {
+            tempoEfeitoFone += GetFrameTime();
+            if (tempoEfeitoFone >= duracaoEfeitoFone) {
+                efeitoFoneAtivo = false;
+                tempoEfeitoFone = 0.0f;
+                StopSound(somMusicaCalma);
+                PlaySound(somCorrida); // Retoma música de corrida
+            }
+        }
 
         // Sistema de aceleração progressiva
         // Verifica se deve acelerar baseado no tempo decorrido
@@ -667,8 +689,10 @@ void TelaJogo(int *estadoJogo, int screenWidth, int screenHeight, Texture2D back
         }
 
         float dt = GetFrameTime();
-        atualizarObstaculos(obstaculos, MAX_OBSTACULOS, velocidadeJogo, horizon_y, screenHeight, dt);
-        atualizarItens(itens, MAX_ITENS, velocidadeJogo, horizon_y, screenHeight, dt);
+        // Reduz velocidade dos obstáculos em 50% quando efeito do fone está ativo
+        float velocidadeObstaculos = efeitoFoneAtivo ? velocidadeJogo * 0.5f : velocidadeJogo;
+        atualizarObstaculos(obstaculos, MAX_OBSTACULOS, velocidadeObstaculos, horizon_y, screenHeight, dt);
+        atualizarItens(itens, MAX_ITENS, velocidadeJogo, horizon_y, screenHeight, dt); // Itens sempre na velocidade normal
 
         // posição X baseada na lane com perspectiva
         // O jogador está em uma posição Y específica, então precisa interpolar igual aos obstáculos/itens
@@ -705,6 +729,12 @@ void TelaJogo(int *estadoJogo, int screenWidth, int screenHeight, Texture2D back
                         if (tipo == 1) { // Moeda: reduz 2 segundos do tempo (mínimo 0)
                             tempoDecorrido -= 2.0f;
                             if (tempoDecorrido < 0.0f) tempoDecorrido = 0.0f;
+                        }
+                        if (tipo == 4) { // Fone: ativa música calma e desacelera obstáculos
+                            efeitoFoneAtivo = true;
+                            tempoEfeitoFone = 0.0f;
+                            StopSound(somCorrida); // Para música de corrida
+                            PlaySound(somMusicaCalma);
                         }
                         PlaySound(somItemBom); // Toca som de item bom
                     }
