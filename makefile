@@ -16,7 +16,7 @@ TARGET = pula_catraca
 # Flags
 CFLAGS = -Wall -std=c99 -I$(INC_DIR)
 
-# Bibliotecas do raylib
+# Bibliotecas do raylib (usa versão do sistema)
 LIBS = -lraylib -lm -lpthread -ldl -lrt -lX11
 
 # Regra padrão

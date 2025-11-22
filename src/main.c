@@ -39,7 +39,7 @@ static float DrawWrappedText(Font font, const char *text, Vector2 pos, float fon
     char *word = strtok(buf, " ");
 
     while (word) {
-        char candidate[1024] = {0};
+        char candidate[2048] = {0};
         if (line[0] == '\0')
             snprintf(candidate, sizeof(candidate), "%s", word);
         else
@@ -1567,7 +1567,7 @@ void TelaComoJogar(int *estadoJogo, int screenWidth, int screenHeight, Texture2D
     const char* objetivoFull = "Para vencer o guarda e garantir sua liberdade, voce precisa de mais do que apenas velocidade. Sua fuga sera um sucesso apenas se voce coletar pelo menos 1 de CADA ITEM espalhado pelo cenario. Cada moeda, cartao e fone e um passo mais perto da sua vitoria. Se voce nao pegar tudo, a perseguicao nao tera fim!";
     // Desenha com quebra automática dentro de objRec usando helper (retorna altura usada)
     Vector2 objPos = { objRec.x, objRec.y };
-    float usedHeight = DrawWrappedText(GetFontDefault(), objetivoFull, objPos, objTextSize, 2, objRec.width, green);
+    DrawWrappedText(GetFontDefault(), objetivoFull, objPos, objTextSize, 2, objRec.width, green);
 
     // Posicao Y para desenhar icones: logo abaixo do box de objetivo
     float iconsY = objBoxY + objBoxHeight + 10.0f;
