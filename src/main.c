@@ -71,6 +71,69 @@ static float DrawWrappedText(Font font, const char *text, Vector2 pos, float fon
     return y - pos.y; // altura ocupada
 }
 
+// Constantes de paths de assets
+#define ASSET_PIPOCA "assets/images/pipoca.png"
+#define ASSET_MOEDA "assets/images/moeda.png"
+#define ASSET_VEM "assets/images/VEM.png"
+#define ASSET_BOTAO_PARADA "assets/images/botao_parada.png"
+#define ASSET_FONE "assets/images/fone.png"
+
+// Helper: calcula progresso normalizado entre 0 e 1
+static float CalcularProgresso(float valor, float min, float max) {
+    float progress = (valor - min) / (max - min);
+    if (progress < 0) progress = 0;
+    if (progress > 1) progress = 1;
+    return progress;
+}
+
+// Helper: desenha fundo com perspectiva
+static void DesenharFundo(Texture2D background, int screenWidth, int screenHeight) {
+    if (background.id > 0) {
+        Rectangle source = {0, 0, (float)background.width, (float)background.height};
+        Rectangle dest = {0, 0, (float)screenWidth, (float)screenHeight};
+        DrawTexturePro(background, source, dest, (Vector2){0, 0}, 0.0f, WHITE);
+    }
+}
+
+// Helper: desenha texto com sombra e bordas
+static void DesenharTextoComSombra(Font font, const char *text, float x, float y, float fontSize, float spacing, Color corSombra, Color corBorda, Color corTexto, float offsetSombra) {
+    // Sombra
+    DrawTextEx(font, text, (Vector2){x + offsetSombra, y + offsetSombra}, fontSize, spacing, corSombra);
+    // Bordas
+    DrawTextEx(font, text, (Vector2){x - 2, y}, fontSize, spacing, corBorda);
+    DrawTextEx(font, text, (Vector2){x + 2, y}, fontSize, spacing, corBorda);
+    DrawTextEx(font, text, (Vector2){x, y - 2}, fontSize, spacing, corBorda);
+    DrawTextEx(font, text, (Vector2){x, y + 2}, fontSize, spacing, corBorda);
+    // Texto principal
+    DrawTextEx(font, text, (Vector2){x, y}, fontSize, spacing, corTexto);
+}
+
+// Helper: desenha botão centralizado e retorna se foi clicado
+static bool DesenharBotao(const char *text, float centerX, float y, float btnWidth, float btnHeight, float fontSize, Color corNormal, Color corHover, Color textoNormal, Color textoHover) {
+    Font font = GetFontDefault();
+    Rectangle btn = {centerX - btnWidth / 2, y, btnWidth, btnHeight};
+    Vector2 mousePos = GetMousePosition();
+    bool hover = CheckCollisionPointRec(mousePos, btn);
+
+    DrawRectangleRounded(btn, 0.3f, 10, hover ? corHover : corNormal);
+
+    float textWidth = MeasureTextEx(font, text, fontSize, 2).x;
+    DrawTextEx(font, text,
+               (Vector2){btn.x + btnWidth / 2 - textWidth / 2, btn.y + btnHeight / 2 - fontSize / 2},
+               fontSize, 2, hover ? textoHover : textoNormal);
+
+    return hover && IsMouseButtonPressed(MOUSE_LEFT_BUTTON);
+}
+
+// Helper: carrega texturas de itens colecionáveis (0-4 = bons)
+static void CarregarTexturasItens(Texture2D texturas[]) {
+    texturas[0] = LoadTexture(ASSET_PIPOCA);
+    texturas[1] = LoadTexture(ASSET_MOEDA);
+    texturas[2] = LoadTexture(ASSET_VEM);
+    texturas[3] = LoadTexture(ASSET_BOTAO_PARADA);
+    texturas[4] = LoadTexture(ASSET_FONE);
+}
+
 int main(void) {
     // resolução  e init da janela
     int screenWidth = 800;
@@ -175,9 +238,7 @@ void TelaMenu(int *estadoJogo, int screenWidth, int screenHeight, Texture2D back
     if (!IsSoundPlaying(somMenu)) {
         PlaySound(somMenu);
     }
-    
-    // fonte texto
-    Font titleFont = GetFontDefault();
+
     // paleta
     Color pink = (Color){255, 102, 196, 255};   // #ff66c4
     Color yellow = (Color){254, 255, 153, 255}; // #feff99
@@ -187,87 +248,29 @@ void TelaMenu(int *estadoJogo, int screenWidth, int screenHeight, Texture2D back
     // botões proporcionais à tela
     float btnWidth = screenWidth * 0.25f;
     float btnHeight = screenHeight * 0.08f;
-
-    Rectangle playBtn = {
-        screenWidth / 2 - btnWidth / 2,
-        screenHeight * 0.55f,
-        btnWidth,
-        btnHeight
-    };
-
-    Rectangle rankingBtn = {
-        screenWidth / 2 - btnWidth / 2,
-        screenHeight * 0.65f,
-        btnWidth,
-        btnHeight
-    };
-
-    Rectangle comoJogarBtn = {
-        screenWidth / 2 - btnWidth / 2,
-        screenHeight * 0.75f,
-        btnWidth,
-        btnHeight
-    };
-
-    Vector2 mousePos = GetMousePosition();
-    bool hoverPlay = CheckCollisionPointRec(mousePos, playBtn);
-    bool hoverRanking = CheckCollisionPointRec(mousePos, rankingBtn);
-    bool hoverComoJogar = CheckCollisionPointRec(mousePos, comoJogarBtn);
-
-    // verifica clique no "PLAY"
-    if (hoverPlay && IsMouseButtonPressed(MOUSE_LEFT_BUTTON)) {
-        StopSound(somMenu); // Para música do menu antes de ir para o jogo
-        *estadoJogo = 1; // vai p tela nickname
-    }
-    
-    // verifica clique no "RANKING"
-    if (hoverRanking && IsMouseButtonPressed(MOUSE_LEFT_BUTTON)) {
-        *estadoJogo = 3; // vai p tela de ranking
-    }
-    
-    // verifica clique no "COMO JOGAR"
-    if (hoverComoJogar && IsMouseButtonPressed(MOUSE_LEFT_BUTTON)) {
-        *estadoJogo = 4; // vai p tela de como jogar
-    }
+    float fontSize = screenWidth * 0.035f;
 
     BeginDrawing();
     ClearBackground(RAYWHITE);
 
-    // fundo redimensionado p caber na janela
-    if (background.id > 0) {
-        Rectangle source = {0, 0, (float)background.width, (float)background.height};
-        Rectangle dest = {0, 0, (float)screenWidth, (float)screenHeight};
-        DrawTexturePro(background, source, dest, (Vector2){0, 0}, 0.0f, WHITE);
-    }
-
-    float fontSize = screenWidth * 0.07f;
+    // fundo redimensionado
+    DesenharFundo(background, screenWidth, screenHeight);
 
     // botão "PLAY"
-    DrawRectangleRounded(playBtn, 0.3f, 10, hoverPlay ? yellow : blue);
-    DrawTextEx(titleFont, "PLAY",
-               (Vector2){
-                   playBtn.x + btnWidth / 2 - MeasureTextEx(titleFont, "PLAY", fontSize * 0.5f, 2).x / 2,
-                   playBtn.y + btnHeight / 2 - fontSize * 0.25f
-               },
-               fontSize * 0.5f, 2, hoverPlay ? pink : green);
+    if (DesenharBotao("PLAY", screenWidth / 2.0f, screenHeight * 0.55f, btnWidth, btnHeight, fontSize, blue, yellow, green, pink)) {
+        StopSound(somMenu);
+        *estadoJogo = 1;
+    }
 
     // botão "RANKING"
-    DrawRectangleRounded(rankingBtn, 0.3f, 10, hoverRanking ? yellow : blue);
-    DrawTextEx(titleFont, "RANKING",
-               (Vector2){
-                   rankingBtn.x + btnWidth / 2 - MeasureTextEx(titleFont, "RANKING", fontSize * 0.5f, 2).x / 2,
-                   rankingBtn.y + btnHeight / 2 - fontSize * 0.25f
-               },
-               fontSize * 0.5f, 2, hoverRanking ? pink : green);
+    if (DesenharBotao("RANKING", screenWidth / 2.0f, screenHeight * 0.65f, btnWidth, btnHeight, fontSize, blue, yellow, green, pink)) {
+        *estadoJogo = 3;
+    }
 
     // botão "COMO JOGAR"
-    DrawRectangleRounded(comoJogarBtn, 0.3f, 10, hoverComoJogar ? yellow : blue);
-    DrawTextEx(titleFont, "COMO JOGAR",
-               (Vector2){
-                   comoJogarBtn.x + btnWidth / 2 - MeasureTextEx(titleFont, "COMO JOGAR", fontSize * 0.5f, 2).x / 2,
-                   comoJogarBtn.y + btnHeight / 2 - fontSize * 0.25f
-               },
-               fontSize * 0.5f, 2, hoverComoJogar ? pink : green);
+    if (DesenharBotao("COMO JOGAR", screenWidth / 2.0f, screenHeight * 0.75f, btnWidth, btnHeight, fontSize, blue, yellow, green, pink)) {
+        *estadoJogo = 4;
+    }
 
     EndDrawing();
 }
@@ -337,11 +340,7 @@ void TelaNickname(int *estadoJogo, int screenWidth, int screenHeight, Texture2D 
     ClearBackground(RAYWHITE);
 
     // fundo
-    if (background.id > 0) {
-        Rectangle source = {0, 0, (float)background.width, (float)background.height};
-        Rectangle dest = {0, 0, (float)screenWidth, (float)screenHeight};
-        DrawTexturePro(background, source, dest, (Vector2){0, 0}, 0.0f, WHITE);
-    }
+    DesenharFundo(background, screenWidth, screenHeight);
 
     float fontSize = screenWidth * 0.06f;
 
@@ -411,31 +410,9 @@ void TelaNickname(int *estadoJogo, int screenWidth, int screenHeight, Texture2D 
     }
 
     // Botão de voltar
-    btnWidth = screenWidth * 0.2f;
-    btnHeight = screenHeight * 0.08f;
-    Rectangle backBtn = {
-        screenWidth / 2 - btnWidth / 2,
-        screenHeight * 0.9f,
-        btnWidth,
-        btnHeight
-    };
-    
-    mousePos = GetMousePosition();
-    bool hoverBack = CheckCollisionPointRec(mousePos, backBtn);
-    
-    if (hoverBack && IsMouseButtonPressed(MOUSE_LEFT_BUTTON)) {
-        *estadoJogo = 0; // Volta ao menu
+    if (DesenharBotao("VOLTAR", screenWidth / 2.0f, screenHeight * 0.9f, screenWidth * 0.2f, screenHeight * 0.08f, screenWidth * 0.04f, cyan, yellow, BLACK, pink)) {
+        *estadoJogo = 0;
     }
-    
-    // Desenha botão voltar
-    DrawRectangleRounded(backBtn, 0.3f, 10, hoverBack ? (Color){254, 255, 153, 255} : cyan);
-    float btnTextSize = screenWidth * 0.04f;
-    const char* backText = "VOLTAR";
-    Vector2 backMeasure = MeasureTextEx(GetFontDefault(), backText, btnTextSize, 2);
-    DrawTextEx(GetFontDefault(), backText,
-               (Vector2){backBtn.x + btnWidth / 2 - backMeasure.x / 2,
-                        backBtn.y + btnHeight / 2 - btnTextSize / 2},
-               btnTextSize, 2, hoverBack ? pink : (Color){0, 0, 0, 255});
     
     EndDrawing();
 }
@@ -517,11 +494,7 @@ void TelaJogo(int *estadoJogo, int screenWidth, int screenHeight, Texture2D back
     ClearBackground(RAYWHITE);
 
     // fundo redimensionado p caber na janela
-    if (background_jogo.id > 0) {
-        Rectangle source = {0, 0, (float)background_jogo.width, (float)background_jogo.height};
-        Rectangle dest = {0, 0, (float)screenWidth, (float)screenHeight};
-        DrawTexturePro(background_jogo, source, dest, (Vector2){0, 0}, 0.0f, WHITE);
-    }
+    DesenharFundo(background_jogo, screenWidth, screenHeight);
     
     // inicializa jogador 1 vez
     if (!inicializado) {
@@ -553,23 +526,19 @@ void TelaJogo(int *estadoJogo, int screenWidth, int screenHeight, Texture2D back
         spriteOnibusCentro = LoadTexture("assets/images/onibus.png");
         spriteOnibusDireito = LoadTexture("assets/images/onibus_direito.png");
         spriteCatraca = LoadTexture("assets/images/catraca.png");
-        spriteLaranja = LoadTexture("assets/images/laranja.png");
+        spriteLaranja = LoadTexture("assets/images/cerca_laranja.png");
         spritesCarregadas = true;
     }
     
     // Carrega texturas dos itens (apenas uma vez)
     if (!texturasCarregadas) {
         // Itens BONS (tipos 0-4)
-        texturasItens[0] = LoadTexture("assets/images/pipoca.png");      // Tipo 0: YELLOW
-        texturasItens[1] = LoadTexture("assets/images/moeda.png");       // Tipo 1: SKYBLUE
-        texturasItens[2] = LoadTexture("assets/images/VEM.png");         // Tipo 2: PINK
-        texturasItens[3] = LoadTexture("assets/images/botao_parada.png"); // Tipo 3: GOLD
-        texturasItens[4] = LoadTexture("assets/images/fone.png");        // Tipo 4: GREEN
+        CarregarTexturasItens(texturasItens);
         // Itens RUINS (tipos 5-7)
         texturasItens[5] = LoadTexture("assets/images/sono.png");        // Tipo 5: Sono (aumenta 5 seg no tempo)
         texturasItens[6] = LoadTexture("assets/images/balaclava.png");   // Tipo 6: Balaclava (perde todos os itens)
         texturasItens[7] = LoadTexture("assets/images/velha.png");       // Tipo 7: Idosa (perde 1 item aleatório)
-        
+
         texturasCarregadas = true;
     }
     
@@ -957,9 +926,7 @@ void TelaJogo(int *estadoJogo, int screenWidth, int screenHeight, Texture2D back
     for (int i = 0; i < MAX_OBSTACULOS; i++) {
         if (obstaculos[i].ativo) {
             // Progress baseado na distância entre horizonte e fundo da tela
-            float progress = (obstaculos[i].pos_y - horizon_y) / (screenHeight - horizon_y);
-            if (progress < 0) progress = 0;
-            if (progress > 1) progress = 1;
+            float progress = CalcularProgresso(obstaculos[i].pos_y, horizon_y, screenHeight);
             
             // menor no topo e maior na base
             float scale = 0.3f + (progress * 0.7f); // De 0.3 a 1.0
@@ -1011,8 +978,8 @@ void TelaJogo(int *estadoJogo, int screenWidth, int screenHeight, Texture2D back
                 }
             } else { // cerca de obra alta = obstaculo alto (abaixar com S)
                 if (spriteLaranja.id > 0) {
-                    float sprite_largura_laranja = 220.0f * scale;
-                    float sprite_altura_laranja = 220.0f * scale;
+                    float sprite_largura_laranja = 200.0f * scale;
+                    float sprite_altura_laranja = 200.0f * scale;
                     Rectangle source = {0, 0, (float)spriteLaranja.width, (float)spriteLaranja.height};
                     Rectangle dest = {obs_x - sprite_largura_laranja / 2, obstaculos[i].pos_y, sprite_largura_laranja, sprite_altura_laranja};
                     DrawTexturePro(spriteLaranja, source, dest, (Vector2){0, 0}, 0.0f, WHITE);
@@ -1049,9 +1016,7 @@ void TelaJogo(int *estadoJogo, int screenWidth, int screenHeight, Texture2D back
     for (int i = 0; i < MAX_ITENS; i++) {
         if (itens[i].ativo && !itens[i].coletado) {
             // Progress baseado na distância entre horizonte e fundo da tela
-            float progress = (itens[i].pos_y - horizon_y) / (screenHeight - horizon_y);
-            if (progress < 0) progress = 0;
-            if (progress > 1) progress = 1;
+            float progress = CalcularProgresso(itens[i].pos_y, horizon_y, screenHeight);
             
             // escala com perspectiva
             float scale = 0.3f + (progress * 0.7f);
@@ -1317,14 +1282,13 @@ void TelaRanking(int *estadoJogo, int screenWidth, int screenHeight, Texture2D b
     
     BeginDrawing();
     ClearBackground(pink); // Fundo rosa/magenta
-    
+
     // Desenha fundo se existir (mas com overlay rosa)
     if (background.id > 0) {
-        Rectangle source = {0, 0, (float)background.width, (float)background.height};
-        Rectangle dest = {0, 0, (float)screenWidth, (float)screenHeight};
-        DrawTexturePro(background, source, dest, (Vector2){0, 0}, 0.0f, (Color){255, 255, 255, 100});
+        DesenharFundo(background, screenWidth, screenHeight);
+        DrawRectangle(0, 0, screenWidth, screenHeight, (Color){0, 0, 0, 155});
     }
-    
+
     // Dimensões da tabela
     float tableWidth = screenWidth * 0.8f;
     float tableHeight = screenHeight * 0.7f;
@@ -1422,32 +1386,11 @@ void TelaRanking(int *estadoJogo, int screenWidth, int screenHeight, Texture2D b
     }
     
     // Botão de voltar
-    float btnWidth = screenWidth * 0.2f;
-    float btnHeight = screenHeight * 0.08f;
-    Rectangle backBtn = {
-        screenWidth / 2 - btnWidth / 2,
-        screenHeight * 0.9f,
-        btnWidth,
-        btnHeight
-    };
-    
-    Vector2 mousePos = GetMousePosition();
-    bool hoverBack = CheckCollisionPointRec(mousePos, backBtn);
-    
-    if (hoverBack && IsMouseButtonPressed(MOUSE_LEFT_BUTTON)) {
-        *estadoJogo = 0; // Volta ao menu
+    Color yellow = (Color){254, 255, 153, 255};
+    if (DesenharBotao("VOLTAR", screenWidth / 2.0f, screenHeight * 0.9f, screenWidth * 0.2f, screenHeight * 0.08f, screenWidth * 0.04f, cyan, yellow, BLACK, pink)) {
+        *estadoJogo = 0;
     }
-    
-    // Desenha botão voltar
-    DrawRectangleRounded(backBtn, 0.3f, 10, hoverBack ? (Color){254, 255, 153, 255} : cyan);
-    float btnTextSize = screenWidth * 0.04f;
-    const char* backText = "VOLTAR";
-    Vector2 backMeasure = MeasureTextEx(GetFontDefault(), backText, btnTextSize, 2);
-    DrawTextEx(GetFontDefault(), backText,
-               (Vector2){backBtn.x + btnWidth / 2 - backMeasure.x / 2,
-                        backBtn.y + btnHeight / 2 - btnTextSize / 2},
-               btnTextSize, 2, hoverBack ? pink : (Color){0, 0, 0, 255});
-    
+
     EndDrawing();
 }
 
@@ -1457,11 +1400,7 @@ void TelaComoJogar(int *estadoJogo, int screenWidth, int screenHeight, Texture2D
     static bool texturasCarregadasComoJogar = false;
     
     if (!texturasCarregadasComoJogar) {
-        texturasItensComoJogar[0] = LoadTexture("assets/images/pipoca.png");      // Tipo 0: Pipoca
-        texturasItensComoJogar[1] = LoadTexture("assets/images/moeda.png");       // Tipo 1: Moeda
-        texturasItensComoJogar[2] = LoadTexture("assets/images/VEM.png");         // Tipo 2: VEM
-        texturasItensComoJogar[3] = LoadTexture("assets/images/botao_parada.png"); // Tipo 3: Botão de parada
-        texturasItensComoJogar[4] = LoadTexture("assets/images/fone.png");        // Tipo 4: Fone
+        CarregarTexturasItens(texturasItensComoJogar);
         texturasCarregadasComoJogar = true;
     }
     
@@ -1475,14 +1414,13 @@ void TelaComoJogar(int *estadoJogo, int screenWidth, int screenHeight, Texture2D
     
     BeginDrawing();
     ClearBackground(pink); // Fundo rosa/magenta
-    
+
     // Desenha fundo se existir (mas com overlay rosa)
     if (background.id > 0) {
-        Rectangle source = {0, 0, (float)background.width, (float)background.height};
-        Rectangle dest = {0, 0, (float)screenWidth, (float)screenHeight};
-        DrawTexturePro(background, source, dest, (Vector2){0, 0}, 0.0f, (Color){255, 255, 255, 100});
+        DesenharFundo(background, screenWidth, screenHeight);
+        DrawRectangle(0, 0, screenWidth, screenHeight, (Color){0, 0, 0, 155});
     }
-    
+
     // Box principal (ajustado: largura menor, altura maior para o texto "Para vencer")
     float boxWidth = screenWidth * 0.78f; // reduzido de 0.85 -> 0.78
     float boxHeight = screenHeight * 0.82f; // aumentado de 0.75 -> 0.82
@@ -1598,33 +1536,11 @@ void TelaComoJogar(int *estadoJogo, int screenWidth, int screenHeight, Texture2D
     
     // Aviso removido por pedido do usuario - nada a desenhar aqui
     (void)0; // placeholder para manter lógica
-    
+
     // Botão de voltar
-    float btnWidth = screenWidth * 0.2f;
-    float btnHeight = screenHeight * 0.08f;
-    Rectangle backBtn = {
-        screenWidth / 2 - btnWidth / 2,
-        boxY + boxHeight + 15,
-        btnWidth,
-        btnHeight
-    };
-    
-    Vector2 mousePos = GetMousePosition();
-    bool hoverBack = CheckCollisionPointRec(mousePos, backBtn);
-    
-    if (hoverBack && IsMouseButtonPressed(MOUSE_LEFT_BUTTON)) {
-        *estadoJogo = 0; // Volta ao menu
+    if (DesenharBotao("VOLTAR", screenWidth / 2.0f, boxY + boxHeight + 15, screenWidth * 0.2f, screenHeight * 0.08f, screenWidth * 0.04f, cyan, yellow, BLACK, pink)) {
+        *estadoJogo = 0;
     }
-    
-    // Desenha botão voltar
-    DrawRectangleRounded(backBtn, 0.3f, 10, hoverBack ? yellow : cyan);
-    float btnTextSize = screenWidth * 0.04f;
-    const char* backText = "VOLTAR";
-    Vector2 backMeasure = MeasureTextEx(GetFontDefault(), backText, btnTextSize, 2);
-    DrawTextEx(GetFontDefault(), backText,
-               (Vector2){backBtn.x + btnWidth / 2 - backMeasure.x / 2,
-                        backBtn.y + btnHeight / 2 - btnTextSize / 2},
-               btnTextSize, 2, hoverBack ? pink : (Color){0, 0, 0, 255});
-    
+
     EndDrawing();
 }
