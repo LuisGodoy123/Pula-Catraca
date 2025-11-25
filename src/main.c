@@ -7,9 +7,7 @@
 #include <stdio.h>
 #include <stdbool.h>
 
-// ============================================================
 // CONSTANTES GLOBAIS
-// ============================================================
 #define BASE_ITEM_SIZE 120.0f
 #define FRAMES_POR_SEGUNDO 60
 #define TEMPO_ANIMACAO_SPRITE 0.25f
@@ -23,9 +21,9 @@
 #define VELOCIDADE_MAXIMA 8.0f
 #define INCREMENTO_VELOCIDADE 1.0f
 
-// ============================================================
+
 // ESTADOS DO JOGO
-// ============================================================
+
 typedef enum {
     ESTADO_MENU = 0,
     ESTADO_NICKNAME = 1,
@@ -514,13 +512,13 @@ void TelaJogo(int *estadoJogo, int screenWidth, int screenHeight, Texture2D back
         }
 
         // Cria obstáculos iniciais imediatamente
-        int quantidade_inicial = (rand() % 3) + 1; // 1, 2 ou 3
+        int quantidade_inicial = (rand() % 3) + 1; 
         criarMultiplosObstaculos(obstaculos, MAX_OBSTACULOS, screenHeight, quantidade_inicial, horizon_y);
         
         inicializado = true;
     }
     
-    // Carrega texturas dos obstáculos (apenas uma vez)
+    // Carrega texturas dos obstáculos 
     if (!spritesCarregadas) {
         spriteOnibusEsquerdo = LoadTexture("assets/images/onibus_lane_esq.png");
         spriteOnibusCentro = LoadTexture("assets/images/onibus_centro.png");
@@ -530,11 +528,11 @@ void TelaJogo(int *estadoJogo, int screenWidth, int screenHeight, Texture2D back
         spritesCarregadas = true;
     }
     
-    // Carrega texturas dos itens (apenas uma vez)
+    // Carrega texturas dos itens 
     if (!texturasCarregadas) {
-        // Itens BONS (tipos 0-4)
+        // Itens BONS 
         CarregarTexturasItens(texturasItens);
-        // Itens RUINS (tipos 5-7)
+        // Itens RUINS 
         texturasItens[5] = LoadTexture("assets/images/sono.png");        // Tipo 5: Sono (aumenta 5 seg no tempo)
         texturasItens[6] = LoadTexture("assets/images/balaclava.png");   // Tipo 6: Balaclava (perde todos os itens)
         texturasItens[7] = LoadTexture("assets/images/velha.png");       // Tipo 7: Idosa (perde 1 item aleatório)
@@ -542,7 +540,7 @@ void TelaJogo(int *estadoJogo, int screenWidth, int screenHeight, Texture2D back
         texturasCarregadas = true;
     }
     
-    // Carrega sprites do jogador (apenas uma vez)
+    // Carrega sprites do jogador 
     if (!spritesJogadorCarregadas) {
         spriteCorrendoDireita = LoadTexture("assets/images/correndo_dir_frente.png");
         spriteCorrendoEsquerda = LoadTexture("assets/images/correndo_esq_frente.png");
@@ -553,13 +551,13 @@ void TelaJogo(int *estadoJogo, int screenWidth, int screenHeight, Texture2D back
         spritesJogadorCarregadas = true;
     }
     
-    // Carrega textura de Game Over (apenas uma vez)
+    // Carrega textura de Game Over 
     if (!texturaGameOverCarregada) {
         texturaGameOver = LoadTexture("assets/images/gameOver.png");
         texturaGameOverCarregada = true;
     }
     
-    // Carrega texturas de vitória (apenas uma vez)
+    // Carrega texturas de vitória 
     if (!texturasVitoriaCarregadas) {
         texturaVitoria1 = LoadTexture("assets/images/vitoria_scene1.png");
         texturaVitoria2 = LoadTexture("assets/images/vitoria_scene2.png");
@@ -597,7 +595,7 @@ void TelaJogo(int *estadoJogo, int screenWidth, int screenHeight, Texture2D back
         // atualiza fisica
         atualizarFisica(&jogador);
 
-        // incrementa o tempo (60 FPS = 1/60 segundo por frame)
+        // incrementa o tempo 60FPS
         tempoDecorrido += 1.0f / 60.0f;
 
         // Sistema de aceleração progressiva
@@ -635,7 +633,7 @@ void TelaJogo(int *estadoJogo, int screenWidth, int screenHeight, Texture2D back
         // novos obstaculos a cada 2seg
         frameCount++;
         if (frameCount >= 120) {
-            int quantidade = (rand() % 3) + 1; // aleatorio 1, 2 ou 3
+            int quantidade = (rand() % 3) + 1; 
             criarMultiplosObstaculos(obstaculos, MAX_ITENS, screenHeight, quantidade, horizon_y);
             frameCount = 0;
         }
