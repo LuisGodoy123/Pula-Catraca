@@ -8,20 +8,60 @@
 #include <stdbool.h>
 
 // CONSTANTES GLOBAIS
+<<<<<<< HEAD
 #define BASE_ITEM_SIZE 120.0f
+=======
+// ============================================================
+
+// Constantes de renderização
+#define TAMANHO_BASE_ITEM 120.0f
+#define ALTURA_HORIZONTE 130.0f
+
+// Constantes de tempo e animação
+>>>>>>> f2495a4a9e3f31ad0691dea90cdcbe1c7e585dac
 #define FRAMES_POR_SEGUNDO 60
 #define TEMPO_ANIMACAO_SPRITE 0.25f
-#define ALTURA_HORIZONTE 150.0f
 #define DURACAO_EFEITO_FONE 4.0f
-#define FRAMES_ENTRE_OBSTACULOS_INICIAL 120
-#define FRAMES_ENTRE_OBSTACULOS_MINIMO 40
 #define INTERVALO_ACELERACAO 30.0f
 #define INTERVALO_AUMENTO_FREQUENCIA 10.0f
+
+// Constantes de velocidade
 #define VELOCIDADE_INICIAL 3.0f
 #define VELOCIDADE_MAXIMA 8.0f
 #define INCREMENTO_VELOCIDADE 1.0f
 
+<<<<<<< HEAD
 
+=======
+// Constantes de spawn
+#define FRAMES_ENTRE_OBSTACULOS_INICIAL 120
+#define FRAMES_ENTRE_OBSTACULOS_MINIMO 40
+#define FRAMES_ENTRE_ITENS 120
+
+// Constantes de perspectiva (baseadas em tela 800x600)
+#define LARGURA_FAIXA_TOPO_PERCENTUAL 0.083f
+#define DESLOCAMENTO_FAIXA_TOPO_PERCENTUAL 0.385f
+#define LARGURA_FAIXA_BASE_PERCENTUAL 0.45f
+#define DESLOCAMENTO_FAIXA_BASE_PERCENTUAL -0.175f
+
+// ============================================================
+// CORES DA INTERFACE
+// ============================================================
+#define COR_ROSA_INTERFACE (Color){255, 102, 196, 255}      // #ff66c4
+#define COR_AMARELO_INTERFACE (Color){254, 255, 153, 255}   // #feff99
+#define COR_AZUL_INTERFACE (Color){175, 218, 225, 255}      // #afdae1
+#define COR_VERDE_INTERFACE (Color){87, 183, 33, 255}       // #57b721
+#define COR_CIANO_INTERFACE (Color){102, 255, 255, 255}     // #66FFFF
+
+// Cores dos itens colecionáveis (fallback caso sprites não carreguem)
+#define COR_ITEM_PIPOCA YELLOW
+#define COR_ITEM_MOEDA SKYBLUE
+#define COR_ITEM_VEM PINK
+#define COR_ITEM_BOTAO_PARADA GOLD
+#define COR_ITEM_FONE GREEN
+
+// ============================================================
+>>>>>>> f2495a4a9e3f31ad0691dea90cdcbe1c7e585dac
 // ESTADOS DO JOGO
 
 typedef enum {
@@ -41,56 +81,56 @@ typedef enum {
 // Protótipos das funções
 void TelaMenu(int *estadoJogo, int screenWidth, int screenHeight, Texture2D background, Sound somMenu);
 void TelaNickname(int *estadoJogo, int screenWidth, int screenHeight, Texture2D background, char *nickname, Sound somMenu);
-void TelaJogo(int *estadoJogo, int screenWidth, int screenHeight, Texture2D background_jogo, char *nickname, Sound somMenu, Sound somCorrida, Sound somItemBom, Sound somItemRuim, Sound somColisao, Sound somVitoria, Sound somMusicaVitoria, Sound somMusicaCalma);
+void TelaJogo(int *estadoJogo, int screenWidth, int screenHeight, Texture2D background_jogo, char *nickname, Sound somMenu, Sound somCorrida, Sound somItemBom, Sound somItemRuim, Sound somColisao, Sound somVitoria, Sound somMusicaVitoria);
 void TelaRanking(int *estadoJogo, int screenWidth, int screenHeight, Texture2D background);
 void TelaComoJogar(int *estadoJogo, int screenWidth, int screenHeight, Texture2D background);
 
 // Ranking (persistente)
-static RankingList ranking;
+static ListaRanking ranking;
 
 // desenha texto com quebra por largura (word wrap) e retorna a altura ocupada
-static float DrawWrappedText(Font font, const char *text, Vector2 pos, float fontSize, float spacing, float wrapWidth, Color tint) {
+static float DesenharTextoQuebrado(Font fonte, const char *texto, Vector2 posicao, float tamanhoFonte, float espacamento, float larguraQuebra, Color cor) {
     // Copia o texto para poder tokenizar
-    size_t len = strlen(text);
-    char *buf = (char *)malloc(len + 1);
-    if (!buf) return 0.0f;
-    strcpy(buf, text);
+    size_t tamanho = strlen(texto);
+    char *buffer = (char *)malloc(tamanho + 1);
+    if (!buffer) return 0.0f;
+    strcpy(buffer, texto);
 
-    float y = pos.y;
-    char line[1024] = {0};
-    char *word = strtok(buf, " ");
+    float y = posicao.y;
+    char linha[1024] = {0};
+    char *palavra = strtok(buffer, " ");
 
-    while (word) {
-        char candidate[2048] = {0};
-        if (line[0] == '\0')
-            snprintf(candidate, sizeof(candidate), "%s", word);
+    while (palavra) {
+        char candidato[2048] = {0};
+        if (linha[0] == '\0')
+            snprintf(candidato, sizeof(candidato), "%s", palavra);
         else
-            snprintf(candidate, sizeof(candidate), "%s %s", line, word);
+            snprintf(candidato, sizeof(candidato), "%s %s", linha, palavra);
 
-        Vector2 measure = MeasureTextEx(font, candidate, fontSize, spacing);
-        if (measure.x <= wrapWidth) {
+        Vector2 medida = MeasureTextEx(fonte, candidato, tamanhoFonte, espacamento);
+        if (medida.x <= larguraQuebra) {
             // cabe na mesma linha
-            strncpy(line, candidate, sizeof(line) - 1);
+            strncpy(linha, candidato, sizeof(linha) - 1);
         } else {
             // desenha a linha atual e inicia nova linha com a palavra
-            if (line[0] != '\0') {
-                DrawTextEx(font, line, (Vector2){pos.x, y}, fontSize, spacing, tint);
-                y += fontSize * 1.15f;
+            if (linha[0] != '\0') {
+                DrawTextEx(fonte, linha, (Vector2){posicao.x, y}, tamanhoFonte, espacamento, cor);
+                y += tamanhoFonte * 1.15f;
             }
             // palavra começa a nova linha
-            strncpy(line, word, sizeof(line) - 1);
+            strncpy(linha, palavra, sizeof(linha) - 1);
         }
 
-        word = strtok(NULL, " ");
+        palavra = strtok(NULL, " ");
     }
 
-    if (line[0] != '\0') {
-        DrawTextEx(font, line, (Vector2){pos.x, y}, fontSize, spacing, tint);
-        y += fontSize * 1.15f;
+    if (linha[0] != '\0') {
+        DrawTextEx(fonte, linha, (Vector2){posicao.x, y}, tamanhoFonte, espacamento, cor);
+        y += tamanhoFonte * 1.15f;
     }
 
-    free(buf);
-    return y - pos.y; // altura ocupada
+    free(buffer);
+    return y - posicao.y; // altura ocupada
 }
 
 // Constantes de paths de assets
@@ -102,18 +142,18 @@ static float DrawWrappedText(Font font, const char *text, Vector2 pos, float fon
 
 // calcula progresso normalizado entre 0 e 1
 static float CalcularProgresso(float valor, float min, float max) {
-    float progress = (valor - min) / (max - min);
-    if (progress < 0) progress = 0;
-    if (progress > 1) progress = 1;
-    return progress;
+    float progresso = (valor - min) / (max - min);
+    if (progresso < 0) progresso = 0;
+    if (progresso > 1) progresso = 1;
+    return progresso;
 }
 
 // desenha fundo (lanes com perspectiva)
 static void DesenharFundo(Texture2D background, int screenWidth, int screenHeight) {
     if (background.id > 0) {
-        Rectangle source = {0, 0, (float)background.width, (float)background.height};
-        Rectangle dest = {0, 0, (float)screenWidth, (float)screenHeight};
-        DrawTexturePro(background, source, dest, (Vector2){0, 0}, 0.0f, WHITE);
+        Rectangle origem = {0, 0, (float)background.width, (float)background.height};
+        Rectangle destino = {0, 0, (float)screenWidth, (float)screenHeight};
+        DrawTexturePro(background, origem, destino, (Vector2){0, 0}, 0.0f, WHITE);
     }
 }
 
@@ -159,7 +199,7 @@ int main(void) {
     loadRankingAll(&ranking, "ranking_all.txt");
     
     // Carrega sons
-    Sound somMenu = LoadSound("assets/sound/scene_inicial.wav");
+    Sound somMenu = LoadSound("assets/sound/menu.wav");
     Sound somCorrida = LoadSound("assets/sound/corrida.wav");
     Sound somItemBom = LoadSound("assets/sound/item_bom.wav");
     Sound somItemRuim = LoadSound("assets/sound/item_ruim.wav");
@@ -168,16 +208,13 @@ int main(void) {
     Sound somMusicaVitoria = LoadSound("assets/sound/musica_vitoria.mp3");
     
     // Ajusta volume dos sons (0.0 a 1.0)
-    SetSoundVolume(somMenu, 0.3f);
-    SetSoundVolume(somCorrida, 0.2f);
-    SetSoundVolume(somItemBom, 0.5f);
-    SetSoundVolume(somItemRuim, 0.5f);
-    SetSoundVolume(somColisao, 0.6f);
-    SetSoundVolume(somVitoria, 0.5f);
-    SetSoundVolume(somMusicaVitoria, 0.3f);
-    
-    Sound somMusicaCalma = LoadSound("assets/sound/musica_calma.mp3");
-    SetSoundVolume(somMusicaCalma, 0.25f);
+    SetSoundVolume(somMenu, 1.0f);
+    SetSoundVolume(somCorrida, 1.0f);
+    SetSoundVolume(somItemBom, 1.0f);
+    SetSoundVolume(somItemRuim, 1.0f);
+    SetSoundVolume(somColisao, 1.0f);
+    SetSoundVolume(somVitoria, 1.0f);
+    SetSoundVolume(somMusicaVitoria, 1.0f);
 
     // carrega imagens de fundo
     Texture2D background_menu = {0};
@@ -214,7 +251,7 @@ int main(void) {
         } else if (estadoJogo == 1) {
             TelaNickname(&estadoJogo, screenWidth, screenHeight, background_menu, nickname, somMenu);
         } else if (estadoJogo == 2) {
-            TelaJogo(&estadoJogo, screenWidth, screenHeight, background_jogo, nickname, somMenu, somCorrida, somItemBom, somItemRuim, somColisao, somVitoria, somMusicaVitoria, somMusicaCalma);
+            TelaJogo(&estadoJogo, screenWidth, screenHeight, background_jogo, nickname, somMenu, somCorrida, somItemBom, somItemRuim, somColisao, somVitoria, somMusicaVitoria);
         } else if (estadoJogo == 3) {
             TelaRanking(&estadoJogo, screenWidth, screenHeight, background_menu);
         } else if (estadoJogo == 4) {
@@ -222,8 +259,8 @@ int main(void) {
         }
     }
     // salva ranking completo e top5 antes de sair
-    saveRankingAll(&ranking, "ranking_all.txt");
-    saveTopTXT(&ranking, "ranking_top5.txt", 5);
+    salvarRankingCompleto(&ranking, "ranking_all.txt");
+    salvarTopTXT(&ranking, "ranking_top5.txt", 5);
     freeRanking(&ranking);
     
     // Descarrega sons
@@ -248,12 +285,6 @@ void TelaMenu(int *estadoJogo, int screenWidth, int screenHeight, Texture2D back
         PlaySound(somMenu);
     }
 
-    // paleta
-    Color pink = (Color){255, 102, 196, 255};   // #ff66c4
-    Color yellow = (Color){254, 255, 153, 255}; // #feff99
-    Color blue = (Color){175, 218, 225, 255};   // #afdae1
-    Color green = (Color){87, 183, 33, 255};    // #57b721
-
     // botões proporcionais à tela
     float btnWidth = screenWidth * 0.25f;
     float btnHeight = screenHeight * 0.08f;
@@ -266,18 +297,18 @@ void TelaMenu(int *estadoJogo, int screenWidth, int screenHeight, Texture2D back
     DesenharFundo(background, screenWidth, screenHeight);
 
     // botão "PLAY"
-    if (DesenharBotao("PLAY", screenWidth / 2.0f, screenHeight * 0.55f, btnWidth, btnHeight, fontSize, blue, yellow, green, pink)) {
+    if (DesenharBotao("PLAY", screenWidth / 2.0f, screenHeight * 0.55f, btnWidth, btnHeight, fontSize, COR_AZUL_INTERFACE, COR_AMARELO_INTERFACE, COR_VERDE_INTERFACE, COR_ROSA_INTERFACE)) {
         StopSound(somMenu);
         *estadoJogo = 1;
     }
 
     // botão "RANKING"
-    if (DesenharBotao("RANKING", screenWidth / 2.0f, screenHeight * 0.65f, btnWidth, btnHeight, fontSize, blue, yellow, green, pink)) {
+    if (DesenharBotao("RANKING", screenWidth / 2.0f, screenHeight * 0.65f, btnWidth, btnHeight, fontSize, COR_AZUL_INTERFACE, COR_AMARELO_INTERFACE, COR_VERDE_INTERFACE, COR_ROSA_INTERFACE)) {
         *estadoJogo = 3;
     }
 
     // botão "COMO JOGAR"
-    if (DesenharBotao("COMO JOGAR", screenWidth / 2.0f, screenHeight * 0.75f, btnWidth, btnHeight, fontSize, blue, yellow, green, pink)) {
+    if (DesenharBotao("COMO JOGAR", screenWidth / 2.0f, screenHeight * 0.75f, btnWidth, btnHeight, fontSize, COR_AZUL_INTERFACE, COR_AMARELO_INTERFACE, COR_VERDE_INTERFACE, COR_ROSA_INTERFACE)) {
         *estadoJogo = 4;
     }
 
@@ -288,14 +319,8 @@ void TelaNickname(int *estadoJogo, int screenWidth, int screenHeight, Texture2D 
     if (!IsSoundPlaying(somMenu)) {
         PlaySound(somMenu);
     }
-    
 
     Font titleFont = GetFontDefault();
-    Color pink = (Color){255, 102, 196, 255};   // #ff66c4
-    Color yellow = (Color){254, 255, 153, 255}; // #feff99
-    Color blue = (Color){175, 218, 225, 255};   // #afdae1
-    Color green = (Color){87, 183, 33, 255};    // #57b721
-    Color cyan = (Color){102, 255, 255, 255};   // #66FFFF
 
     // caixa de texto
     float boxWidth = screenWidth * 0.4f;
@@ -354,11 +379,11 @@ void TelaNickname(int *estadoJogo, int screenWidth, int screenHeight, Texture2D 
     float titleWidth = MeasureTextEx(titleFont, title, fontSize * 0.7f, 2).x;
     DrawTextEx(titleFont, title,
                (Vector2){screenWidth / 2 - titleWidth / 2, screenHeight * 0.35f},
-               fontSize * 0.7f, 2, pink);
+               fontSize * 0.7f, 2, COR_ROSA_INTERFACE);
 
     // caixa de input
-    DrawRectangleRounded(inputBox, 0.3f, 10, blue);
-    DrawRectangleLinesEx(inputBox, 3.0f, green);
+    DrawRectangleRounded(inputBox, 0.3f, 10, COR_AZUL_INTERFACE);
+    DrawRectangleLinesEx(inputBox, 3.0f, COR_VERDE_INTERFACE);
 
     // texto digitado
     if (nicknameLen > 0) {
@@ -397,13 +422,13 @@ void TelaNickname(int *estadoJogo, int screenWidth, int screenHeight, Texture2D 
 
     // botão confirmar (só ativo se tiver texto)
     if (nicknameLen > 0) {
-        DrawRectangleRounded(confirmBtn, 0.3f, 10, hoverConfirm ? yellow : blue);
+        DrawRectangleRounded(confirmBtn, 0.3f, 10, hoverConfirm ? COR_AMARELO_INTERFACE : COR_AZUL_INTERFACE);
         DrawTextEx(titleFont, "CONFIRMAR",
                    (Vector2){
                        confirmBtn.x + btnWidth / 2 - MeasureTextEx(titleFont, "CONFIRMAR", fontSize * 0.5f, 2).x / 2,
                        confirmBtn.y + btnHeight / 2 - fontSize * 0.25f
                    },
-                   fontSize * 0.5f, 2, hoverConfirm ? pink : green);
+                   fontSize * 0.5f, 2, hoverConfirm ? COR_ROSA_INTERFACE : COR_VERDE_INTERFACE);
     } else {
         DrawRectangleRounded(confirmBtn, 0.3f, 10, GRAY);
         DrawTextEx(titleFont, "CONFIRMAR",
@@ -415,35 +440,33 @@ void TelaNickname(int *estadoJogo, int screenWidth, int screenHeight, Texture2D 
     }
 
     // Botão de voltar
-    if (DesenharBotao("VOLTAR", screenWidth / 2.0f, screenHeight * 0.9f, screenWidth * 0.2f, screenHeight * 0.08f, screenWidth * 0.04f, cyan, yellow, BLACK, pink)) {
+    if (DesenharBotao("VOLTAR", screenWidth / 2.0f, screenHeight * 0.9f, screenWidth * 0.2f, screenHeight * 0.08f, screenWidth * 0.04f, COR_CIANO_INTERFACE, COR_AMARELO_INTERFACE, BLACK, COR_ROSA_INTERFACE)) {
         *estadoJogo = 0;
     }
     
     EndDrawing();
 }
 
-void TelaJogo(int *estadoJogo, int screenWidth, int screenHeight, Texture2D background_jogo, char *nickname, Sound somMenu, Sound somCorrida, Sound somItemBom, Sound somItemRuim, Sound somColisao, Sound somVitoria, Sound somMusicaVitoria, Sound somMusicaCalma) {
+void TelaJogo(int *estadoJogo, int screenWidth, int screenHeight, Texture2D background_jogo, char *nickname, Sound somMenu, Sound somCorrida, Sound somItemBom, Sound somItemRuim, Sound somColisao, Sound somVitoria, Sound somMusicaVitoria) {
     static Jogador jogador;
     static Obstaculo obstaculos[MAX_OBSTACULOS];
     static ItemColetavel itens[MAX_ITENS];
     static int itensColetados[TIPOS_ITENS]; // contador de cada tipo coletado
     static bool inicializado = false;
     static int frameCount = 0;
-    static int frameCountItens = 0;
+    static int frameCountItens = -120; // Começa negativo para delay de 2 segundos (120 frames)
     static float velocidadeJogo = VELOCIDADE_INICIAL;
     static float velocidadeMaxima = VELOCIDADE_MAXIMA;
     static float intervaloAceleracao = INTERVALO_ACELERACAO;
     static float tempoUltimaAceleracao = 0.0f;
     static float incrementoVelocidade = INCREMENTO_VELOCIDADE;
     static float tempoDecorrido = 0.0f;
-    static bool gameOver = false;
+    static bool fimDeJogo = false;
     static bool vitoria = false;
     static bool rankingInserido = false;
-    static bool primeiraVezJogando = true;
-    static int estadoMorte = 0; // 0 = normal, 1 = morte_1, 2 = morte_2, 3 = game over
     static int direcaoJogador = DIRECAO_CENTRO;
     static float tempoAnimacao = 0.0f;
-    static bool frameAnimacao = false;
+    static bool quadroAnimacao = false;
 
     // Sistema progressivo de obstáculos
     static int framesEntreObstaculos = FRAMES_ENTRE_OBSTACULOS_INICIAL;
@@ -482,43 +505,52 @@ void TelaJogo(int *estadoJogo, int screenWidth, int screenHeight, Texture2D back
     static bool texturasVitoriaCarregadas = false;
     static int cenaVitoria = 0; // 0 = tela normal, 1 = scene1, 2 = scene2, 3 = voltou ao normal
     
-    // Perspectiva das lanes - ajustadas para coincidir com as faixas do asfalto
+    // ============================================================
+    // PERSPECTIVA DAS LANES
+    // ============================================================
     const float horizon_y = ALTURA_HORIZONTE;
-    // Medidas calibradas para coincidir com a imagem de fundo (800x600)
-    // No topo (horizonte): as 3 lanes ocupam aproximadamente 25% da largura da tela
-    // Na base: ocupam mais que a largura da tela para coincidir com as faixas
-    float lane_width_top = screenWidth * 0.083f;      // ~66px por lane no topo (3 lanes = 25% da tela)
-    float lane_offset_top = screenWidth * 0.385f;     // começa em 38.5% da tela (centralizado)
-    float lane_width_bottom = screenWidth * 0.45f;    // ~360px por lane na base (3 lanes = 135% da tela)
-    float lane_offset_bottom = -screenWidth * 0.175f; // começa antes da borda esquerda (-17.5%)
+    float lane_width_top = screenWidth * LARGURA_FAIXA_TOPO_PERCENTUAL;
+    float lane_offset_top = screenWidth * DESLOCAMENTO_FAIXA_TOPO_PERCENTUAL;
+    float lane_width_bottom = screenWidth * LARGURA_FAIXA_BASE_PERCENTUAL;
+    float lane_offset_bottom = screenWidth * DESLOCAMENTO_FAIXA_BASE_PERCENTUAL;
 
     BeginDrawing();
     ClearBackground(RAYWHITE);
-
-    // fundo redimensionado p caber na janela
     DesenharFundo(background_jogo, screenWidth, screenHeight);
-    
-    // inicializa jogador 1 vez
+
+    // ============================================================
+    // SEÇÃO: INICIALIZAÇÃO E CARREGAMENTO DE RECURSOS
+    // ============================================================
+
+    // Inicializa jogador e arrays (apenas na primeira vez)
     if (!inicializado) {
         float pos_x = screenWidth / 2;
         float pos_y = screenHeight - 100;
         inicializarJogador(&jogador, pos_x, pos_y);
         inicializarObstaculos(obstaculos, MAX_OBSTACULOS);
         inicializarItens(itens, MAX_ITENS);
-        
-        // zera itens coletados
+
         for (int i = 0; i < TIPOS_ITENS; i++) {
             itensColetados[i] = 0;
         }
 
+<<<<<<< HEAD
         // Cria obstáculos iniciais imediatamente
         int quantidade_inicial = (rand() % 3) + 1; 
+=======
+        int quantidade_inicial = (rand() % 3) + 1;
+>>>>>>> f2495a4a9e3f31ad0691dea90cdcbe1c7e585dac
         criarMultiplosObstaculos(obstaculos, MAX_OBSTACULOS, screenHeight, quantidade_inicial, horizon_y);
-        
+
         inicializado = true;
     }
+<<<<<<< HEAD
     
     // Carrega texturas dos obstáculos 
+=======
+
+    // Carrega texturas dos obstáculos (apenas uma vez)
+>>>>>>> f2495a4a9e3f31ad0691dea90cdcbe1c7e585dac
     if (!spritesCarregadas) {
         spriteOnibusEsquerdo = LoadTexture("assets/images/onibus_lane_esq.png");
         spriteOnibusCentro = LoadTexture("assets/images/onibus_centro.png");
@@ -527,6 +559,7 @@ void TelaJogo(int *estadoJogo, int screenWidth, int screenHeight, Texture2D back
         spriteLaranja = LoadTexture("assets/images/cerca_laranja.png");
         spritesCarregadas = true;
     }
+<<<<<<< HEAD
     
     // Carrega texturas dos itens 
     if (!texturasCarregadas) {
@@ -541,6 +574,19 @@ void TelaJogo(int *estadoJogo, int screenWidth, int screenHeight, Texture2D back
     }
     
     // Carrega sprites do jogador 
+=======
+
+    // Carrega texturas dos itens (apenas uma vez)
+    if (!texturasCarregadas) {
+        CarregarTexturasItens(texturasItens);
+        texturasItens[ITEM_SONO] = LoadTexture("assets/images/sono.png");
+        texturasItens[ITEM_BALACLAVA] = LoadTexture("assets/images/balaclava.png");
+        texturasItens[ITEM_IDOSA] = LoadTexture("assets/images/idosa.png");
+        texturasCarregadas = true;
+    }
+
+    // Carrega sprites do jogador (apenas uma vez)
+>>>>>>> f2495a4a9e3f31ad0691dea90cdcbe1c7e585dac
     if (!spritesJogadorCarregadas) {
         spriteCorrendoDireita = LoadTexture("assets/images/correndo_dir_frente.png");
         spriteCorrendoEsquerda = LoadTexture("assets/images/correndo_esq_frente.png");
@@ -564,19 +610,22 @@ void TelaJogo(int *estadoJogo, int screenWidth, int screenHeight, Texture2D back
         texturasVitoriaCarregadas = true;
     }
 
-    if (!gameOver) {
-        // Para som do menu e toca som de corrida em loop durante o jogo
+    // ============================================================
+    // SEÇÃO: LÓGICA DO JOGO (INPUT E FÍSICA)
+    // ============================================================
+
+    if (!fimDeJogo) {
+        // Gerenciamento de áudio
         static bool somInicializado = false;
         if (!somInicializado) {
-            StopSound(somMenu); // Para música do menu
+            StopSound(somMenu);
             somInicializado = true;
         }
-        // Toca som de corrida em loop
         if (!IsSoundPlaying(somCorrida)) {
             PlaySound(somCorrida);
         }
-        
-        // inputs do jogador
+
+        // Processamento de input do jogador
         if (IsKeyPressed(KEY_W)) {
             pular(&jogador);
         }
@@ -592,11 +641,11 @@ void TelaJogo(int *estadoJogo, int screenWidth, int screenHeight, Texture2D back
             deslizar(&jogador);
         }
 
-        // atualiza fisica
+        // Atualiza física do jogador
         atualizarFisica(&jogador);
 
-        // incrementa o tempo 60FPS
-        tempoDecorrido += 1.0f / 60.0f;
+        // Atualiza tempo decorrido
+        tempoDecorrido += 1.0f / FRAMES_POR_SEGUNDO;
 
         // Sistema de aceleração progressiva
         // Verifica se deve acelerar baseado no tempo decorrido
@@ -623,51 +672,59 @@ void TelaJogo(int *estadoJogo, int screenWidth, int screenHeight, Texture2D back
             }
         }
 
-        // Timer para animação das sprites do jogador (alterna a cada 0.5s)
+        // Timer para animação das sprites do jogador (alterna a cada 0.25s)
         tempoAnimacao += GetFrameTime();
         if (tempoAnimacao >= 0.25f) {
-            frameAnimacao = !frameAnimacao;
+            quadroAnimacao = !quadroAnimacao;
             tempoAnimacao = 0.0f;
         }
         
-        // novos obstaculos a cada 2seg
+        // Spawn de obstáculos
         frameCount++;
+<<<<<<< HEAD
         if (frameCount >= 120) {
             int quantidade = (rand() % 3) + 1; 
             criarMultiplosObstaculos(obstaculos, MAX_ITENS, screenHeight, quantidade, horizon_y);
+=======
+        if (frameCount >= framesEntreObstaculos) {
+            int quantidade = (rand() % 3) + 1;
+            criarMultiplosObstaculos(obstaculos, MAX_OBSTACULOS, screenHeight, quantidade, horizon_y);
+>>>>>>> f2495a4a9e3f31ad0691dea90cdcbe1c7e585dac
             frameCount = 0;
         }
-        // novos itens a cada 2seg
+
+        // Spawn de itens
         frameCountItens++;
-        if (frameCountItens >= 120) {
+        if (frameCountItens >= FRAMES_ENTRE_ITENS) {
             criarItem(itens, MAX_ITENS, screenHeight, obstaculos, MAX_OBSTACULOS, horizon_y, itensColetados);
             frameCountItens = 0;
         }
 
-        float dt = GetFrameTime();
-        atualizarObstaculos(obstaculos, MAX_OBSTACULOS, velocidadeJogo, horizon_y, screenHeight, dt);
-        atualizarItens(itens, MAX_ITENS, velocidadeJogo, horizon_y, screenHeight, dt);
+        // Atualiza posição de obstáculos e itens
+        float deltaTempo = GetFrameTime();
+        atualizarObstaculos(obstaculos, MAX_OBSTACULOS, velocidadeJogo, horizon_y, screenHeight, deltaTempo);
+        atualizarItens(itens, MAX_ITENS, velocidadeJogo, horizon_y, screenHeight, deltaTempo);
 
         // posição X baseada na lane com perspectiva
         // O jogador está em uma posição Y específica, então precisa interpolar igual aos obstáculos/itens
-        
-        // Calcula progress baseado na posição Y do jogador (mesma lógica dos obstáculos)
-        float player_progress = (jogador.pos_y_real - horizon_y) / (screenHeight - horizon_y);
-        if (player_progress < 0) player_progress = 0;
-        if (player_progress > 1) player_progress = 1;
-        
+
+        // Calcula progresso baseado na posição Y do jogador (mesma lógica dos obstáculos)
+        float progresso_jogador = (jogador.pos_y_real - horizon_y) / (screenHeight - horizon_y);
+        if (progresso_jogador < 0) progresso_jogador = 0;
+        if (progresso_jogador > 1) progresso_jogador = 1;
+
         // Posição X interpolada entre topo e base
-        float x_top = lane_offset_top + lane_width_top * jogador.lane + lane_width_top / 2;
-        float x_bottom = lane_offset_bottom + lane_width_bottom * jogador.lane + lane_width_bottom / 2;
-        float target_x = x_top + (x_bottom - x_top) * player_progress;
-        
+        float x_topo = lane_offset_top + lane_width_top * jogador.lane + lane_width_top / 2;
+        float x_base = lane_offset_bottom + lane_width_bottom * jogador.lane + lane_width_bottom / 2;
+        float x_alvo = x_topo + (x_base - x_topo) * progresso_jogador;
+
         // transição entre lanes
-        if (jogador.pos_x_real < target_x) {
+        if (jogador.pos_x_real < x_alvo) {
             jogador.pos_x_real += 10;
-            if (jogador.pos_x_real > target_x) jogador.pos_x_real = target_x;
-        } else if (jogador.pos_x_real > target_x) {
+            if (jogador.pos_x_real > x_alvo) jogador.pos_x_real = x_alvo;
+        } else if (jogador.pos_x_real > x_alvo) {
             jogador.pos_x_real -= 10;
-            if (jogador.pos_x_real < target_x) jogador.pos_x_real = target_x;
+            if (jogador.pos_x_real < x_alvo) jogador.pos_x_real = x_alvo;
         }
 
         // verifica coleta de itens
@@ -732,11 +789,11 @@ void TelaJogo(int *estadoJogo, int screenWidth, int screenHeight, Texture2D back
             // Se o jogador acabou de vencer, insere no ranking (apenas uma vez)
             if (vitoria && !rankingInserido && nickname[0] != '\0') {
                 insertRanking(&ranking, nickname, tempoDecorrido);
-                saveTopTXT(&ranking, "ranking_top10.txt", 10);
-                saveRankingAll(&ranking, "ranking_all.txt");
+                salvarTopTXT(&ranking, "ranking_top5.txt", 5);
+                salvarRankingCompleto(&ranking, "ranking_all.txt");
                 rankingInserido = true;
 
-                gameOver = true; // Termina o jogo
+                fimDeJogo = true; // Termina o jogo
                 cenaVitoria = 1; // Inicia sequência de cenas de vitória
                 PlaySound(somVitoria); // Toca som de vitória
                 StopSound(somCorrida); // Para som de corrida
@@ -745,34 +802,13 @@ void TelaJogo(int *estadoJogo, int screenWidth, int screenHeight, Texture2D back
         // colisões (posição sem perspectiva p cálculo)
         for (int i = 0; i < MAX_OBSTACULOS; i++) {
             if (verificarColisao(&jogador, &obstaculos[i], lane_width_bottom, lane_offset_bottom, horizon_y, screenHeight)) {
-                gameOver = true;
+                fimDeJogo = true;
                 PlaySound(somColisao); // Toca som de colisão
                 StopSound(somCorrida); // Para som de corrida
-                // Se é primeira vez jogando, inicia sequência de imagens
-                if (primeiraVezJogando) {
-                    estadoMorte = 1; // Mostra primeira imagem
-                } else {
-                    estadoMorte = 3; // Vai direto para tela de game over
-                }
                 break;
             }
         }
     } else {
-        // Controle da sequência de imagens de morte (sem fade)
-        if (primeiraVezJogando && !vitoria) {
-            if (estadoMorte == 1) {
-                // Mostrando morte_1
-                if (IsKeyPressed(KEY_ENTER)) {
-                    estadoMorte = 2; // Vai para morte_2
-                }
-            } else if (estadoMorte == 2) {
-                // Mostrando morte_2
-                if (IsKeyPressed(KEY_ENTER)) {
-                    estadoMorte = 3; // Vai para game over
-                }
-            }
-        }
-        
         // ENTER para avançar entre cenas de vitória
         if (IsKeyPressed(KEY_ENTER) && vitoria && cenaVitoria > 0 && cenaVitoria < 3) {
             cenaVitoria++; // Avança para próxima cena
@@ -795,9 +831,8 @@ void TelaJogo(int *estadoJogo, int screenWidth, int screenHeight, Texture2D back
             int quantidade_inicial = (rand() % 3) + 1; // 1, 2 ou 3
             criarMultiplosObstaculos(obstaculos, MAX_OBSTACULOS, screenHeight, quantidade_inicial, horizon_y);
             
-            gameOver = false;
+            fimDeJogo = false;
             vitoria = false;
-            estadoMorte = 0; // Reseta estado de morte
             cenaVitoria = 0; // Reseta cenas de vitória
             StopSound(somMusicaVitoria); // Para música de vitória
             // NÃO reseta tempoDecorrido e itensColetados
@@ -818,7 +853,6 @@ void TelaJogo(int *estadoJogo, int screenWidth, int screenHeight, Texture2D back
         StopSound(somCorrida); // Para som de corrida
         StopSound(somMusicaVitoria); // Para música de vitória
         inicializado = false; // Força reinicialização completa (reseta tempo e itens)
-        primeiraVezJogando = false; // Marca que já não é mais a primeira vez (resetou)
     }
 
     // Tecla ESC para voltar ao menu e resetar tudo (incluindo nickname)
@@ -828,19 +862,18 @@ void TelaJogo(int *estadoJogo, int screenWidth, int screenHeight, Texture2D back
         StopSound(somMusicaVitoria); // Para música de vitória
         inicializado = false; // Força reinicialização completa (reseta tempo e itens)
         nickname[0] = '\0'; // Limpa o nickname (fim da run)
-        primeiraVezJogando = false; // Marca que já não é mais a primeira vez (resetou)
     }
 
     // Cores dos itens (declarado aqui para uso em toda a função)
     Color coresItens[TIPOS_ITENS] = {
-        YELLOW,    // Tipo 0 - Pipoca (BOM)
-        SKYBLUE,   // Tipo 1 - Moeda (BOM)
-        PINK,      // Tipo 2 - VEM (BOM)
-        GOLD,      // Tipo 3 - Botão parada (BOM)
-        GREEN,     // Tipo 4 - Fone (BOM)
-        PURPLE,    // Tipo 5 - Sono (RUIM - aumenta 5 seg)
-        DARKGRAY,  // Tipo 6 - Balaclava (RUIM - perde todos)
-        ORANGE     // Tipo 7 - Idosa (RUIM - perde 1 aleatório)
+        COR_ITEM_PIPOCA,         // Tipo 0 - Pipoca (BOM)
+        COR_ITEM_MOEDA,          // Tipo 1 - Moeda (BOM)
+        COR_ITEM_VEM,            // Tipo 2 - VEM (BOM)
+        COR_ITEM_BOTAO_PARADA,   // Tipo 3 - Botão parada (BOM)
+        COR_ITEM_FONE,           // Tipo 4 - Fone (BOM)
+        PURPLE,                  // Tipo 5 - Sono (RUIM - aumenta 5 seg)
+        DARKGRAY,                // Tipo 6 - Balaclava (RUIM - perde todos)
+        ORANGE                   // Tipo 7 - Idosa (RUIM - perde 1 aleatório)
     };
 
     BeginDrawing();
@@ -889,133 +922,97 @@ void TelaJogo(int *estadoJogo, int screenWidth, int screenHeight, Texture2D back
         (Color){100, 100, 100, 100}
     );
 
-    // caminho dos obstaculos com perspectiva
-    for (int i = 0; i < MAX_OBSTACULOS; i++) {
-        if (obstaculos[i].ativo) {
-            // Progress baseado na distância entre horizonte e fundo da tela
-            float progress = CalcularProgresso(obstaculos[i].pos_y, horizon_y, screenHeight);
-            
-            // menor no topo e maior na base
-            float scale = 0.3f + (progress * 0.7f); // De 0.3 a 1.0
-            
-            // largura e altura em escala
-            float largura_scaled = obstaculos[i].largura * scale;
-            float altura_scaled = obstaculos[i].altura * scale;
-            
-            // posição X interpolada entre topo e base
-            float x_top = lane_offset_top + lane_width_top * obstaculos[i].lane + lane_width_top / 2;
-            float x_bottom = lane_offset_bottom + lane_width_bottom * obstaculos[i].lane + lane_width_bottom / 2;
-            float obs_x = x_top + (x_bottom - x_top) * progress;
-            
-            if (obstaculos[i].tipo == OBSTACULO_ONIBUS) { // Ônibus (desviar com A/D)
-                // Seleciona a sprite correta baseada na lane
-                Texture2D spriteOnibusAtual = spriteOnibusCentro; // Padrão para lane central (= 1)
-                if (obstaculos[i].lane == 0) {
-                    spriteOnibusAtual = spriteOnibusEsquerdo;
-                } else if (obstaculos[i].lane == 2) {
-                    spriteOnibusAtual = spriteOnibusDireito;
-                }
+    // ============================================================
+    // SEÇÃO: RENDERIZAÇÃO - OBSTÁCULOS
+    // ============================================================
 
-                if (spriteOnibusAtual.id > 0) {
-                    // Sprite visual 300px
-                    float sprite_largura = 300.0f * scale;
-                    float sprite_altura = 300.0f * scale;
-                    Rectangle source = {0, 0, (float)spriteOnibusAtual.width, (float)spriteOnibusAtual.height};
-                    Rectangle dest = {obs_x - sprite_largura / 2, obstaculos[i].pos_y, sprite_largura, sprite_altura};
-                    DrawTexturePro(spriteOnibusAtual, source, dest, (Vector2){0, 0}, 0.0f, WHITE);
-                } else {
-                    // Alternativa caso a textura não carregue
-                    DrawRectangle(obs_x - largura_scaled / 2, obstaculos[i].pos_y, largura_scaled, altura_scaled, ORANGE);
-                }
-            } else if (obstaculos[i].tipo == OBSTACULO_CATRACA) { // Catraca (pular com W)
-                if (spriteCatraca.id > 0) { // Sprite 80px por 80px
-                    float sprite_largura_catraca = 100.0f * scale;
-                    float sprite_altura_catraca = 90.0f * scale;
-                    Rectangle source = {0, 0, (float)spriteCatraca.width, (float)spriteCatraca.height};
-                    Rectangle dest = {obs_x - sprite_largura_catraca / 2, obstaculos[i].pos_y + 60, sprite_largura_catraca, sprite_altura_catraca-5};
-                    DrawTexturePro(spriteCatraca, source, dest, (Vector2){0, 0}, 0.0f, WHITE);
-                } else { // Alternativa caso a textura não carregue
-                    DrawRectangle(
-                        obs_x - largura_scaled / 2,
-                        obstaculos[i].pos_y,
-                        largura_scaled,
-                        altura_scaled,
-                        GREEN
-                    );
-                }
-            } else { // cerca de obra alta = obstaculo alto (abaixar com S)
-                if (spriteLaranja.id > 0) {
-                    float sprite_largura_laranja = 200.0f * scale;
-                    float sprite_altura_laranja = 200.0f * scale;
-                    Rectangle source = {0, 0, (float)spriteLaranja.width, (float)spriteLaranja.height};
-                    Rectangle dest = {obs_x - sprite_largura_laranja / 2, obstaculos[i].pos_y, sprite_largura_laranja, sprite_altura_laranja};
-                    DrawTexturePro(spriteLaranja, source, dest, (Vector2){0, 0}, 0.0f, WHITE);
-                } else { // Alternativa: desenha estrutura vazada caso a textura não carregue
-                    Color cor = PURPLE;
-                    float border = 8 * scale;
-                    DrawRectangle(
-                        obs_x - largura_scaled / 2, 
-                        obstaculos[i].pos_y, 
-                        largura_scaled, 
-                        border, 
-                        cor
-                    );
-                    DrawRectangle(
-                        obs_x - largura_scaled / 2, 
-                        obstaculos[i].pos_y, 
-                        border, 
-                        altura_scaled, 
-                        cor
-                    );
-                    DrawRectangle(
-                        obs_x + largura_scaled / 2 - border, 
-                        obstaculos[i].pos_y, 
-                        border, 
-                        altura_scaled, 
-                        cor
-                    );
-                }
+    for (int indiceObstaculo = 0; indiceObstaculo < MAX_OBSTACULOS; indiceObstaculo++) {
+        if (!obstaculos[indiceObstaculo].ativo) continue;
+
+        float progresso = CalcularProgresso(obstaculos[indiceObstaculo].pos_y, horizon_y, screenHeight);
+        float escala = 0.3f + (progresso * 0.7f);
+
+        float largura_escalada = obstaculos[indiceObstaculo].largura * escala;
+        float altura_escalada = obstaculos[indiceObstaculo].altura * escala;
+
+        // Calcula posição X com perspectiva
+        float x_topo = lane_offset_top + lane_width_top * obstaculos[indiceObstaculo].lane + lane_width_top / 2;
+        float x_base = lane_offset_bottom + lane_width_bottom * obstaculos[indiceObstaculo].lane + lane_width_bottom / 2;
+        float posicaoXObstaculo = x_topo + (x_base - x_topo) * progresso;
+
+        if (obstaculos[indiceObstaculo].tipo == OBSTACULO_ONIBUS) {
+            Texture2D spriteOnibusAtual = spriteOnibusCentro;
+            if (obstaculos[indiceObstaculo].lane == 0) {
+                spriteOnibusAtual = spriteOnibusEsquerdo;
+            } else if (obstaculos[indiceObstaculo].lane == 2) {
+                spriteOnibusAtual = spriteOnibusDireito;
+            }
+
+            if (spriteOnibusAtual.id > 0) {
+                float sprite_largura = 300.0f * escala;
+                float sprite_altura = 300.0f * escala;
+                Rectangle origem = {0, 0, (float)spriteOnibusAtual.width, (float)spriteOnibusAtual.height};
+                Rectangle destino = {posicaoXObstaculo - sprite_largura / 2, obstaculos[indiceObstaculo].pos_y, sprite_largura, sprite_altura};
+                DrawTexturePro(spriteOnibusAtual, origem, destino, (Vector2){0, 0}, 0.0f, WHITE);
+            } else {
+                DrawRectangle(posicaoXObstaculo - largura_escalada / 2, obstaculos[indiceObstaculo].pos_y, largura_escalada, altura_escalada, ORANGE);
+            }
+        } else if (obstaculos[indiceObstaculo].tipo == OBSTACULO_CATRACA) {
+            if (spriteCatraca.id > 0) {
+                float sprite_largura_catraca = 100.0f * escala;
+                float sprite_altura_catraca = 95.0f * escala;
+                Rectangle origem = {0, 0, (float)spriteCatraca.width, (float)spriteCatraca.height};
+                Rectangle destino = {posicaoXObstaculo - sprite_largura_catraca / 2, obstaculos[indiceObstaculo].pos_y + 60, sprite_largura_catraca, sprite_altura_catraca};
+                DrawTexturePro(spriteCatraca, origem, destino, (Vector2){0, 0}, 0.0f, WHITE);
+            } else {
+                DrawRectangle(posicaoXObstaculo - largura_escalada / 2, obstaculos[indiceObstaculo].pos_y, largura_escalada, altura_escalada, GREEN);
+            }
+        } else {
+            if (spriteLaranja.id > 0) {
+                float sprite_largura_laranja = 200.0f * escala;
+                float sprite_altura_laranja = 200.0f * escala;
+                Rectangle origem = {0, 0, (float)spriteLaranja.width, (float)spriteLaranja.height};
+                Rectangle destino = {posicaoXObstaculo - sprite_largura_laranja / 2, obstaculos[indiceObstaculo].pos_y, sprite_largura_laranja, sprite_altura_laranja};
+                DrawTexturePro(spriteLaranja, origem, destino, (Vector2){0, 0}, 0.0f, WHITE);
+            } else {
+                Color cor = PURPLE;
+                float borda = 8 * escala;
+                DrawRectangle(posicaoXObstaculo - largura_escalada / 2, obstaculos[indiceObstaculo].pos_y, largura_escalada, borda, cor);
+                DrawRectangle(posicaoXObstaculo - largura_escalada / 2, obstaculos[indiceObstaculo].pos_y, borda, altura_escalada, cor);
+                DrawRectangle(posicaoXObstaculo + largura_escalada / 2 - borda, obstaculos[indiceObstaculo].pos_y, borda, altura_escalada, cor);
             }
         }
     }
 
-    // itens colecionáveis com perspectiva
-    for (int i = 0; i < MAX_ITENS; i++) {
-        if (itens[i].ativo && !itens[i].coletado) {
-            // Progress baseado na distância entre horizonte e fundo da tela
-            float progress = CalcularProgresso(itens[i].pos_y, horizon_y, screenHeight);
-            
-            // escala com perspectiva
-            float scale = 0.3f + (progress * 0.7f);
-            float tamanho_scaled = BASE_ITEM_SIZE * scale; // 120 pixels (varia de 36px no horizonte a 120px na base)
-            
-            // posição X com perspectiva
-            float x_top = lane_offset_top + (itens[i].lane * lane_width_top) + lane_width_top / 2;
-            float x_bottom = lane_offset_bottom + (itens[i].lane * lane_width_bottom) + lane_width_bottom / 2;
-            float item_x = x_top + (x_bottom - x_top) * progress;
-            
-            // Desenha sprite do item
-            if (texturasItens[itens[i].tipo].id > 0) {
-                // Usa a textura se carregada, mantendo proporção original
-                Rectangle source = {0, 0, (float)texturasItens[itens[i].tipo].width, (float)texturasItens[itens[i].tipo].height};
-                
-                // Calcula dimensões mantendo aspect ratio
-                float aspectRatio = (float)texturasItens[itens[i].tipo].width / (float)texturasItens[itens[i].tipo].height;
-                float item_width = tamanho_scaled;
-                float item_height = tamanho_scaled / aspectRatio;
-                
-                Rectangle dest = {
-                    item_x - item_width / 2, 
-                    itens[i].pos_y, 
-                    item_width, 
-                    item_height
-                };
-                DrawTexturePro(texturasItens[itens[i].tipo], source, dest, (Vector2){0, 0}, 0.0f, WHITE);
-            } else {
-                // Alternativa: desenha círculo colorido caso a textura não carregue
-                DrawCircle(item_x, itens[i].pos_y + tamanho_scaled / 2, tamanho_scaled / 2, coresItens[itens[i].tipo]);
-                DrawCircleLines(item_x, itens[i].pos_y + tamanho_scaled / 2, tamanho_scaled / 2, BLACK);
-            }
+    // ============================================================
+    // SEÇÃO: RENDERIZAÇÃO - ITENS COLECIONÁVEIS
+    // ============================================================
+
+    for (int indiceItem = 0; indiceItem < MAX_ITENS; indiceItem++) {
+        if (!itens[indiceItem].ativo || itens[indiceItem].coletado) continue;
+
+        float progresso = CalcularProgresso(itens[indiceItem].pos_y, horizon_y, screenHeight);
+        float escala = 0.3f + (progresso * 0.7f);
+        float tamanho_escalado = TAMANHO_BASE_ITEM * escala;
+
+        // Calcula posição X com perspectiva
+        float x_topo = lane_offset_top + (itens[indiceItem].lane * lane_width_top) + lane_width_top / 2;
+        float x_base = lane_offset_bottom + (itens[indiceItem].lane * lane_width_bottom) + lane_width_bottom / 2;
+        float posicaoXItem = x_topo + (x_base - x_topo) * progresso;
+
+        // Desenha sprite do item
+        if (texturasItens[itens[indiceItem].tipo].id > 0) {
+            Rectangle origem = {0, 0, (float)texturasItens[itens[indiceItem].tipo].width, (float)texturasItens[itens[indiceItem].tipo].height};
+
+            float proporcaoAspecto = (float)texturasItens[itens[indiceItem].tipo].width / (float)texturasItens[itens[indiceItem].tipo].height;
+            float largura_item = tamanho_escalado;
+            float altura_item = tamanho_escalado / proporcaoAspecto;
+
+            Rectangle destino = {posicaoXItem - largura_item / 2, itens[indiceItem].pos_y, largura_item, altura_item};
+            DrawTexturePro(texturasItens[itens[indiceItem].tipo], origem, destino, (Vector2){0, 0}, 0.0f, WHITE);
+        } else {
+            DrawCircle(posicaoXItem, itens[indiceItem].pos_y + tamanho_escalado / 2, tamanho_escalado / 2, coresItens[itens[indiceItem].tipo]);
+            DrawCircleLines(posicaoXItem, itens[indiceItem].pos_y + tamanho_escalado / 2, tamanho_escalado / 2, BLACK);
         }
     }
 
@@ -1023,44 +1020,44 @@ void TelaJogo(int *estadoJogo, int screenWidth, int screenHeight, Texture2D back
     if (jogador.deslizando) { // deslizando - usa direção do movimento
         Texture2D spriteAtual = (direcaoJogador < 0) ? spriteDeslizandoDireita : spriteDeslizandoEsquerda;
         if (spriteAtual.id > 0) {
-            Rectangle source = {0, 0, (float)spriteAtual.width, (float)spriteAtual.height};
+            Rectangle origem = {0, 0, (float)spriteAtual.width, (float)spriteAtual.height};
             // Sprite 150x150 mas hitbox = 40x30
-            Rectangle dest = {jogador.pos_x_real - 75, jogador.pos_y_real - 40, 110, 110};
-            DrawTexturePro(spriteAtual, source, dest, (Vector2){0, 0}, 0.0f, WHITE);
+            Rectangle destino = {jogador.pos_x_real - 75, jogador.pos_y_real - 40, 110, 110};
+            DrawTexturePro(spriteAtual, origem, destino, (Vector2){0, 0}, 0.0f, WHITE);
         } else {
             DrawRectangle(jogador.pos_x_real - 20, jogador.pos_y_real + 20, 40, 20, RED);
         }
     } else if (jogador.pulando) { // pulando - usa direção do movimento
         Texture2D spriteAtual = (direcaoJogador < 0) ? spritePulandoDireita : spritePulandoEsquerda;
         if (spriteAtual.id > 0) {
-            Rectangle source = {0, 0, (float)spriteAtual.width, (float)spriteAtual.height};
+            Rectangle origem = {0, 0, (float)spriteAtual.width, (float)spriteAtual.height};
             // Sprite 150x150 mas hitbox mantém 40x50
-            Rectangle dest = {jogador.pos_x_real - 75, jogador.pos_y_real - 60, 150, 150};
-            DrawTexturePro(spriteAtual, source, dest, (Vector2){0, 0}, 0.0f, WHITE);
+            Rectangle destino = {jogador.pos_x_real - 75, jogador.pos_y_real - 60, 150, 150};
+            DrawTexturePro(spriteAtual, origem, destino, (Vector2){0, 0}, 0.0f, WHITE);
         } else {
             DrawRectangle(jogador.pos_x_real - 20, jogador.pos_y_real - 20, 40, 40, RED);
         }
     } else { // correndo - alterna entre direita e esquerda a cada 0.5s
-        Texture2D spriteAtual = frameAnimacao ? spriteCorrendoEsquerda : spriteCorrendoDireita;
+        Texture2D spriteAtual = quadroAnimacao ? spriteCorrendoEsquerda : spriteCorrendoDireita;
         if (spriteAtual.id > 0) {
-            Rectangle source = {0, 0, (float)spriteAtual.width, (float)spriteAtual.height};
+            Rectangle origem = {0, 0, (float)spriteAtual.width, (float)spriteAtual.height};
             // Sprite 150x150 mas hitbox mantém 40x50
-            Rectangle dest = {jogador.pos_x_real - 75, jogador.pos_y_real - 60, 150, 150};
-            DrawTexturePro(spriteAtual, source, dest, (Vector2){0, 0}, 0.0f, WHITE);
+            Rectangle destino = {jogador.pos_x_real - 75, jogador.pos_y_real - 60, 150, 150};
+            DrawTexturePro(spriteAtual, origem, destino, (Vector2){0, 0}, 0.0f, WHITE);
         } else {
             DrawRectangle(jogador.pos_x_real - 20, jogador.pos_y_real, 40, 40, RED);
         }
     }
 
-    if (gameOver) {
+    if (fimDeJogo) {
         if (vitoria && cenaVitoria == 1 && texturaVitoria1.id > 0) { // Se está na cena de vitória 1
             if (!IsSoundPlaying(somVitoria) && !IsSoundPlaying(somMusicaVitoria)) {
                 PlaySound(somMusicaVitoria); // Toca música de vitória em loop após som de vitória acabar
             }
             // Mostra cena de vitória 1
-            Rectangle source = {0, 0, (float)texturaVitoria1.width, (float)texturaVitoria1.height};
-            Rectangle dest = {0, 0, (float)screenWidth, (float)screenHeight};
-            DrawTexturePro(texturaVitoria1, source, dest, (Vector2){0, 0}, 0.0f, WHITE);
+            Rectangle origem = {0, 0, (float)texturaVitoria1.width, (float)texturaVitoria1.height};
+            Rectangle destino = {0, 0, (float)screenWidth, (float)screenHeight};
+            DrawTexturePro(texturaVitoria1, origem, destino, (Vector2){0, 0}, 0.0f, WHITE);
             
             const char* instrucao = "Pressione ENTER para continuar...";
             int instrWidth = MeasureText(instrucao, 20);
@@ -1075,9 +1072,9 @@ void TelaJogo(int *estadoJogo, int screenWidth, int screenHeight, Texture2D back
             if (vitoria) {
                 // Usa vitoria_scene2 como fundo da tela de vitória
                 if (texturaVitoria2.id > 0) {
-                    Rectangle source = {0, 0, (float)texturaVitoria2.width, (float)texturaVitoria2.height};
-                    Rectangle dest = {0, 0, (float)screenWidth, (float)screenHeight};
-                    DrawTexturePro(texturaVitoria2, source, dest, (Vector2){0, 0}, 0.0f, WHITE);
+                    Rectangle origem = {0, 0, (float)texturaVitoria2.width, (float)texturaVitoria2.height};
+                    Rectangle destino = {0, 0, (float)screenWidth, (float)screenHeight};
+                    DrawTexturePro(texturaVitoria2, origem, destino, (Vector2){0, 0}, 0.0f, WHITE);
                 } else {
                     // Alternativa: overlay escuro caso a imagem não carregue
                     DrawRectangle(0, 0, screenWidth, screenHeight, (Color){0, 0, 0, 150});
@@ -1100,9 +1097,9 @@ void TelaJogo(int *estadoJogo, int screenWidth, int screenHeight, Texture2D back
             } else {
                 // Usa gameOver.png como fundo quando perde
                 if (texturaGameOver.id > 0) {
-                    Rectangle source = {0, 0, (float)texturaGameOver.width, (float)texturaGameOver.height};
-                    Rectangle dest = {0, 0, (float)screenWidth, (float)screenHeight};
-                    DrawTexturePro(texturaGameOver, source, dest, (Vector2){0, 0}, 0.0f, WHITE);
+                    Rectangle origem = {0, 0, (float)texturaGameOver.width, (float)texturaGameOver.height};
+                    Rectangle destino = {0, 0, (float)screenWidth, (float)screenHeight};
+                    DrawTexturePro(texturaGameOver, origem, destino, (Vector2){0, 0}, 0.0f, WHITE);
                 } else {
                     // Alternativa: overlay escuro caso a imagem não carregue
                     DrawRectangle(0, 0, screenWidth, screenHeight, (Color){0, 0, 0, 150});
@@ -1135,9 +1132,9 @@ void TelaJogo(int *estadoJogo, int screenWidth, int screenHeight, Texture2D back
                 int icon_x = startX + (i * 60);
                 int icon_y = screenHeight/2 + 105 + offsetY;
                 if (texturasItens[i].id > 0) {
-                    Rectangle source = {0, 0, (float)texturasItens[i].width, (float)texturasItens[i].height};
-                    Rectangle dest = {icon_x - 24, icon_y, 48, 48};
-                    DrawTexturePro(texturasItens[i], source, dest, (Vector2){0, 0}, 0.0f, WHITE);
+                    Rectangle origem = {0, 0, (float)texturasItens[i].width, (float)texturasItens[i].height};
+                    Rectangle destino = {icon_x - 24, icon_y, 48, 48};
+                    DrawTexturePro(texturasItens[i], origem, destino, (Vector2){0, 0}, 0.0f, WHITE);
                 } else {
                     DrawCircle(icon_x, icon_y + 24, 12, coresItens[i]);
                 }
@@ -1472,18 +1469,18 @@ void TelaComoJogar(int *estadoJogo, int screenWidth, int screenHeight, Texture2D
     const char* objetivoFull = "Para vencer o guarda e garantir sua liberdade, voce precisa de mais do que apenas velocidade. Sua fuga sera um sucesso apenas se voce coletar pelo menos 1 de CADA ITEM espalhado pelo cenario. Cada moeda, cartao e fone e um passo mais perto da sua vitoria. Se voce nao pegar tudo, a perseguicao nao tera fim!";
     // Desenha com quebra automática dentro de objRec usando helper (retorna altura usada)
     Vector2 objPos = { objRec.x, objRec.y };
-    DrawWrappedText(GetFontDefault(), objetivoFull, objPos, objTextSize, 2, objRec.width, green);
+    DesenharTextoQuebrado(GetFontDefault(), objetivoFull, objPos, objTextSize, 2, objRec.width, green);
 
     // Posicao Y para desenhar icones: logo abaixo do box de objetivo
     float iconsY = objBoxY + objBoxHeight + 10.0f;
     
     // Cores dos itens como alternativa (caso as sprites não carreguem)
     Color coresItens[5] = {
-        YELLOW,   // Tipo 0 - Pipoca
-        SKYBLUE,  // Tipo 1 - Moeda
-        PINK,     // Tipo 2 - VEM
-        GOLD,     // Tipo 3 - Botão de parada
-        GREEN     // Tipo 4 - Fone
+        COR_ITEM_PIPOCA,         // Tipo 0 - Pipoca
+        COR_ITEM_MOEDA,          // Tipo 1 - Moeda
+        COR_ITEM_VEM,            // Tipo 2 - VEM
+        COR_ITEM_BOTAO_PARADA,   // Tipo 3 - Botão de parada
+        COR_ITEM_FONE            // Tipo 4 - Fone
     };
 
     for (int i = 0; i < 5; i++) {
@@ -1491,9 +1488,9 @@ void TelaComoJogar(int *estadoJogo, int screenWidth, int screenHeight, Texture2D
 
         // Desenha a textura do item se carregada
         if (texturasItensComoJogar[i].id > 0) {
-            Rectangle source = {0, 0, (float)texturasItensComoJogar[i].width, (float)texturasItensComoJogar[i].height};
-            Rectangle dest = {iconX, iconsY, iconSize, iconSize};
-            DrawTexturePro(texturasItensComoJogar[i], source, dest, (Vector2){0, 0}, 0.0f, WHITE);
+            Rectangle origem = {0, 0, (float)texturasItensComoJogar[i].width, (float)texturasItensComoJogar[i].height};
+            Rectangle destino = {iconX, iconsY, iconSize, iconSize};
+            DrawTexturePro(texturasItensComoJogar[i], origem, destino, (Vector2){0, 0}, 0.0f, WHITE);
         } else {
             // Alternativa: desenha círculo colorido caso a textura não carregue
             DrawCircle(iconX + iconSize/2, iconsY + iconSize/2, iconSize/2 - 2, coresItens[i]);
