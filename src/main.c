@@ -926,7 +926,7 @@ void TelaJogo(int *estadoJogo, int screenWidth, int screenHeight, Texture2D back
                     Rectangle dest = {obs_x - sprite_largura / 2, obstaculos[i].pos_y, sprite_largura, sprite_altura};
                     DrawTexturePro(spriteOnibusAtual, source, dest, (Vector2){0, 0}, 0.0f, WHITE);
                 } else {
-                    // Fallback se a textura não carregar
+                    // Alternativa caso a textura não carregue
                     DrawRectangle(obs_x - largura_scaled / 2, obstaculos[i].pos_y, largura_scaled, altura_scaled, ORANGE);
                 }
             } else if (obstaculos[i].tipo == OBSTACULO_CATRACA) { // Catraca (pular com W)
@@ -936,12 +936,12 @@ void TelaJogo(int *estadoJogo, int screenWidth, int screenHeight, Texture2D back
                     Rectangle source = {0, 0, (float)spriteCatraca.width, (float)spriteCatraca.height};
                     Rectangle dest = {obs_x - sprite_largura_catraca / 2, obstaculos[i].pos_y + 60, sprite_largura_catraca, sprite_altura_catraca-5};
                     DrawTexturePro(spriteCatraca, source, dest, (Vector2){0, 0}, 0.0f, WHITE);
-                } else { // Fallback se a textura não carregar
+                } else { // Alternativa caso a textura não carregue
                     DrawRectangle(
-                        obs_x - largura_scaled / 2, 
-                        obstaculos[i].pos_y, 
-                        largura_scaled, 
-                        altura_scaled, 
+                        obs_x - largura_scaled / 2,
+                        obstaculos[i].pos_y,
+                        largura_scaled,
+                        altura_scaled,
                         GREEN
                     );
                 }
@@ -952,7 +952,7 @@ void TelaJogo(int *estadoJogo, int screenWidth, int screenHeight, Texture2D back
                     Rectangle source = {0, 0, (float)spriteLaranja.width, (float)spriteLaranja.height};
                     Rectangle dest = {obs_x - sprite_largura_laranja / 2, obstaculos[i].pos_y, sprite_largura_laranja, sprite_altura_laranja};
                     DrawTexturePro(spriteLaranja, source, dest, (Vector2){0, 0}, 0.0f, WHITE);
-                } else { // Fallback: desenha estrutura vazada se a textura não carregar
+                } else { // Alternativa: desenha estrutura vazada caso a textura não carregue
                     Color cor = PURPLE;
                     float border = 8 * scale;
                     DrawRectangle(
@@ -1014,7 +1014,7 @@ void TelaJogo(int *estadoJogo, int screenWidth, int screenHeight, Texture2D back
                 };
                 DrawTexturePro(texturasItens[itens[i].tipo], source, dest, (Vector2){0, 0}, 0.0f, WHITE);
             } else {
-                // Fallback: desenha círculo colorido se a textura não carregar
+                // Alternativa: desenha círculo colorido caso a textura não carregue
                 DrawCircle(item_x, itens[i].pos_y + tamanho_scaled / 2, tamanho_scaled / 2, coresItens[itens[i].tipo]);
                 DrawCircleLines(item_x, itens[i].pos_y + tamanho_scaled / 2, tamanho_scaled / 2, BLACK);
             }
@@ -1081,7 +1081,7 @@ void TelaJogo(int *estadoJogo, int screenWidth, int screenHeight, Texture2D back
                     Rectangle dest = {0, 0, (float)screenWidth, (float)screenHeight};
                     DrawTexturePro(texturaVitoria2, source, dest, (Vector2){0, 0}, 0.0f, WHITE);
                 } else {
-                    // Fallback: overlay escuro se a imagem não carregar
+                    // Alternativa: overlay escuro caso a imagem não carregue
                     DrawRectangle(0, 0, screenWidth, screenHeight, (Color){0, 0, 0, 150});
                 }
                 
@@ -1106,7 +1106,7 @@ void TelaJogo(int *estadoJogo, int screenWidth, int screenHeight, Texture2D back
                     Rectangle dest = {0, 0, (float)screenWidth, (float)screenHeight};
                     DrawTexturePro(texturaGameOver, source, dest, (Vector2){0, 0}, 0.0f, WHITE);
                 } else {
-                    // Fallback: overlay escuro se a imagem não carregar
+                    // Alternativa: overlay escuro caso a imagem não carregue
                     DrawRectangle(0, 0, screenWidth, screenHeight, (Color){0, 0, 0, 150});
                 }
                 
@@ -1479,7 +1479,7 @@ void TelaComoJogar(int *estadoJogo, int screenWidth, int screenHeight, Texture2D
     // Posicao Y para desenhar icones: logo abaixo do box de objetivo
     float iconsY = objBoxY + objBoxHeight + 10.0f;
     
-    // Cores dos itens para fallback (se sprites não carregarem)
+    // Cores dos itens como alternativa (caso as sprites não carreguem)
     Color coresItens[5] = {
         YELLOW,   // Tipo 0 - Pipoca
         SKYBLUE,  // Tipo 1 - Moeda
@@ -1487,17 +1487,17 @@ void TelaComoJogar(int *estadoJogo, int screenWidth, int screenHeight, Texture2D
         GOLD,     // Tipo 3 - Botão de parada
         GREEN     // Tipo 4 - Fone
     };
-    
+
     for (int i = 0; i < 5; i++) {
         float iconX = iconsStartX + (i * iconSpacing);
-        
+
         // Desenha a textura do item se carregada
         if (texturasItensComoJogar[i].id > 0) {
             Rectangle source = {0, 0, (float)texturasItensComoJogar[i].width, (float)texturasItensComoJogar[i].height};
             Rectangle dest = {iconX, iconsY, iconSize, iconSize};
             DrawTexturePro(texturasItensComoJogar[i], source, dest, (Vector2){0, 0}, 0.0f, WHITE);
         } else {
-            // Fallback: desenha círculo colorido se a textura não carregar
+            // Alternativa: desenha círculo colorido caso a textura não carregue
             DrawCircle(iconX + iconSize/2, iconsY + iconSize/2, iconSize/2 - 2, coresItens[i]);
             DrawCircleLines(iconX + iconSize/2, iconsY + iconSize/2, iconSize/2 - 2, (Color){0, 0, 0, 255});
         }

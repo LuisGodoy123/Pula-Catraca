@@ -43,7 +43,7 @@ void insertRanking(RankingList *r, const char *name, float time) {
     node->time = time;
     node->next = NULL;
 
-    // Insert sorted ascending (lower time first)
+    // Insere ordenado de forma crescente (menor tempo primeiro = melhor colocação)
     if (!r->head || time < r->head->time) {
         node->next = r->head;
         r->head = node;
