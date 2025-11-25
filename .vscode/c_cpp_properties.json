@@ -5,19 +5,24 @@
             "includePath": [
                 "${workspaceFolder}/**",
                 "${workspaceFolder}/include",
-                "C:/raylib/raylib/src",
-                "C:/raylib/w64devkit/x86_64-w64-mingw32/include"
+                "C:\\raylib\\raylib\\src",
+                "C:\\raylib\\w64devkit\\x86_64-w64-mingw32\\include"
             ],
             "defines": [
                 "_DEBUG",
                 "UNICODE",
-                "_UNICODE"
+                "_UNICODE",
+                "PLATFORM_DESKTOP"
             ],
             "windowsSdkVersion": "10.0.19041.0",
-            "compilerPath": "C:/raylib/w64devkit/bin/gcc.exe",
-            "cStandard": "c17",
+            "compilerPath": "C:\\raylib\\w64devkit\\bin\\gcc.exe",
+            "cStandard": "c99",
             "cppStandard": "c++17",
-            "intelliSenseMode": "windows-gcc-x64"
+            "intelliSenseMode": "windows-gcc-x64",
+            "compilerArgs": [
+                "-Wall",
+                "-std=c99"
+            ]
         }
     ],
     "version": 4
