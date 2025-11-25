@@ -7,9 +7,6 @@
 #include <stdio.h>
 #include <stdbool.h>
 
-// Forward declaration for DrawTextRec (some raylib headers/toolchains may not expose it)
-void DrawTextRec(Font font, const char *text, Rectangle rec, float fontSize, float spacing, bool wordWrap, Color tint);
-
 #define BASE_ITEM_SIZE 120.0f
 
 // Protótipos das funções
@@ -21,10 +18,6 @@ void TelaComoJogar(int *estadoJogo, int screenWidth, int screenHeight, Texture2D
 
 // Ranking (persistente)
 static RankingList ranking;
-
-// Último score do jogador (para exibir na tela de ranking)
-static float ultimoTempoJogador = 0.0f;
-static char ultimoNicknameJogador[50] = "";
 
 // Helper: desenha texto com quebra por largura (word wrap) e retorna a altura ocupada
 static float DrawWrappedText(Font font, const char *text, Vector2 pos, float fontSize, float spacing, float wrapWidth, Color tint) {
@@ -93,19 +86,6 @@ static void DesenharFundo(Texture2D background, int screenWidth, int screenHeigh
         Rectangle dest = {0, 0, (float)screenWidth, (float)screenHeight};
         DrawTexturePro(background, source, dest, (Vector2){0, 0}, 0.0f, WHITE);
     }
-}
-
-// Helper: desenha texto com sombra e bordas
-static void DesenharTextoComSombra(Font font, const char *text, float x, float y, float fontSize, float spacing, Color corSombra, Color corBorda, Color corTexto, float offsetSombra) {
-    // Sombra
-    DrawTextEx(font, text, (Vector2){x + offsetSombra, y + offsetSombra}, fontSize, spacing, corSombra);
-    // Bordas
-    DrawTextEx(font, text, (Vector2){x - 2, y}, fontSize, spacing, corBorda);
-    DrawTextEx(font, text, (Vector2){x + 2, y}, fontSize, spacing, corBorda);
-    DrawTextEx(font, text, (Vector2){x, y - 2}, fontSize, spacing, corBorda);
-    DrawTextEx(font, text, (Vector2){x, y + 2}, fontSize, spacing, corBorda);
-    // Texto principal
-    DrawTextEx(font, text, (Vector2){x, y}, fontSize, spacing, corTexto);
 }
 
 // Helper: desenha botão centralizado e retorna se foi clicado
@@ -546,8 +526,8 @@ void TelaJogo(int *estadoJogo, int screenWidth, int screenHeight, Texture2D back
     if (!spritesJogadorCarregadas) {
         spriteCorrendoDireita = LoadTexture("assets/images/correndo_dir_frente.png");
         spriteCorrendoEsquerda = LoadTexture("assets/images/correndo_esq_frente.png");
-        spritePulandoDireita = LoadTexture("assets/images/pulando_direita.png");
-        spritePulandoEsquerda = LoadTexture("assets/images/pulando_esquerda.png");
+        spritePulandoDireita = LoadTexture("assets/images/pulando_p_dir.png");
+        spritePulandoEsquerda = LoadTexture("assets/images/pulando_p_esq.png");
         spriteDeslizandoDireita = LoadTexture("assets/images/abaixado_p_dir.png");
         spriteDeslizandoEsquerda = LoadTexture("assets/images/abaixado_p_esq.png");
         spritesJogadorCarregadas = true;
@@ -763,12 +743,7 @@ void TelaJogo(int *estadoJogo, int screenWidth, int screenHeight, Texture2D back
                 saveTopTXT(&ranking, "ranking_top10.txt", 10);
                 saveRankingAll(&ranking, "ranking_all.txt");
                 rankingInserido = true;
-                
-                // Salva o último tempo e nickname do jogador para exibir no ranking
-                ultimoTempoJogador = tempoDecorrido;
-                strncpy(ultimoNicknameJogador, nickname, sizeof(ultimoNicknameJogador) - 1);
-                ultimoNicknameJogador[sizeof(ultimoNicknameJogador) - 1] = '\0';
-                
+
                 gameOver = true; // Termina o jogo
                 cenaVitoria = 1; // Inicia sequência de cenas de vitória
                 PlaySound(somVitoria); // Toca som de vitória
@@ -1058,7 +1033,7 @@ void TelaJogo(int *estadoJogo, int screenWidth, int screenHeight, Texture2D back
         if (spriteAtual.id > 0) {
             Rectangle source = {0, 0, (float)spriteAtual.width, (float)spriteAtual.height};
             // Sprite 150x150 mas hitbox = 40x30
-            Rectangle dest = {jogador.pos_x_real - 75, jogador.pos_y_real - 60, 100, 100};
+            Rectangle dest = {jogador.pos_x_real - 75, jogador.pos_y_real - 40, 110, 110};
             DrawTexturePro(spriteAtual, source, dest, (Vector2){0, 0}, 0.0f, WHITE);
         } else {
             DrawRectangle(jogador.pos_x_real - 20, jogador.pos_y_real + 20, 40, 20, RED);
@@ -1078,7 +1053,7 @@ void TelaJogo(int *estadoJogo, int screenWidth, int screenHeight, Texture2D back
         if (spriteAtual.id > 0) {
             Rectangle source = {0, 0, (float)spriteAtual.width, (float)spriteAtual.height};
             // Sprite 150x150 mas hitbox mantém 40x50
-            Rectangle dest = {jogador.pos_x_real - 75, jogador.pos_y_real - 60, 130, 130};
+            Rectangle dest = {jogador.pos_x_real - 75, jogador.pos_y_real - 60, 150, 150};
             DrawTexturePro(spriteAtual, source, dest, (Vector2){0, 0}, 0.0f, WHITE);
         } else {
             DrawRectangle(jogador.pos_x_real - 20, jogador.pos_y_real, 40, 40, RED);
