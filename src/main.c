@@ -7,7 +7,38 @@
 #include <stdio.h>
 #include <stdbool.h>
 
+// ============================================================
+// CONSTANTES GLOBAIS
+// ============================================================
 #define BASE_ITEM_SIZE 120.0f
+#define FRAMES_POR_SEGUNDO 60
+#define TEMPO_ANIMACAO_SPRITE 0.25f
+#define ALTURA_HORIZONTE 150.0f
+#define DURACAO_EFEITO_FONE 4.0f
+#define FRAMES_ENTRE_OBSTACULOS_INICIAL 120
+#define FRAMES_ENTRE_OBSTACULOS_MINIMO 40
+#define INTERVALO_ACELERACAO 30.0f
+#define INTERVALO_AUMENTO_FREQUENCIA 10.0f
+#define VELOCIDADE_INICIAL 3.0f
+#define VELOCIDADE_MAXIMA 8.0f
+#define INCREMENTO_VELOCIDADE 1.0f
+
+// ============================================================
+// ESTADOS DO JOGO
+// ============================================================
+typedef enum {
+    ESTADO_MENU = 0,
+    ESTADO_NICKNAME = 1,
+    ESTADO_JOGANDO = 2,
+    ESTADO_RANKING = 3,
+    ESTADO_COMO_JOGAR = 4
+} EstadoJogo;
+
+typedef enum {
+    DIRECAO_ESQUERDA = -1,
+    DIRECAO_CENTRO = 0,
+    DIRECAO_DIREITA = 1
+} DirecaoJogador;
 
 // Protótipos das funções
 void TelaMenu(int *estadoJogo, int screenWidth, int screenHeight, Texture2D background, Sound somMenu);
@@ -19,7 +50,7 @@ void TelaComoJogar(int *estadoJogo, int screenWidth, int screenHeight, Texture2D
 // Ranking (persistente)
 static RankingList ranking;
 
-// Helper: desenha texto com quebra por largura (word wrap) e retorna a altura ocupada
+// desenha texto com quebra por largura (word wrap) e retorna a altura ocupada
 static float DrawWrappedText(Font font, const char *text, Vector2 pos, float fontSize, float spacing, float wrapWidth, Color tint) {
     // Copia o texto para poder tokenizar
     size_t len = strlen(text);
@@ -71,7 +102,7 @@ static float DrawWrappedText(Font font, const char *text, Vector2 pos, float fon
 #define ASSET_BOTAO_PARADA "assets/images/botao_parada.png"
 #define ASSET_FONE "assets/images/fone.png"
 
-// Helper: calcula progresso normalizado entre 0 e 1
+// calcula progresso normalizado entre 0 e 1
 static float CalcularProgresso(float valor, float min, float max) {
     float progress = (valor - min) / (max - min);
     if (progress < 0) progress = 0;
@@ -79,7 +110,7 @@ static float CalcularProgresso(float valor, float min, float max) {
     return progress;
 }
 
-// Helper: desenha fundo com perspectiva
+// desenha fundo (lanes com perspectiva)
 static void DesenharFundo(Texture2D background, int screenWidth, int screenHeight) {
     if (background.id > 0) {
         Rectangle source = {0, 0, (float)background.width, (float)background.height};
@@ -88,7 +119,7 @@ static void DesenharFundo(Texture2D background, int screenWidth, int screenHeigh
     }
 }
 
-// Helper: desenha botão centralizado e retorna se foi clicado
+// desenha botão centralizado e retorna se foi clicado
 static bool DesenharBotao(const char *text, float centerX, float y, float btnWidth, float btnHeight, float fontSize, Color corNormal, Color corHover, Color textoNormal, Color textoHover) {
     Font font = GetFontDefault();
     Rectangle btn = {centerX - btnWidth / 2, y, btnWidth, btnHeight};
@@ -105,7 +136,7 @@ static bool DesenharBotao(const char *text, float centerX, float y, float btnWid
     return hover && IsMouseButtonPressed(MOUSE_LEFT_BUTTON);
 }
 
-// Helper: carrega texturas de itens colecionáveis (0-4 = bons)
+// carrega texturas de itens colecionáveis (0-4 = bons)
 static void CarregarTexturasItens(Texture2D texturas[]) {
     texturas[0] = LoadTexture(ASSET_PIPOCA);
     texturas[1] = LoadTexture(ASSET_MOEDA);
@@ -192,9 +223,9 @@ int main(void) {
             TelaComoJogar(&estadoJogo, screenWidth, screenHeight, background_menu);
         }
     }
-    // salva ranking completo e top10 antes de sair
+    // salva ranking completo e top5 antes de sair
     saveRankingAll(&ranking, "ranking_all.txt");
-    saveTopTXT(&ranking, "ranking_top10.txt", 10);
+    saveTopTXT(&ranking, "ranking_top5.txt", 5);
     freeRanking(&ranking);
     
     // Descarrega sons
@@ -257,12 +288,11 @@ void TelaMenu(int *estadoJogo, int screenWidth, int screenHeight, Texture2D back
 
 void TelaNickname(int *estadoJogo, int screenWidth, int screenHeight, Texture2D background, char *nickname, Sound somMenu) {
     if (!IsSoundPlaying(somMenu)) {
-        PlaySound(somMenu); // Para música do menu antes de ir para o jogo
+        PlaySound(somMenu);
     }
     
-    // fonte texto
+
     Font titleFont = GetFontDefault();
-    // paleta
     Color pink = (Color){255, 102, 196, 255};   // #ff66c4
     Color yellow = (Color){254, 255, 153, 255}; // #feff99
     Color blue = (Color){175, 218, 225, 255};   // #afdae1
@@ -318,13 +348,10 @@ void TelaNickname(int *estadoJogo, int screenWidth, int screenHeight, Texture2D 
 
     BeginDrawing();
     ClearBackground(RAYWHITE);
-
-    // fundo
     DesenharFundo(background, screenWidth, screenHeight);
 
-    float fontSize = screenWidth * 0.06f;
-
     // título
+    float fontSize = screenWidth * 0.06f;
     const char *title = "Digite seu nickname:";
     float titleWidth = MeasureTextEx(titleFont, title, fontSize * 0.7f, 2).x;
     DrawTextEx(titleFont, title,
@@ -405,29 +432,26 @@ void TelaJogo(int *estadoJogo, int screenWidth, int screenHeight, Texture2D back
     static bool inicializado = false;
     static int frameCount = 0;
     static int frameCountItens = 0;
-    static float velocidadeJogo = 3.0f; // Velocidade inicial: 3.0 m/s
-    static float velocidadeMaxima = 8.0f; // Velocidade máxima: 8 m/s
-    static float intervaloAceleracao = 30.0f; // Acelera a cada 30 segundos
-    static float tempoUltimaAceleracao = 0.0f; // Controla quando acelerar
-    static float incrementoVelocidade = 1.0f; // Aumenta 1 m/s a cada intervalo
-    static float tempoDecorrido = 0.0f; // Tempo em segundos
+    static float velocidadeJogo = VELOCIDADE_INICIAL;
+    static float velocidadeMaxima = VELOCIDADE_MAXIMA;
+    static float intervaloAceleracao = INTERVALO_ACELERACAO;
+    static float tempoUltimaAceleracao = 0.0f;
+    static float incrementoVelocidade = INCREMENTO_VELOCIDADE;
+    static float tempoDecorrido = 0.0f;
     static bool gameOver = false;
     static bool vitoria = false;
     static bool rankingInserido = false;
-    static bool efeitoFoneAtivo = false; // Efeito do fone de ouvido ativo
-    static float tempoEfeitoFone = 0.0f; // Contador de tempo do efeito
-    static float duracaoEfeitoFone = 4.0f; // Duração de 4 segundos
-    static bool primeiraVezJogando = true; // Flag para controlar se é a primeira vez jogando (nunca resetou com X)
-    static int estadoMorte = 0; // 0 = jogo normal, 1 = mostra morte_1, 2 = mostra morte_2, 3 = tela game over
-    static int direcaoJogador = 0; // -1 = esquerda, 0 = centro, 1 = direita
-    static float tempoAnimacao = 0.0f; // Timer para animação de sprites
-    static bool frameAnimacao = false; // Alterna entre direito(false) e esquerdo(true)
-    
+    static bool primeiraVezJogando = true;
+    static int estadoMorte = 0; // 0 = normal, 1 = morte_1, 2 = morte_2, 3 = game over
+    static int direcaoJogador = DIRECAO_CENTRO;
+    static float tempoAnimacao = 0.0f;
+    static bool frameAnimacao = false;
+
     // Sistema progressivo de obstáculos
-    static int framesEntreObstaculos = 120; // Começa com 2 segundos (120 frames)
-    static int framesMinimos = 40; // Mínimo de 0.66 segundo (~40 frames)
-    static float tempoUltimoAumentoFrequencia = 0.0f; // Controla quando aumentar frequência
-    static float intervaloAumentoFrequencia = 10.0f; // Aumenta frequência a cada 10 segundos
+    static int framesEntreObstaculos = FRAMES_ENTRE_OBSTACULOS_INICIAL;
+    static int framesMinimos = FRAMES_ENTRE_OBSTACULOS_MINIMO;
+    static float tempoUltimoAumentoFrequencia = 0.0f;
+    static float intervaloAumentoFrequencia = INTERVALO_AUMENTO_FREQUENCIA;
     
     // Texturas dos obstáculos
     static Texture2D spriteOnibusEsquerdo = {0};
@@ -461,7 +485,7 @@ void TelaJogo(int *estadoJogo, int screenWidth, int screenHeight, Texture2D back
     static int cenaVitoria = 0; // 0 = tela normal, 1 = scene1, 2 = scene2, 3 = voltou ao normal
     
     // Perspectiva das lanes - ajustadas para coincidir com as faixas do asfalto
-    const float horizon_y = 180.0f;          // linha do horizonte onde a estrada começa
+    const float horizon_y = ALTURA_HORIZONTE;
     // Medidas calibradas para coincidir com a imagem de fundo (800x600)
     // No topo (horizonte): as 3 lanes ocupam aproximadamente 25% da largura da tela
     // Na base: ocupam mais que a largura da tela para coincidir com as faixas
@@ -488,11 +512,7 @@ void TelaJogo(int *estadoJogo, int screenWidth, int screenHeight, Texture2D back
         for (int i = 0; i < TIPOS_ITENS; i++) {
             itensColetados[i] = 0;
         }
-        
-        // Reseta efeito do fone
-        efeitoFoneAtivo = false;
-        tempoEfeitoFone = 0.0f;
-        
+
         // Cria obstáculos iniciais imediatamente
         int quantidade_inicial = (rand() % 3) + 1; // 1, 2 ou 3
         criarMultiplosObstaculos(obstaculos, MAX_OBSTACULOS, screenHeight, quantidade_inicial, horizon_y);
@@ -502,9 +522,9 @@ void TelaJogo(int *estadoJogo, int screenWidth, int screenHeight, Texture2D back
     
     // Carrega texturas dos obstáculos (apenas uma vez)
     if (!spritesCarregadas) {
-        spriteOnibusEsquerdo = LoadTexture("assets/images/onibus_esquerdo.png");
-        spriteOnibusCentro = LoadTexture("assets/images/onibus.png");
-        spriteOnibusDireito = LoadTexture("assets/images/onibus_direito.png");
+        spriteOnibusEsquerdo = LoadTexture("assets/images/onibus_lane_esq.png");
+        spriteOnibusCentro = LoadTexture("assets/images/onibus_centro.png");
+        spriteOnibusDireito = LoadTexture("assets/images/onibus_lane_dir.png");
         spriteCatraca = LoadTexture("assets/images/catraca.png");
         spriteLaranja = LoadTexture("assets/images/cerca_laranja.png");
         spritesCarregadas = true;
@@ -553,8 +573,8 @@ void TelaJogo(int *estadoJogo, int screenWidth, int screenHeight, Texture2D back
             StopSound(somMenu); // Para música do menu
             somInicializado = true;
         }
-        // Só toca corrida se o efeito do fone não estiver ativo
-        if (!efeitoFoneAtivo && !IsSoundPlaying(somCorrida)) {
+        // Toca som de corrida em loop
+        if (!IsSoundPlaying(somCorrida)) {
             PlaySound(somCorrida);
         }
         
@@ -564,11 +584,11 @@ void TelaJogo(int *estadoJogo, int screenWidth, int screenHeight, Texture2D back
         }
         if (IsKeyPressed(KEY_A)) {
             moverEsquerda(&jogador);
-            direcaoJogador = -1;
+            direcaoJogador = DIRECAO_ESQUERDA;
         }
         if (IsKeyPressed(KEY_D)) {
             moverDireita(&jogador);
-            direcaoJogador = 1;
+            direcaoJogador = DIRECAO_DIREITA;
         }
         if (IsKeyPressed(KEY_S)) {
             deslizar(&jogador);
@@ -579,17 +599,6 @@ void TelaJogo(int *estadoJogo, int screenWidth, int screenHeight, Texture2D back
 
         // incrementa o tempo (60 FPS = 1/60 segundo por frame)
         tempoDecorrido += 1.0f / 60.0f;
-
-        // Efeito do fone: reduz velocidade temporariamente
-        if (efeitoFoneAtivo) {
-            tempoEfeitoFone += GetFrameTime();
-            if (tempoEfeitoFone >= duracaoEfeitoFone) {
-                efeitoFoneAtivo = false;
-                tempoEfeitoFone = 0.0f;
-                StopSound(somMusicaCalma);
-                PlaySound(somCorrida); // Retoma música de corrida
-            }
-        }
 
         // Sistema de aceleração progressiva
         // Verifica se deve acelerar baseado no tempo decorrido
@@ -638,10 +647,8 @@ void TelaJogo(int *estadoJogo, int screenWidth, int screenHeight, Texture2D back
         }
 
         float dt = GetFrameTime();
-        // Reduz velocidade dos obstáculos em 50% quando efeito do fone está ativo
-        float velocidadeObstaculos = efeitoFoneAtivo ? velocidadeJogo * 0.5f : velocidadeJogo;
-        atualizarObstaculos(obstaculos, MAX_OBSTACULOS, velocidadeObstaculos, horizon_y, screenHeight, dt);
-        atualizarItens(itens, MAX_ITENS, velocidadeJogo, horizon_y, screenHeight, dt); // Itens sempre na velocidade normal
+        atualizarObstaculos(obstaculos, MAX_OBSTACULOS, velocidadeJogo, horizon_y, screenHeight, dt);
+        atualizarItens(itens, MAX_ITENS, velocidadeJogo, horizon_y, screenHeight, dt);
 
         // posição X baseada na lane com perspectiva
         // O jogador está em uma posição Y específica, então precisa interpolar igual aos obstáculos/itens
@@ -669,68 +676,55 @@ void TelaJogo(int *estadoJogo, int screenWidth, int screenHeight, Texture2D back
         for (int i = 0; i < MAX_ITENS; i++) {
             if (verificarColeta(&jogador, &itens[i], lane_width_bottom, lane_offset_bottom)) {
                 int tipo = itens[i].tipo;
-                
-                // Itens BONS (tipos 0-4)
-                if (tipo >= 0 && tipo <= 4) {
+
+                // Itens BONS (ITEM_PIPOCA até ITEM_FONE)
+                if (tipo >= ITEM_PIPOCA && tipo <= ITEM_FONE) {
                     // incrementa apenas se ainda não atingiu o limite de 5
                     if (itensColetados[tipo] < 5) {
                         itensColetados[tipo]++;
-                        if (tipo == 1) { // Moeda: reduz 2 segundos do tempo (mínimo 0)
-                            tempoDecorrido -= 2.0f;
-                            if (tempoDecorrido < 0.0f) tempoDecorrido = 0.0f;
-                        }
-                        if (tipo == 4) { // Fone: ativa música calma e desacelera obstáculos
-                            efeitoFoneAtivo = true;
-                            tempoEfeitoFone = 0.0f;
-                            StopSound(somCorrida); // Para música de corrida
-                            PlaySound(somMusicaCalma);
-                        }
-                        PlaySound(somItemBom); // Toca som de item bom
+                        PlaySound(somItemBom);
                     }
                 }
-                // Itens RUINS (tipos 5-7)
-                else if (tipo == 5) {
-                    // SONO: "você dormiu e perdeu a parada" - aumenta 5 segundos no tempo
+                // Itens RUINS
+                else if (tipo == ITEM_SONO) {
+                    // SONO: aumenta 5 segundos no tempo
                     tempoDecorrido += 5.0f;
-                    // Marca como coletado para mostrar mensagem customizada
                     itensColetados[tipo]++;
-                    PlaySound(somItemRuim); // Toca som de item ruim
+                    PlaySound(somItemRuim);
                 }
-                else if (tipo == 6) {
-                    // BALACLAVA: "você foi assaltado e perdeu seus itens" - perde TODOS os itens
-                    for (int j = 0; j < 5; j++) { // Apenas itens bons (0-4)
+                else if (tipo == ITEM_BALACLAVA) {
+                    // BALACLAVA: perde TODOS os itens bons
+                    for (int j = ITEM_PIPOCA; j <= ITEM_FONE; j++) {
                         itensColetados[j] = 0;
                     }
                     itensColetados[tipo]++;
-                    PlaySound(somItemRuim); // Toca som de item ruim
+                    PlaySound(somItemRuim);
                 }
-                else if (tipo == 7) {
-                    // IDOSA: "você cedeu o assento e ficou em pé" - perde 1 item aleatório
-                    // Procura itens que o jogador possui
+                else if (tipo == ITEM_IDOSA) {
+                    // IDOSA: perde 1 item aleatório
                     int itensDisponiveis[5];
                     int quantidadeDisponiveis = 0;
-                    for (int j = 0; j < 5; j++) {
+                    for (int j = ITEM_PIPOCA; j <= ITEM_FONE; j++) {
                         if (itensColetados[j] > 0) {
                             itensDisponiveis[quantidadeDisponiveis] = j;
                             quantidadeDisponiveis++;
                         }
                     }
-                    // Se tiver algum item, remove um aleatório
                     if (quantidadeDisponiveis > 0) {
                         int indiceAleatorio = rand() % quantidadeDisponiveis;
                         int itemRemovido = itensDisponiveis[indiceAleatorio];
                         itensColetados[itemRemovido]--;
                     }
                     itensColetados[tipo]++;
-                    PlaySound(somItemRuim); // Toca som de item ruim
+                    PlaySound(somItemRuim);
                 }
             }
         }
 
-        // verifica vitoria (pelo menos 1 item de cada tipo BOM - apenas tipos 0-4)
+        // verifica vitoria (pelo menos 1 item de cada tipo BOM)
         if (!vitoria) {
             bool ganhou = true;
-            for (int i = 0; i < 5; i++) { // Apenas itens bons (0-4)
+            for (int i = ITEM_PIPOCA; i <= ITEM_FONE; i++) {
                 if (itensColetados[i] == 0) {
                     ganhou = false;
                     break;
@@ -915,7 +909,7 @@ void TelaJogo(int *estadoJogo, int screenWidth, int screenHeight, Texture2D back
             float x_bottom = lane_offset_bottom + lane_width_bottom * obstaculos[i].lane + lane_width_bottom / 2;
             float obs_x = x_top + (x_bottom - x_top) * progress;
             
-            if (obstaculos[i].tipo == 0) { // Ônibus = obstaculo padrão (desviar com A e D)
+            if (obstaculos[i].tipo == OBSTACULO_ONIBUS) { // Ônibus (desviar com A/D)
                 // Seleciona a sprite correta baseada na lane
                 Texture2D spriteOnibusAtual = spriteOnibusCentro; // Padrão para lane central (= 1)
                 if (obstaculos[i].lane == 0) {
@@ -923,7 +917,7 @@ void TelaJogo(int *estadoJogo, int screenWidth, int screenHeight, Texture2D back
                 } else if (obstaculos[i].lane == 2) {
                     spriteOnibusAtual = spriteOnibusDireito;
                 }
-                
+
                 if (spriteOnibusAtual.id > 0) {
                     // Sprite visual 300px
                     float sprite_largura = 300.0f * scale;
@@ -935,12 +929,12 @@ void TelaJogo(int *estadoJogo, int screenWidth, int screenHeight, Texture2D back
                     // Fallback se a textura não carregar
                     DrawRectangle(obs_x - largura_scaled / 2, obstaculos[i].pos_y, largura_scaled, altura_scaled, ORANGE);
                 }
-            } else if (obstaculos[i].tipo == 1) { // catraca = obstaculo baixo (pular com W)
+            } else if (obstaculos[i].tipo == OBSTACULO_CATRACA) { // Catraca (pular com W)
                 if (spriteCatraca.id > 0) { // Sprite 80px por 80px
-                    float sprite_largura_catraca = 80.0f * scale;
-                    float sprite_altura_catraca = 80.0f * scale;
+                    float sprite_largura_catraca = 100.0f * scale;
+                    float sprite_altura_catraca = 90.0f * scale;
                     Rectangle source = {0, 0, (float)spriteCatraca.width, (float)spriteCatraca.height};
-                    Rectangle dest = {obs_x - sprite_largura_catraca / 2, obstaculos[i].pos_y, sprite_largura_catraca, sprite_altura_catraca};
+                    Rectangle dest = {obs_x - sprite_largura_catraca / 2, obstaculos[i].pos_y + 60, sprite_largura_catraca, sprite_altura_catraca-5};
                     DrawTexturePro(spriteCatraca, source, dest, (Vector2){0, 0}, 0.0f, WHITE);
                 } else { // Fallback se a textura não carregar
                     DrawRectangle(

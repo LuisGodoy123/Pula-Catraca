@@ -2,9 +2,9 @@
 #include <stdlib.h>
 #include <time.h>
 
-// ========== FUNÇÕES HELPER ==========
+// ========== FUNÇÕES AUXILIARES ==========
 
-// Helper: calcula progresso normalizado entre 0 e 1
+// calcula progresso normalizado entre 0 e 1
 static float calcularProgresso(float valor, float min, float max) {
     float progress = (valor - min) / (max - min);
     if (progress < 0) progress = 0;
@@ -12,24 +12,24 @@ static float calcularProgresso(float valor, float min, float max) {
     return progress;
 }
 
-// Helper: define dimensões do obstáculo por tipo
+// define dimensões do obstáculo por tipo
 static void definirDimensoesObstaculo(Obstaculo *obs) {
-    if (obs->tipo == 0) {
-        // Ônibus alto (precisa desviar ou deslizar)
+    if (obs->tipo == OBSTACULO_ONIBUS) {
+        // Ônibus alto (precisa desviar)
         obs->largura = 60;
         obs->altura = 80;
-    } else if (obs->tipo == 1) {
-        // Obstáculo baixo no chão (precisa pular)
+    } else if (obs->tipo == OBSTACULO_CATRACA) {
+        // Obstáculo baixo no chão = catraca (precisa pular)
         obs->largura = 60;
         obs->altura = 30;
     } else {
-        // Obstáculo alto vazado (precisa deslizar)
+        // Obstáculo alto vazado = cerca laranja (precisa deslizar)
         obs->largura = 60;
         obs->altura = 50;
     }
 }
 
-// Helper: verifica se há obstáculos próximos em uma lane
+// verifica se há obstáculos próximos em uma lane
 static int verificarObstaculoProximo(Obstaculo obstaculos[], int tamanho, int indiceAtual, int lane, float pos_y, float distanciaSeguranca) {
     for (int j = 0; j < tamanho; j++) {
         if (j != indiceAtual && obstaculos[j].ativo && obstaculos[j].lane == lane) {
@@ -42,7 +42,7 @@ static int verificarObstaculoProximo(Obstaculo obstaculos[], int tamanho, int in
     return 0; // Não há obstáculo próximo
 }
 
-// Helper: verifica se há itens próximos em uma lane
+// verifica se há itens próximos em uma lane
 static int verificarItemProximo(ItemColetavel itens[], int tamanho, int indiceAtual, int lane, float pos_y, float distanciaSeguranca) {
     for (int j = 0; j < tamanho; j++) {
         if (j != indiceAtual && itens[j].ativo && !itens[j].coletado && itens[j].lane == lane) {
@@ -62,7 +62,7 @@ void inicializarJogador(Jogador *j, float pos_x_inicial, float pos_y_inicial) {
     j->lane = 1; // começa no centro
     j->pulando = 0;
     j->deslizando = 0;
-    j->velocidade_pulo = 0;
+    j->altura_pulo = 0;
     j->tempo_deslizando = 0;
     j->pos_x_real = pos_x_inicial;
     j->pos_y_real = pos_y_inicial;
@@ -84,28 +84,28 @@ void moverDireita(Jogador *j) {
 void pular(Jogador *j) {
     if (!j->pulando && !j->deslizando) {
         j->pulando = 1;
-        j->velocidade_pulo = 15; // Reduzido de 17 para 15 (mais 10% de redução)
+        j->altura_pulo = 20; // Velocidade inicial (mesma de antes)
     }
 }
 
 void deslizar(Jogador *j) {
     if (!j->pulando && !j->deslizando) {
         j->deslizando = 1;
-        j->tempo_deslizando = 46; // Reduzido de 51 para 46 frames (mais 10% de redução = ~0.77 segundos)
+        j->tempo_deslizando = 45;
     }
 }
 
 void atualizarFisica(Jogador *j) {
     // Física do pulo (gravidade)
     if (j->pulando) {
-        j->pos_y_real -= j->velocidade_pulo;
-        j->velocidade_pulo -= 1; // gravidade
-        
+        j->pos_y_real -= j->altura_pulo;
+        j->altura_pulo -= 1; // gravidade
+
         // Volta ao chão
         if (j->pos_y_real >= j->chao_y) {
             j->pos_y_real = j->chao_y;
             j->pulando = 0;
-            j->velocidade_pulo = 0;
+            j->altura_pulo = 0;
         }
     }
     
@@ -231,13 +231,13 @@ void atualizarObstaculos(Obstaculo obstaculos[], int tamanho, float velocidade, 
 
 int verificarColisao(Jogador *j, Obstaculo *obs, float lane_width, float lane_offset, float horizon_y, float screenHeight) {
     if (!obs->ativo) return 0;
-    
-    // Se é um obstáculo baixo e o jogador está pulando, não colide
-    if (obs->tipo == 1 && j->pulando) {
+
+    // Se é catraca (baixo) e o jogador está pulando, não colide
+    if (obs->tipo == OBSTACULO_CATRACA && j->pulando) {
         return 0;
     }
-    // Se é um obstáculo alto vazado e o jogador está deslizando, não colide
-    if (obs->tipo == 2 && j->deslizando) {
+    // Se é cerca laranja (alto vazado) e o jogador está deslizando, não colide
+    if (obs->tipo == OBSTACULO_CERCA_LARANJA && j->deslizando) {
         return 0;
     }
     
@@ -263,25 +263,23 @@ int verificarColisao(Jogador *j, Obstaculo *obs, float lane_width, float lane_of
     float player_top = j->deslizando ? j->pos_y_real + 10 : j->pos_y_real - 10;
     float player_bottom = j->deslizando ? j->pos_y_real + 40 : j->pos_y_real + 40;
     
-    // Hitbox do obstáculo tipo 0 (ônibus): ajustada proporcionalmente de 150px para 300px
-    // Fator de escala: 300/150 = 2x
-    // Hitbox anterior: 70% da largura visual
-    // Nova hitbox: 70% * 2 = 140% = 1.4x (mantendo proporcional)
-    float hitbox_factor = (obs->tipo == 0) ? 1.4f : 0.7f; // 140% para ônibus, 70% para outros
+    // Hitbox do ônibus: ajustada proporcionalmente (140% da largura visual)
+    // Outros obstáculos: 70% da largura visual
+    float hitbox_factor = (obs->tipo == OBSTACULO_ONIBUS) ? 1.4f : 0.7f;
     float largura_scaled = obs->largura * scale * hitbox_factor;
     float obs_left = obs_x - largura_scaled / 2;
     float obs_right = obs_x + largura_scaled / 2;
-    
+
     // Ajuste de altura da hitbox
     float altura_ajustada = obs->altura * scale;
-    if (obs->tipo == 1) {
-        // Catraca: reduz 20px da altura da hitbox
-        altura_ajustada = (obs->altura * scale) - 20.0f;
-        if (altura_ajustada < 0) altura_ajustada = 0; // Garante que não fique negativo
+    if (obs->tipo == OBSTACULO_CATRACA) {
+        // Catraca: reduz 35px da altura da hitbox (mais fácil de passar)
+        altura_ajustada = (obs->altura * scale) - 35.0f;
+        if (altura_ajustada < 0) altura_ajustada = 0;
     }
-    
-    float obs_top = obs->pos_y + (altura_ajustada * 0.15f); // 15% de margem no topo
-    float obs_bottom = obs->pos_y + (altura_ajustada * 0.85f); // 85% da altura
+
+    float obs_top = obs->pos_y + (altura_ajustada * 0.25f); // 25% de margem no topo (maior margem)
+    float obs_bottom = obs->pos_y + (altura_ajustada * 0.75f); // 75% da altura
     
     // Verifica colisão em X e Y (AABB - Axis-Aligned Bounding Box)
     if (player_right > obs_left && player_left < obs_right &&
@@ -331,7 +329,7 @@ void criarItem(ItemColetavel itens[], int tamanho, float screenHeight, Obstaculo
                         float distancia_y = obstaculos[j].pos_y - pos_y_item;
 
                         // Distância de segurança maior para ônibus (tipo 0)
-                        float distancia_seguranca = (obstaculos[j].tipo == 0) ? 150.0f : 80.0f;
+                        float distancia_seguranca = (obstaculos[j].tipo == OBSTACULO_ONIBUS) ? 150.0f : 80.0f;
 
                         // Se estiver muito próximo, invalida
                         if (distancia_y >= -distancia_seguranca && distancia_y <= distancia_seguranca) {

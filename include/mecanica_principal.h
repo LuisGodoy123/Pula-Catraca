@@ -1,9 +1,39 @@
 #ifndef MECANICA_PRINCIPAL_H
 #define MECANICA_PRINCIPAL_H
 
+// ============================================================
+// CONSTANTES DO JOGO
+// ============================================================
 #define MAX_OBSTACULOS 10
 #define MAX_ITENS 25
 #define TIPOS_ITENS 8  // 5 itens bons + 3 itens ruins
+#define MAX_LANES 3
+
+// ============================================================
+// TIPOS DE OBSTÁCULOS
+// ============================================================
+typedef enum {
+    OBSTACULO_ONIBUS = 0,        // Obstáculo alto (desviar com A/D)
+    OBSTACULO_CATRACA = 1,       // Obstáculo baixo (pular com W)
+    OBSTACULO_CERCA_LARANJA = 2  // Obstáculo alto vazado (deslizar com S)
+} TipoObstaculo;
+
+// ============================================================
+// TIPOS DE ITENS COLECIONÁVEIS
+// ============================================================
+typedef enum {
+    // Itens BONS (necessários para a vitória)
+    ITEM_PIPOCA = 0,
+    ITEM_MOEDA = 1,
+    ITEM_VEM = 2,
+    ITEM_BOTAO_PARADA = 3,
+    ITEM_FONE = 4,
+
+    // Itens RUINS (prejudicam o jogador)
+    ITEM_SONO = 5,               // Aumenta 5 segundos no tempo
+    ITEM_BALACLAVA = 6,          // Perde TODOS os itens
+    ITEM_IDOSA = 7               // Perde 1 item aleatório
+} TipoItem;
 
 typedef struct {
     float pos_x;
@@ -22,7 +52,7 @@ typedef struct {
     int lane; // 0 = esquerda, 1 = centro, 2 = direita
     int pulando;
     int deslizando;
-    int velocidade_pulo;
+    int altura_pulo;
     int tempo_deslizando;
     float pos_x_real; // posição real em pixels
     float pos_y_real; // posição real em pixels
