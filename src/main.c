@@ -544,12 +544,12 @@ void TelaJogo(int *estadoJogo, int screenWidth, int screenHeight, Texture2D back
     
     // Carrega sprites do jogador (apenas uma vez)
     if (!spritesJogadorCarregadas) {
-        spriteCorrendoDireita = LoadTexture("assets/images/correndo_direito.png");
-        spriteCorrendoEsquerda = LoadTexture("assets/images/correndo_esquerdo.png");
+        spriteCorrendoDireita = LoadTexture("assets/images/correndo_dir_frente.png");
+        spriteCorrendoEsquerda = LoadTexture("assets/images/correndo_esq_frente.png");
         spritePulandoDireita = LoadTexture("assets/images/pulando_direita.png");
         spritePulandoEsquerda = LoadTexture("assets/images/pulando_esquerda.png");
-        spriteDeslizandoDireita = LoadTexture("assets/images/deslizando_direita.png");
-        spriteDeslizandoEsquerda = LoadTexture("assets/images/deslizando_esquerda.png");
+        spriteDeslizandoDireita = LoadTexture("assets/images/abaixado_p_dir.png");
+        spriteDeslizandoEsquerda = LoadTexture("assets/images/abaixado_p_esq.png");
         spritesJogadorCarregadas = true;
     }
     
@@ -1058,7 +1058,7 @@ void TelaJogo(int *estadoJogo, int screenWidth, int screenHeight, Texture2D back
         if (spriteAtual.id > 0) {
             Rectangle source = {0, 0, (float)spriteAtual.width, (float)spriteAtual.height};
             // Sprite 150x150 mas hitbox = 40x30
-            Rectangle dest = {jogador.pos_x_real - 75, jogador.pos_y_real - 60, 150, 150};
+            Rectangle dest = {jogador.pos_x_real - 75, jogador.pos_y_real - 60, 100, 100};
             DrawTexturePro(spriteAtual, source, dest, (Vector2){0, 0}, 0.0f, WHITE);
         } else {
             DrawRectangle(jogador.pos_x_real - 20, jogador.pos_y_real + 20, 40, 20, RED);
@@ -1078,7 +1078,7 @@ void TelaJogo(int *estadoJogo, int screenWidth, int screenHeight, Texture2D back
         if (spriteAtual.id > 0) {
             Rectangle source = {0, 0, (float)spriteAtual.width, (float)spriteAtual.height};
             // Sprite 150x150 mas hitbox mantém 40x50
-            Rectangle dest = {jogador.pos_x_real - 75, jogador.pos_y_real - 60, 150, 150};
+            Rectangle dest = {jogador.pos_x_real - 75, jogador.pos_y_real - 60, 130, 130};
             DrawTexturePro(spriteAtual, source, dest, (Vector2){0, 0}, 0.0f, WHITE);
         } else {
             DrawRectangle(jogador.pos_x_real - 20, jogador.pos_y_real, 40, 40, RED);

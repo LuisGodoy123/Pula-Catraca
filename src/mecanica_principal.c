@@ -2,6 +2,61 @@
 #include <stdlib.h>
 #include <time.h>
 
+// ========== FUNÇÕES HELPER ==========
+
+// Helper: calcula progresso normalizado entre 0 e 1
+static float calcularProgresso(float valor, float min, float max) {
+    float progress = (valor - min) / (max - min);
+    if (progress < 0) progress = 0;
+    if (progress > 1) progress = 1;
+    return progress;
+}
+
+// Helper: define dimensões do obstáculo por tipo
+static void definirDimensoesObstaculo(Obstaculo *obs) {
+    if (obs->tipo == 0) {
+        // Ônibus alto (precisa desviar ou deslizar)
+        obs->largura = 60;
+        obs->altura = 80;
+    } else if (obs->tipo == 1) {
+        // Obstáculo baixo no chão (precisa pular)
+        obs->largura = 60;
+        obs->altura = 30;
+    } else {
+        // Obstáculo alto vazado (precisa deslizar)
+        obs->largura = 60;
+        obs->altura = 50;
+    }
+}
+
+// Helper: verifica se há obstáculos próximos em uma lane
+static int verificarObstaculoProximo(Obstaculo obstaculos[], int tamanho, int indiceAtual, int lane, float pos_y, float distanciaSeguranca) {
+    for (int j = 0; j < tamanho; j++) {
+        if (j != indiceAtual && obstaculos[j].ativo && obstaculos[j].lane == lane) {
+            float distancia_y = obstaculos[j].pos_y - pos_y;
+            if (distancia_y >= -distanciaSeguranca && distancia_y <= distanciaSeguranca) {
+                return 1; // Há obstáculo próximo
+            }
+        }
+    }
+    return 0; // Não há obstáculo próximo
+}
+
+// Helper: verifica se há itens próximos em uma lane
+static int verificarItemProximo(ItemColetavel itens[], int tamanho, int indiceAtual, int lane, float pos_y, float distanciaSeguranca) {
+    for (int j = 0; j < tamanho; j++) {
+        if (j != indiceAtual && itens[j].ativo && !itens[j].coletado && itens[j].lane == lane) {
+            float distancia_y = itens[j].pos_y - pos_y;
+            if (distancia_y >= -distanciaSeguranca && distancia_y <= distanciaSeguranca) {
+                return 1; // Há item próximo
+            }
+        }
+    }
+    return 0; // Não há item próximo
+}
+
+// ========== FUNÇÕES PRINCIPAIS ==========
+
 // Inicializa o jogador com posição customizável para Raylib
 void inicializarJogador(Jogador *j, float pos_x_inicial, float pos_y_inicial) {
     j->lane = 1; // começa no centro
@@ -87,20 +142,8 @@ void criarObstaculo(Obstaculo obstaculos[], int tamanho, float screenHeight, flo
             obstaculos[i].lane = rand() % 3; // Lane aleatória (0, 1 ou 2)
             obstaculos[i].pos_y = horizon_y + 10; // Começa no horizonte
             obstaculos[i].tipo = rand() % 3; // 0 = ônibus, 1 = catraca, 2 = parada
-            
-            if (obstaculos[i].tipo == 0) {
-                // Ônibus (precisa desviar)
-                obstaculos[i].largura = 60;
-                obstaculos[i].altura = 80;
-            } else if (obstaculos[i].tipo == 1) {
-                // Catraca (precisa pular)
-                obstaculos[i].largura = 60;
-                obstaculos[i].altura = 30;
-            } else {
-                // Parada de ônibus (precisa deslizar)
-                obstaculos[i].largura = 60;
-                obstaculos[i].altura = 50; // Alto, mas deixa espaço embaixo
-            }
+
+            definirDimensoesObstaculo(&obstaculos[i]);
             break;
         }
     }
@@ -129,18 +172,7 @@ void criarMultiplosObstaculos(Obstaculo obstaculos[], int tamanho, float screenH
                 }
                 
                 // Verifica se há obstáculos MUITO PRÓXIMOS nesta lane
-                pode_criar = 1;
-                for (int j = 0; j < tamanho; j++) {
-                    if (j != i && obstaculos[j].ativo && obstaculos[j].lane == lane_tentativa) {
-                        float distancia_y = obstaculos[j].pos_y - pos_y_novo;
-                        
-                        // Se estiver muito próximo (dentro de 100 pixels), não cria
-                        if (distancia_y >= -100.0f && distancia_y <= 100.0f) {
-                            pode_criar = 0;
-                            break;
-                        }
-                    }
-                }
+                pode_criar = !verificarObstaculoProximo(obstaculos, tamanho, i, lane_tentativa, pos_y_novo, 100.0f);
                 
                 if (tentativas >= 20) break; // Evita loop infinito
             } while ((!pode_criar || lanes_usadas[lane_tentativa]) && tentativas < 20);
@@ -165,21 +197,9 @@ void criarMultiplosObstaculos(Obstaculo obstaculos[], int tamanho, float screenH
             
             obstaculos[i].tipo = tipo_tentativa;
             tipos_criados[tipo_tentativa]++;
-            
-            if (obstaculos[i].tipo == 0) {
-                // Ônibus alto (precisa desviar ou deslizar)
-                obstaculos[i].largura = 60;
-                obstaculos[i].altura = 80;
-            } else if (obstaculos[i].tipo == 1) {
-                // Obstáculo baixo no chão (precisa pular)
-                obstaculos[i].largura = 60;
-                obstaculos[i].altura = 30;
-            } else {
-                // Obstáculo alto vazado (precisa deslizar para passar por baixo)
-                obstaculos[i].largura = 60;
-                obstaculos[i].altura = 50;
-            }
-            
+
+            definirDimensoesObstaculo(&obstaculos[i]);
+
             lanes_usadas[lane_tentativa] = 1; // Marca a lane como usada
             criados++;
         }
@@ -193,11 +213,9 @@ void atualizarObstaculos(Obstaculo obstaculos[], int tamanho, float velocidade, 
 
     for (int i = 0; i < tamanho; i++) {
         if (!obstaculos[i].ativo) continue;
-        
+
         // Calcula progress (0 = no horizonte, 1 = na base da tela)
-        float progress = (obstaculos[i].pos_y - horizon_y) / (screenHeight - horizon_y);
-        if (progress < 0) progress = 0;
-        if (progress > 1) progress = 1;
+        float progress = calcularProgresso(obstaculos[i].pos_y, horizon_y, screenHeight);
 
         // Fator de velocidade aumenta conforme se aproxima (objetos próximos parecem mais rápidos)
         float speedFactor = baseFactor + progress * extraFactor;
@@ -224,9 +242,7 @@ int verificarColisao(Jogador *j, Obstaculo *obs, float lane_width, float lane_of
     }
     
     // Calcula o scale do obstáculo baseado na perspectiva
-    float progress = (obs->pos_y - horizon_y) / (screenHeight - horizon_y);
-    if (progress < 0) progress = 0;
-    if (progress > 1) progress = 1;
+    float progress = calcularProgresso(obs->pos_y, horizon_y, screenHeight);
     float scale = 0.3f + (progress * 0.7f); // De 0.3 a 1.0
     
     // Calcula posição X do obstáculo com perspectiva (igual ao renderização)
@@ -313,10 +329,10 @@ void criarItem(ItemColetavel itens[], int tamanho, float screenHeight, Obstaculo
                     if (obstaculos[j].ativo && obstaculos[j].lane == lane_escolhida) {
                         // Calcula distância em Y entre o item e o obstáculo
                         float distancia_y = obstaculos[j].pos_y - pos_y_item;
-                        
+
                         // Distância de segurança maior para ônibus (tipo 0)
                         float distancia_seguranca = (obstaculos[j].tipo == 0) ? 150.0f : 80.0f;
-                        
+
                         // Se estiver muito próximo, invalida
                         if (distancia_y >= -distancia_seguranca && distancia_y <= distancia_seguranca) {
                             lane_valida = 0;
@@ -324,20 +340,10 @@ void criarItem(ItemColetavel itens[], int tamanho, float screenHeight, Obstaculo
                         }
                     }
                 }
-                
+
                 // Também verifica se há outro item próximo
                 if (lane_valida) {
-                    for (int j = 0; j < tamanho; j++) {
-                        if (j != i && itens[j].ativo && !itens[j].coletado && itens[j].lane == lane_escolhida) {
-                            float distancia_y = itens[j].pos_y - pos_y_item;
-                            
-                            // Se estiver muito próximo (dentro de 60 pixels), invalida
-                            if (distancia_y >= -60.0f && distancia_y <= 60.0f) {
-                                lane_valida = 0;
-                                break;
-                            }
-                        }
-                    }
+                    lane_valida = !verificarItemProximo(itens, tamanho, i, lane_escolhida, pos_y_item, 60.0f);
                 }
                 
                 tentativas++;
@@ -401,11 +407,9 @@ void atualizarItens(ItemColetavel itens[], int tamanho, float velocidade, float 
 
     for (int i = 0; i < tamanho; i++) {
         if (!itens[i].ativo || itens[i].coletado) continue;
-        
+
         // Calcula progress (0 = no horizonte, 1 = na base da tela)
-        float progress = (itens[i].pos_y - horizon_y) / (screenHeight - horizon_y);
-        if (progress < 0) progress = 0;
-        if (progress > 1) progress = 1;
+        float progress = calcularProgresso(itens[i].pos_y, horizon_y, screenHeight);
 
         // Fator de velocidade aumenta conforme se aproxima (mesma física dos obstáculos)
         float speedFactor = baseFactor + progress * extraFactor;
