@@ -15,18 +15,18 @@ typedef struct RankingNode {
 typedef struct {
     RankingNode *head;
     int size;
-} RankingList;
+} ListaRanking;
 
-void initRanking(RankingList *r);
-void freeRanking(RankingList *r);
+void initRanking(ListaRanking *r);
+void freeRanking(ListaRanking *r);
 
 // Insere uma nova entrada ordenada de forma crescente pelo tempo (menor tempo = melhor posição)
-void insertRanking(RankingList *r, const char *name, float time);
+void insertRanking(ListaRanking *r, const char *name, float time);
 
 // Persistência: carrega/salva a lista completa (todas as entradas) em formato TXT (nome,tempo)
 // e exporta o top N para um arquivo TXT separado
-void loadRankingAll(RankingList *r, const char *filepath);
-void saveRankingAll(RankingList *r, const char *filepath);
-void saveTopTXT(RankingList *r, const char *filepath, int topN);
+void loadRankingAll(ListaRanking *r, const char *filepath);
+void salvarRankingCompleto(ListaRanking *r, const char *filepath);
+void salvarTopTXT(ListaRanking *r, const char *filepath, int topN);
 
 #endif

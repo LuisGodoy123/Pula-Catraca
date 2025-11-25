@@ -328,8 +328,9 @@ void criarItem(ItemColetavel itens[], int tamanho, float screenHeight, Obstaculo
                         // Calcula distância em Y entre o item e o obstáculo
                         float distancia_y = obstaculos[j].pos_y - pos_y_item;
 
-                        // Distância de segurança maior para ônibus (tipo 0)
-                        float distancia_seguranca = (obstaculos[j].tipo == OBSTACULO_ONIBUS) ? 150.0f : 80.0f;
+                        // Distância de segurança de ~1 segundo (considerando velocidade 3-8)
+                        // Usando 200px como distância base (equivalente a ~1 seg na velocidade média)
+                        float distancia_seguranca = 200.0f;
 
                         // Se estiver muito próximo, invalida
                         if (distancia_y >= -distancia_seguranca && distancia_y <= distancia_seguranca) {
@@ -339,9 +340,9 @@ void criarItem(ItemColetavel itens[], int tamanho, float screenHeight, Obstaculo
                     }
                 }
 
-                // Também verifica se há outro item próximo
+                // Também verifica se há outro item próximo (distância menor entre itens)
                 if (lane_valida) {
-                    lane_valida = !verificarItemProximo(itens, tamanho, i, lane_escolhida, pos_y_item, 60.0f);
+                    lane_valida = !verificarItemProximo(itens, tamanho, i, lane_escolhida, pos_y_item, 120.0f);
                 }
                 
                 tentativas++;
@@ -426,7 +427,12 @@ int verificarColeta(Jogador *j, ItemColetavel *item, float lane_width, float lan
     if (item->coletado || !item->ativo) {
         return 0;
     }
-    
+
+    // Se o jogador está pulando, não coleta itens (similar à catraca)
+    if (j->pulando) {
+        return 0;
+    }
+
     // Verifica se estão na mesma lane
     if (j->lane != item->lane) {
         return 0;

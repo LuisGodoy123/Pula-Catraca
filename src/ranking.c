@@ -3,111 +3,110 @@
 #include <string.h>
 #include <stdio.h>
 
-static char *strdup_local(const char *s) {
+static char *duplicarString(const char *s) {
     if (!s) return NULL;
-    size_t L = strlen(s) + 1;
-    char *p = (char*)malloc(L);
-    if (p) memcpy(p, s, L);
+    size_t tamanho = strlen(s) + 1;
+    char *p = (char*)malloc(tamanho);
+    if (p) memcpy(p, s, tamanho);
     return p;
 }
 
-void initRanking(RankingList *r) {
+void initRanking(ListaRanking *r) {
     if (!r) return;
     r->head = NULL;
     r->size = 0;
 }
 
-static void removeTailIfNeeded(RankingList *r) {
+static void removerUltimoSeNecessario(ListaRanking *r) {
     if (!r) return;
     if (r->size <= RANKING_MAX) return;
-    RankingNode *cur = r->head;
-    RankingNode *prev = NULL;
-    while (cur && cur->next) {
-        prev = cur;
-        cur = cur->next;
+    RankingNode *atual = r->head;
+    RankingNode *anterior = NULL;
+    while (atual && atual->next) {
+        anterior = atual;
+        atual = atual->next;
     }
-    if (cur) {
-        if (prev) prev->next = NULL;
+    if (atual) {
+        if (anterior) anterior->next = NULL;
         else r->head = NULL;
-        free(cur->name);
-        free(cur);
+        free(atual->name);
+        free(atual);
         r->size--;
     }
 }
 
-void insertRanking(RankingList *r, const char *name, float time) {
-    if (!r || !name) return;
-    RankingNode *node = (RankingNode*)malloc(sizeof(RankingNode));
-    if (!node) return;
-    node->name = strdup_local(name);
-    node->time = time;
-    node->next = NULL;
+void insertRanking(ListaRanking *r, const char *nome, float tempo) {
+    if (!r || !nome) return;
+    RankingNode *no = (RankingNode*)malloc(sizeof(RankingNode));
+    if (!no) return;
+    no->name = duplicarString(nome);
+    no->time = tempo;
+    no->next = NULL;
 
     // Insere ordenado de forma crescente (menor tempo primeiro = melhor colocação)
-    if (!r->head || time < r->head->time) {
-        node->next = r->head;
-        r->head = node;
+    if (!r->head || tempo < r->head->time) {
+        no->next = r->head;
+        r->head = no;
     } else {
-        RankingNode *cur = r->head;
-        while (cur->next && cur->next->time <= time) cur = cur->next;
-        node->next = cur->next;
-        cur->next = node;
+        RankingNode *atual = r->head;
+        while (atual->next && atual->next->time <= tempo) atual = atual->next;
+        no->next = atual->next;
+        atual->next = no;
     }
     r->size++;
-    removeTailIfNeeded(r);
 }
 
-void saveRankingAll(RankingList *r, const char *filepath) {
-    if (!r || !filepath) return;
-    FILE *f = fopen(filepath, "w");
-    if (!f) return;
-    RankingNode *cur = r->head;
-    while (cur) {
-        fprintf(f, "%s,%.3f\n", cur->name ? cur->name : "", cur->time);
-        cur = cur->next;
+void salvarRankingCompleto(ListaRanking *r, const char *caminhoArquivo) {
+    if (!r || !caminhoArquivo) return;
+    FILE *arquivo = fopen(caminhoArquivo, "w");
+    if (!arquivo) return;
+    RankingNode *atual = r->head;
+    while (atual) {
+        fprintf(arquivo, "%s,%.3f\n", atual->name ? atual->name : "", atual->time);
+        atual = atual->next;
     }
-    fclose(f);
+    fclose(arquivo);
 }
 
-void saveTopTXT(RankingList *r, const char *filepath, int topN) {
-    if (!r || !filepath) return;
-    FILE *f = fopen(filepath, "w");
-    if (!f) return;
-    RankingNode *cur = r->head;
+void salvarTopTXT(ListaRanking *r, const char *caminhoArquivo, int topN) {
+    if (!r || !caminhoArquivo) return;
+    FILE *arquivo = fopen(caminhoArquivo, "w");
+    if (!arquivo) return;
+    RankingNode *atual = r->head;
     int i = 0;
-    while (cur && i < topN) {
-        fprintf(f, "%s,%.3f\n", cur->name ? cur->name : "", cur->time);
-        cur = cur->next; i++;
+    while (atual && i < topN) {
+        fprintf(arquivo, "%s,%.3f\n", atual->name ? atual->name : "", atual->time);
+        atual = atual->next; i++;
     }
-    fclose(f);
+    fclose(arquivo);
 }
 
-void loadRankingAll(RankingList *r, const char *filepath) {
-    if (!r || !filepath) return;
-    FILE *f = fopen(filepath, "r");
-    if (!f) return;
-    char line[512];
-    while (fgets(line, sizeof(line), f)) {
-        char *nl = strchr(line, '\n'); if (nl) *nl = '\0';
-        char *comma = strchr(line, ',');
-        if (!comma) continue;
-        *comma = '\0';
-        char *name = line;
-        char *time_s = comma + 1;
-        float t = (float)atof(time_s);
-        insertRanking(r, name, t);
+void loadRankingAll(ListaRanking *r, const char *caminhoArquivo) {
+    if (!r || !caminhoArquivo) return;
+    FILE *arquivo = fopen(caminhoArquivo, "r");
+    if (!arquivo) return;
+    char linha[512];
+    while (fgets(linha, sizeof(linha), arquivo)) {
+        char *novaLinha = strchr(linha, '\n'); if (novaLinha) *novaLinha = '\0';
+        char *virgula = strchr(linha, ',');
+        if (!virgula) continue;
+        *virgula = '\0';
+        char *nome = linha;
+        char *tempoString = virgula + 1;
+        float tempo = (float)atof(tempoString);
+        insertRanking(r, nome, tempo);
     }
-    fclose(f);
+    fclose(arquivo);
 }
 
-void freeRanking(RankingList *r) {
+void freeRanking(ListaRanking *r) {
     if (!r) return;
-    RankingNode *cur = r->head;
-    while (cur) {
-        RankingNode *next = cur->next;
-        free(cur->name);
-        free(cur);
-        cur = next;
+    RankingNode *atual = r->head;
+    while (atual) {
+        RankingNode *proximo = atual->next;
+        free(atual->name);
+        free(atual);
+        atual = proximo;
     }
     r->head = NULL;
     r->size = 0;
