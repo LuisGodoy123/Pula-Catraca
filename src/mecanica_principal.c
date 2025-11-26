@@ -14,13 +14,13 @@ static float calcularProgresso(float valor, float min, float max) {
 
 // define dimensões do obstáculo por tipo
 static void definirDimensoesObstaculo(Obstaculo *obs) {
-    if (obs->tipo == OBSTACULO_ONIBUS) { // Ônibus alto (precisa desviar)
+    if (obs->tipo == OBSTACULO_ONIBUS) { 
         obs->largura = 60;
         obs->altura = 80;
-    } else if (obs->tipo == OBSTACULO_CATRACA) { // Obstáculo baixo no chão = catraca (precisa pular)
+    } else if (obs->tipo == OBSTACULO_CATRACA) { 
         obs->largura = 60;
         obs->altura = 30;
-    } else { // Obstáculo alto vazado = cerca laranja (precisa deslizar)
+    } else { 
         obs->largura = 60;
         obs->altura = 50;
     }
