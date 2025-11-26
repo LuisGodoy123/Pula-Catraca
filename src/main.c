@@ -7,40 +7,33 @@
 #include <stdio.h>
 #include <stdbool.h>
 
-// CONSTANTES GLOBAIS
-
-// Constantes de renderização
 #define TAMANHO_BASE_ITEM 120.0f
 #define ALTURA_HORIZONTE 150.0f
 
-// Constantes de tempo e animação
 #define FRAMES_POR_SEGUNDO 60
 #define TEMPO_ANIMACAO_SPRITE 0.25f
 #define DURACAO_EFEITO_FONE 4.0f
 #define INTERVALO_ACELERACAO 30.0f
 #define INTERVALO_AUMENTO_FREQUENCIA 10.0f
 
-// Constantes de velocidade
 #define VELOCIDADE_INICIAL 3.0f
 #define VELOCIDADE_MAXIMA 8.0f
 #define INCREMENTO_VELOCIDADE 1.0f
 
-// Constantes de spawn
 #define FRAMES_ENTRE_OBSTACULOS_INICIAL 120
 #define FRAMES_ENTRE_OBSTACULOS_MINIMO 40
 #define FRAMES_ENTRE_ITENS 120
 
-// Constantes de perspectiva (baseadas em tela 800x600)
 #define LARGURA_FAIXA_TOPO_PERCENTUAL 0.06f
 #define DESLOCAMENTO_FAIXA_TOPO_PERCENTUAL 0.42f
 #define LARGURA_FAIXA_BASE_PERCENTUAL 0.45f
 #define DESLOCAMENTO_FAIXA_BASE_PERCENTUAL -0.175f
 
-#define COR_ROSA_INTERFACE (Color){255, 102, 196, 255}      // #ff66c4
-#define COR_AMARELO_INTERFACE (Color){254, 255, 153, 255}   // #feff99
-#define COR_AZUL_INTERFACE (Color){175, 218, 225, 255}      // #afdae1
-#define COR_VERDE_INTERFACE (Color){87, 183, 33, 255}       // #57b721
-#define COR_CIANO_INTERFACE (Color){102, 255, 255, 255}     // #66FFFF
+#define COR_ROSA_INTERFACE (Color){255, 102, 196, 255}
+#define COR_AMARELO_INTERFACE (Color){254, 255, 153, 255}
+#define COR_AZUL_INTERFACE (Color){175, 218, 225, 255}
+#define COR_VERDE_INTERFACE (Color){87, 183, 33, 255}
+#define COR_CIANO_INTERFACE (Color){102, 255, 255, 255}
 
 #define COR_ITEM_PIPOCA YELLOW
 #define COR_ITEM_MOEDA SKYBLUE
@@ -48,32 +41,15 @@
 #define COR_ITEM_BOTAO_PARADA GOLD
 #define COR_ITEM_FONE GREEN
 
-typedef enum {
-    ESTADO_MENU = 0,
-    ESTADO_NICKNAME = 1,
-    ESTADO_JOGANDO = 2,
-    ESTADO_RANKING = 3,
-    ESTADO_COMO_JOGAR = 4
-} EstadoJogo;
-
-typedef enum {
-    DIRECAO_ESQUERDA = -1,
-    DIRECAO_CENTRO = 0,
-    DIRECAO_DIREITA = 1
-} DirecaoJogador;
-
-// Protótipos das funções
 void TelaMenu(int *estadoJogo, int larguraTela, int alturaTela, Texture2D background, Sound somMenu);
 void TelaNickname(int *estadoJogo, int larguraTela, int alturaTela, Texture2D background, char *nickname);
 void TelaJogo(int *estadoJogo, int larguraTela, int alturaTela, Texture2D background_jogo, char *nickname, Sound somMenu, Sound somCorrida, Sound somItemBom, Sound somItemRuim, Sound somColisao, Sound somVitoria, Sound somMusicaVitoria);
 void TelaRanking(int *estadoJogo, int larguraTela, int alturaTela, Texture2D background);
 void TelaComoJogar(int *estadoJogo, int larguraTela, int alturaTela, Texture2D background);
 
-// Ranking (persistente)
 static ListaRanking ranking;
 
 static float DesenharTextoQuebrado(Font fonte, const char *texto, Vector2 posicao, float tamanhoFonte, float espacamento, float larguraQuebra, Color cor) {
-    // Copia o texto para poder tokenizar
     size_t tamanho = strlen(texto);
     char *buffer = (char *)malloc(tamanho + 1);
     if (!buffer) return 0.0f;
@@ -92,15 +68,12 @@ static float DesenharTextoQuebrado(Font fonte, const char *texto, Vector2 posica
 
         Vector2 medida = MeasureTextEx(fonte, candidato, tamanhoFonte, espacamento);
         if (medida.x <= larguraQuebra) {
-            // cabe na mesma linha
             strncpy(linha, candidato, sizeof(linha) - 1);
         } else {
-            // desenha a linha atual e inicia nova linha com a palavra
             if (linha[0] != '\0') {
                 DrawTextEx(fonte, linha, (Vector2){posicao.x, y}, tamanhoFonte, espacamento, cor);
                 y += tamanhoFonte * 1.15f;
             }
-            // palavra começa a nova linha
             strncpy(linha, palavra, sizeof(linha) - 1);
         }
 
@@ -116,14 +89,12 @@ static float DesenharTextoQuebrado(Font fonte, const char *texto, Vector2 posica
     return y - posicao.y;
 }
 
-// Constantes de paths de assets
 #define ASSET_PIPOCA "assets/images/pipoca.png"
 #define ASSET_MOEDA "assets/images/moeda.png"
 #define ASSET_VEM "assets/images/VEM.png"
 #define ASSET_BOTAO_PARADA "assets/images/botao_parada.png"
 #define ASSET_FONE "assets/images/fone.png"
 
-// calcula progresso normalizado entre 0 e 1
 static float CalcularProgresso(float valor, float min, float max) {
     float progresso = (valor - min) / (max - min);
     if (progresso < 0) progresso = 0;
@@ -155,7 +126,6 @@ static bool DesenharBotao(const char *text, float centerX, float y, float largur
     return hover && IsMouseButtonPressed(MOUSE_LEFT_BUTTON);
 }
 
-// carrega texturas de itens colecionáveis (0-4 = bons)
 static void CarregarTexturasItens(Texture2D texturas[]) {
     texturas[0] = LoadTexture(ASSET_PIPOCA);
     texturas[1] = LoadTexture(ASSET_MOEDA);
@@ -196,7 +166,6 @@ int main(void) {
     SetSoundVolume(somVitoria, 1.0f);
     SetSoundVolume(somMusicaVitoria, 1.0f);
 
-    // carrega imagens de fundo
     Texture2D background_menu = {0};
     Texture2D background_jogo = {0};
     Image fundo_menu = LoadImage("assets/images/fundo_menu.png");
@@ -206,8 +175,7 @@ int main(void) {
         background_menu = LoadTextureFromImage(fundo_menu);
         UnloadImage(fundo_menu);
     } else {
-        // fundo = cor, caso não carregue a imagem do menu
-        Image tempImg = GenImageColor(larguraTela, alturaTela, (Color){215, 50, 133, 255}); // #d73285
+        Image tempImg = GenImageColor(larguraTela, alturaTela, (Color){215, 50, 133, 255});
         background_menu = LoadTextureFromImage(tempImg);
         UnloadImage(tempImg);
     }
@@ -216,14 +184,13 @@ int main(void) {
         background_jogo = LoadTextureFromImage(fundo_do_jogo);
         UnloadImage(fundo_do_jogo);
     } else {
-        // fundo = cor, caso não carregue a imagem do menu
-        Image tempImg = GenImageColor(larguraTela, alturaTela, (Color){96, 80, 125, 255}); // #60507d
+        Image tempImg = GenImageColor(larguraTela, alturaTela, (Color){96, 80, 125, 255});
         background_jogo = LoadTextureFromImage(tempImg);
         UnloadImage(tempImg);
     }
 
-    int estadoJogo = 0; // 0 = menu, 1 = tela nickname, 2 = jogando, 3 = ranking, 4 = como jogar
-    char nickname[21] = ""; // Armazena até 20 caracteres + null terminator
+    int estadoJogo = 0;
+    char nickname[21] = "";
     
     while (!WindowShouldClose()) {
         if (estadoJogo == 0) {
@@ -242,7 +209,6 @@ int main(void) {
     salvarTopTXT(&ranking, "ranking_top5.txt", 5);
     freeRanking(&ranking);
     
-    // Descarrega sons
     UnloadSound(somMenu);
     UnloadSound(somCorrida);
     UnloadSound(somItemBom);
@@ -259,12 +225,10 @@ int main(void) {
 }
 
 void TelaMenu(int *estadoJogo, int larguraTela, int alturaTela, Texture2D background, Sound somMenu) {
-    // Toca som do menu em loop (se não estiver tocando)
     if (!IsSoundPlaying(somMenu)) {
         PlaySound(somMenu);
     }
 
-    // botões proporcionais à tela
     float larguraBotao = larguraTela * 0.25f;
     float alturaBotao = alturaTela * 0.08f;
     float fontSize = larguraTela * 0.035f;
@@ -313,12 +277,10 @@ void TelaNickname(int *estadoJogo, int larguraTela, int alturaTela, Texture2D ba
     Vector2 mousePos = GetMousePosition();
     bool hoverConfirm = CheckCollisionPointRec(mousePos, confirmBtn);
 
-    // captura teclas
     int tecla = GetCharPressed();
     int nicknameLen = strlen(nickname);
     
     while (tecla > 0) {
-        // aceita letras, números, espaço (32-126 ASCII)
         if ((tecla >= 32) && (tecla <= 126) && (nicknameLen < 20)) {
             nickname[nicknameLen] = (char)tecla;
             nickname[nicknameLen + 1] = '\0';
@@ -327,14 +289,12 @@ void TelaNickname(int *estadoJogo, int larguraTela, int alturaTela, Texture2D ba
         tecla = GetCharPressed();
     }
 
-    // backspace
     if (IsKeyPressed(KEY_BACKSPACE) && nicknameLen > 0) {
         nickname[nicknameLen - 1] = '\0';
     }
 
-    // enter ou clique no botão confirmar
     if ((IsKeyPressed(KEY_ENTER) || (hoverConfirm && IsMouseButtonPressed(MOUSE_LEFT_BUTTON))) && nicknameLen > 0) {
-        *estadoJogo = 2; // vai p jogo
+        *estadoJogo = 2;
     }
 
     BeginDrawing();
@@ -354,7 +314,6 @@ void TelaNickname(int *estadoJogo, int larguraTela, int alturaTela, Texture2D ba
                    },
                    fontSize * 0.5f, 2, BLACK);
     } else {
-        // placeholder
         const char *placeholder = "Seu nome aqui...";
         float phWidth = MeasureTextEx(fonteTitulo, placeholder, fontSize * 0.4f, 2).x;
         DrawTextEx(fonteTitulo, placeholder,
@@ -365,7 +324,6 @@ void TelaNickname(int *estadoJogo, int larguraTela, int alturaTela, Texture2D ba
                    fontSize * 0.4f, 2, GRAY);
     }
 
-    // botão confirmar (só ativo se tiver texto)
     if (nicknameLen > 0) {
         DrawRectangleRounded(confirmBtn, 0.3f, 10, hoverConfirm ? COR_AMARELO_INTERFACE : COR_AZUL_INTERFACE);
         DrawTextEx(fonteTitulo, "CONFIRMAR",
@@ -409,7 +367,7 @@ void TelaJogo(int *estadoJogo, int larguraTela, int alturaTela, Texture2D backgr
     static bool fimDeJogo = false;
     static bool vitoria = false;
     static bool rankingInserido = false;
-    static int direcaoJogador = DIRECAO_CENTRO;
+    static int direcaoJogador = 0;
     static float tempoAnimacao = 0.0f;
     static bool quadroAnimacao = false;
 
@@ -448,7 +406,7 @@ void TelaJogo(int *estadoJogo, int larguraTela, int alturaTela, Texture2D backgr
     static Texture2D texturaVitoria1 = {0};
     static Texture2D texturaVitoria2 = {0};
     static bool texturasVitoriaCarregadas = false;
-    static int cenaVitoria = 0; // 0 = tela normal, 1 = scene1, 2 = scene2, 3 = voltou ao normal
+    static int cenaVitoria = 0;
     
     float larguraTopoLane = larguraTela * LARGURA_FAIXA_TOPO_PERCENTUAL;
     float deslocTopoLane = larguraTela * DESLOCAMENTO_FAIXA_TOPO_PERCENTUAL;
@@ -469,7 +427,6 @@ void TelaJogo(int *estadoJogo, int larguraTela, int alturaTela, Texture2D backgr
         int quantidade_inicial = (rand() % 3) + 1;
         criarMultiplosObstaculos(obstaculos, MAX_OBSTACULOS, alturaTela, quantidade_inicial, ALTURA_HORIZONTE);
 
-        // Reseta variáveis de progresso e dificuldade
         velocidadeJogo = VELOCIDADE_INICIAL;
         framesEntreObstaculos = FRAMES_ENTRE_OBSTACULOS_INICIAL;
         tempoDecorrido = 0.0f;
@@ -481,14 +438,13 @@ void TelaJogo(int *estadoJogo, int larguraTela, int alturaTela, Texture2D backgr
         vitoria = false;
         rankingInserido = false;
         cenaVitoria = 0;
-        direcaoJogador = DIRECAO_CENTRO;
+        direcaoJogador = 0;
         tempoAnimacao = 0.0f;
         quadroAnimacao = false;
 
         inicializado = true;
     }
 
-    // Carrega texturas dos obstáculos (apenas uma vez)
     if (!spritesCarregadas) {
         spriteOnibusEsquerdo = LoadTexture("assets/images/onibus_lane_esq.png");
         spriteOnibusCentro = LoadTexture("assets/images/onibus_centro.png");
@@ -498,7 +454,6 @@ void TelaJogo(int *estadoJogo, int larguraTela, int alturaTela, Texture2D backgr
         spritesCarregadas = true;
     }
 
-    // Carrega texturas dos itens (apenas uma vez)
     if (!texturasCarregadas) {
         CarregarTexturasItens(texturasItens);
         texturasItens[ITEM_SONO] = LoadTexture("assets/images/sono.png");
@@ -507,7 +462,6 @@ void TelaJogo(int *estadoJogo, int larguraTela, int alturaTela, Texture2D backgr
         texturasCarregadas = true;
     }
 
-    // Carrega sprites do jogador (apenas uma vez)
     if (!spritesJogadorCarregadas) {
         spriteCorrendoDireita = LoadTexture("assets/images/correndo_dir_frente.png");
         spriteCorrendoEsquerda = LoadTexture("assets/images/correndo_esq_frente.png");
@@ -518,13 +472,11 @@ void TelaJogo(int *estadoJogo, int larguraTela, int alturaTela, Texture2D backgr
         spritesJogadorCarregadas = true;
     }
     
-    // Carrega textura de Game Over 
     if (!texturaGameOverCarregada) {
         texturaGameOver = LoadTexture("assets/images/gameOver.png");
         texturaGameOverCarregada = true;
     }
     
-    // Carrega texturas de vitória 
     if (!texturasVitoriaCarregadas) {
         texturaVitoria1 = LoadTexture("assets/images/vitoria_scene1.png");
         texturaVitoria2 = LoadTexture("assets/images/vitoria_scene2.png");
@@ -533,8 +485,6 @@ void TelaJogo(int *estadoJogo, int larguraTela, int alturaTela, Texture2D backgr
 
     static bool somInicializado = false;
     if (!fimDeJogo) {
-        // Gerenciamento de áudio
-        
         if (!somInicializado) {
             StopSound(somMenu);
             somInicializado = true;
@@ -543,29 +493,25 @@ void TelaJogo(int *estadoJogo, int larguraTela, int alturaTela, Texture2D backgr
             PlaySound(somCorrida);
         }
 
-        // Processamento de input do jogador
         if (IsKeyPressed(KEY_W)) {
             pular(&jogador);
         }
         if (IsKeyPressed(KEY_A)) {
             moverEsquerda(&jogador);
-            direcaoJogador = DIRECAO_ESQUERDA;
+            direcaoJogador = -1;
         }
         if (IsKeyPressed(KEY_D)) {
             moverDireita(&jogador);
-            direcaoJogador = DIRECAO_DIREITA;
+            direcaoJogador = 1;
         }
         if (IsKeyPressed(KEY_S)) {
             deslizar(&jogador);
         }
 
-        // Atualiza física do jogador
         atualizarFisica(&jogador);
 
-        // Atualiza tempo decorrido
         tempoDecorrido += 1.0f / FRAMES_POR_SEGUNDO;
 
-        // Sistema de aceleração progressiva
         if (velocidadeJogo < velocidadeMaxima) {
             if (tempoDecorrido - tempoUltimaAceleracao >= intervaloAceleracao) {
                 velocidadeJogo += incrementoVelocidade;
@@ -573,11 +519,9 @@ void TelaJogo(int *estadoJogo, int larguraTela, int alturaTela, Texture2D backgr
                     velocidadeJogo = velocidadeMaxima;
                 }
                 tempoUltimaAceleracao = tempoDecorrido;
-                // Ativa mensagem de aceleração
             }
         }
 
-        // Sistema progressivo: aumenta frequência de obstáculos a cada 5 segundos
         if (framesEntreObstaculos > framesMinimos) {
             if (tempoDecorrido - tempoUltimoAumentoFrequencia >= intervaloAumentoFrequencia) {
                 framesEntreObstaculos -= 10; // Reduz 10 frames (~0.17 segundos)
@@ -587,15 +531,13 @@ void TelaJogo(int *estadoJogo, int larguraTela, int alturaTela, Texture2D backgr
                 tempoUltimoAumentoFrequencia = tempoDecorrido;
             }
         }
-
-        // Timer para animação das sprites do jogador (alterna a cada 0.25s)
+        
         tempoAnimacao += GetFrameTime();
         if (tempoAnimacao >= 0.25f) {
             quadroAnimacao = !quadroAnimacao;
             tempoAnimacao = 0.0f;
         }
         
-        // Spawn de obstáculos
         frameCont++;
         if (frameCont >= framesEntreObstaculos) {
             int quantidade = (rand() % 3) + 1;
@@ -603,34 +545,25 @@ void TelaJogo(int *estadoJogo, int larguraTela, int alturaTela, Texture2D backgr
             frameCont = 0;
         }
 
-        // Spawn de itens
         frameContItens++;
         if (frameContItens >= FRAMES_ENTRE_ITENS) {
             criarItem(itens, MAX_ITENS, alturaTela, obstaculos, MAX_OBSTACULOS, ALTURA_HORIZONTE, itensColetados);
             frameContItens = 0;
         }
 
-        // Atualiza posição de obstáculos e itens
         float deltaTempo = GetFrameTime();
         atualizarObstaculos(obstaculos, MAX_OBSTACULOS, velocidadeJogo, ALTURA_HORIZONTE, alturaTela, deltaTempo);
         atualizarItens(itens, MAX_ITENS, velocidadeJogo, ALTURA_HORIZONTE, alturaTela, deltaTempo);
 
-        // posição X baseada na lane com perspectiva
-        // O jogador está em uma posição Y específica, então precisa interpolar igual aos obstáculos/itens
-
-        // Calcula progresso baseado na posição Y do jogador
-        // Durante o pulo, usa a posição do chão para manter X fixo (pulo reto para cima)
         float pos_y_para_perspectiva = jogador.pulando ? jogador.chao_y : jogador.pos_y_real;
         float progresso_jogador = (pos_y_para_perspectiva - ALTURA_HORIZONTE) / (alturaTela - ALTURA_HORIZONTE);
         if (progresso_jogador < 0) progresso_jogador = 0;
         if (progresso_jogador > 1) progresso_jogador = 1;
 
-        // Posição X interpolada entre topo e base
         float x_topo = deslocTopoLane + larguraTopoLane * jogador.lane + larguraTopoLane / 2;
         float x_base = deslocLaneFundo + larguraLaneFundo * jogador.lane + larguraLaneFundo / 2;
         float x_alvo = x_topo + (x_base - x_topo) * progresso_jogador;
 
-        // transição entre lanes
         if (jogador.pos_x_real < x_alvo) {
             jogador.pos_x_real += 10;
             if (jogador.pos_x_real > x_alvo) jogador.pos_x_real = x_alvo;
@@ -639,27 +572,22 @@ void TelaJogo(int *estadoJogo, int larguraTela, int alturaTela, Texture2D backgr
             if (jogador.pos_x_real < x_alvo) jogador.pos_x_real = x_alvo;
         }
 
-// Coleta itens
         for (int i = 0; i < MAX_ITENS; i++) {
             if (verificarColeta(&jogador, &itens[i], larguraLaneFundo, deslocLaneFundo)) {
                 int tipo = itens[i].tipo;
 
-                // Itens BONS (ITEM_PIPOCA até ITEM_FONE)
                 if (tipo >= ITEM_PIPOCA && tipo <= ITEM_FONE) {
                     if (itensColetados[tipo] < 5) {
                         itensColetados[tipo]++;
                         PlaySound(somItemBom);
                     }
                 }
-                // Itens RUINS
                 else if (tipo == ITEM_SONO) {
-                    // SONO: aumenta 5 segundos no tempo
                     tempoDecorrido += 5.0f;
                     itensColetados[tipo]++;
                     PlaySound(somItemRuim);
                 }
                 else if (tipo == ITEM_BALACLAVA) {
-                    // BALACLAVA: perde TODOS os itens bons
                     for (int j = ITEM_PIPOCA; j <= ITEM_FONE; j++) {
                         itensColetados[j] = 0;
                     }
@@ -667,7 +595,6 @@ void TelaJogo(int *estadoJogo, int larguraTela, int alturaTela, Texture2D backgr
                     PlaySound(somItemRuim);
                 }
                 else if (tipo == ITEM_IDOSA) {
-                    // IDOSA: perde 1 item aleatório
                     int itensDisponiveis[5];
                     int quantidadeDisponiveis = 0;
                     for (int j = ITEM_PIPOCA; j <= ITEM_FONE; j++) {
@@ -687,7 +614,6 @@ void TelaJogo(int *estadoJogo, int larguraTela, int alturaTela, Texture2D backgr
             }
         }
 
-// Vitória: precisa 1 de cada tipo
         if (!vitoria) {
             bool ganhou = true;
             for (int i = ITEM_PIPOCA; i <= ITEM_FONE; i++) {
@@ -697,45 +623,41 @@ void TelaJogo(int *estadoJogo, int larguraTela, int alturaTela, Texture2D backgr
                 }
             }
             vitoria = ganhou;
-            // Se o jogador acabou de vencer, insere no ranking (apenas uma vez)
             if (vitoria && !rankingInserido && nickname[0] != '\0') {
                 insertRanking(&ranking, nickname, tempoDecorrido);
                 salvarTopTXT(&ranking, "ranking_top5.txt", 5);
                 salvarRankingCompleto(&ranking, "ranking_all.txt");
                 rankingInserido = true;
 
-                fimDeJogo = true; // Termina o jogo
-                cenaVitoria = 1; // Inicia sequência de cenas de vitória
-                PlaySound(somVitoria); // Toca som de vitória
+                fimDeJogo = true;
+                cenaVitoria = 1;
+                PlaySound(somVitoria);
                 StopSound(somCorrida); // Para som de corrida
                 PlaySound(somMusicaVitoria); // Toca música de vitória
             }
         }
-        // colisões (posição sem perspectiva p cálculo)
         for (int i = 0; i < MAX_OBSTACULOS; i++) {
             if (verificarColisao(&jogador, &obstaculos[i], larguraLaneFundo, deslocLaneFundo, ALTURA_HORIZONTE, alturaTela)) {
                 fimDeJogo = true;
-                PlaySound(somColisao); // Toca som de colisão
-                StopSound(somCorrida); // Para som de corrida
+                PlaySound(somColisao);
+                StopSound(somCorrida);
                 break;
             }
         }
     } else {
-        // ENTER para avançar entre cenas de vitória
         if (IsKeyPressed(KEY_ENTER) && vitoria && cenaVitoria > 0 && cenaVitoria < 3) {
-            cenaVitoria++; // Avança para próxima cena
+            cenaVitoria++;
         }
         
         // "Game Over" ou "Vitória" - C p continuar a run (mantém tempo e itens coletados)
         if (IsKeyPressed(KEY_C)) {
-            // Reinicia o jogador, obstáculos e velocidade
             float pos_x = larguraTela / 2;
             float pos_y = alturaTela - 100;
             inicializarJogador(&jogador, pos_x, pos_y);
             inicializarObstaculos(obstaculos, MAX_OBSTACULOS);
-            velocidadeJogo = 3.0f; // Reinicia na velocidade inicial
-            tempoUltimaAceleracao = tempoDecorrido; // Mantém tempo acumulado
-            framesEntreObstaculos = 180; // Reinicia frequência de obstáculos (3 segundos)
+            velocidadeJogo = 3.0f;
+            tempoUltimaAceleracao = tempoDecorrido;
+            framesEntreObstaculos = 180;
             tempoUltimoAumentoFrequencia = tempoDecorrido;
             frameCont = 0; // Reseta contador para criar obstáculos imediatamente
             
@@ -745,33 +667,33 @@ void TelaJogo(int *estadoJogo, int larguraTela, int alturaTela, Texture2D backgr
             
             fimDeJogo = false;
             vitoria = false;
-            cenaVitoria = 0; // Reseta cenas de vitória
-            StopSound(somMusicaVitoria); // Para música de vitória
+            cenaVitoria = 0;
+            StopSound(somMusicaVitoria);
             // NÃO reseta tempoDecorrido e itensColetados
         }
     }
 
     if (IsKeyPressed(KEY_P)) {
-        *estadoJogo = 0; // de volta ao menu
-        StopSound(somCorrida); // Para som de corrida
-        StopSound(somMusicaVitoria); // Para música de vitória
+        *estadoJogo = 0;
+        StopSound(somCorrida);
+        StopSound(somMusicaVitoria);
         somInicializado = false;
         // NÃO define inicializado = false, então mantém tempo e itens coletados
     }
 
     // Tecla X para resetar o tempo, os itens e voltar ao menu
     if (IsKeyPressed(KEY_X)) {
-        *estadoJogo = 0; // de volta ao menu
-        StopSound(somCorrida); // Para som de corrida
-        StopSound(somMusicaVitoria); // Para música de vitória
+        *estadoJogo = 0;
+        StopSound(somCorrida);
+        StopSound(somMusicaVitoria);
         somInicializado = false;
         inicializado = false;
     }
 
     if (IsKeyPressed(KEY_ESCAPE)) {
-        *estadoJogo = 0; // de volta ao menu
-        StopSound(somCorrida); // Para som de corrida
-        StopSound(somMusicaVitoria); // Para música de vitória
+        *estadoJogo = 0;
+        StopSound(somCorrida);
+        StopSound(somMusicaVitoria);
         somInicializado = false;
         inicializado = false;
         nickname[0] = '\0';
@@ -919,18 +841,16 @@ void TelaJogo(int *estadoJogo, int larguraTela, int alturaTela, Texture2D backgr
         }
     }
 
-// Desenha o jogador
-    if (jogador.deslizando) { // deslizando - usa direção do movimento
+    if (jogador.deslizando) {
         Texture2D spriteAtual = (direcaoJogador < 0) ? spriteDeslizandoDireita : spriteDeslizandoEsquerda;
         if (spriteAtual.id > 0) {
             Rectangle origem = {0, 0, (float)spriteAtual.width, (float)spriteAtual.height};
-            // Sprite 150x150 mas hitbox = 40x30
             Rectangle destino = {jogador.pos_x_real - 75, jogador.pos_y_real - 40, 110, 110};
             DrawTexturePro(spriteAtual, origem, destino, (Vector2){0, 0}, 0.0f, WHITE);
         } else {
             DrawRectangle(jogador.pos_x_real - 20, jogador.pos_y_real + 20, 40, 20, RED);
         }
-    } else if (jogador.pulando) { // pulando - usa direção do movimento
+    } else if (jogador.pulando) {
         Texture2D spriteAtual = (direcaoJogador < 0) ? spritePulandoDireita : spritePulandoEsquerda;
         if (spriteAtual.id > 0) {
             Rectangle origem = {0, 0, (float)spriteAtual.width, (float)spriteAtual.height};
@@ -940,7 +860,7 @@ void TelaJogo(int *estadoJogo, int larguraTela, int alturaTela, Texture2D backgr
         } else {
             DrawRectangle(jogador.pos_x_real - 20, jogador.pos_y_real - 20, 40, 40, RED);
         }
-    } else { // correndo - alterna entre direita e esquerda a cada 0.25s
+    } else {
         Texture2D spriteAtual = quadroAnimacao ? spriteCorrendoEsquerda : spriteCorrendoDireita;
         if (spriteAtual.id > 0) {
             Rectangle origem = {0, 0, (float)spriteAtual.width, (float)spriteAtual.height};
@@ -1084,7 +1004,7 @@ void TelaJogo(int *estadoJogo, int larguraTela, int alturaTela, Texture2D backgr
         float leftSectionX = boxX + 15;
         float leftSectionY = boxY + alturaCaixa / 2;
         
-        // Ícone de relógio (representação simples)
+        // Ícone de relógio 
         float clockCenterX = leftSectionX + 18;
         float clockCenterY = leftSectionY;
         DrawCircle(clockCenterX, clockCenterY, 14, yellow);
