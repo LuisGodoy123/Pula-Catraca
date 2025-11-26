@@ -8,7 +8,6 @@
 #include <stdbool.h>
 
 // CONSTANTES GLOBAIS
-// ============================================================
 
 // Constantes de renderização
 #define TAMANHO_BASE_ITEM 120.0f
@@ -37,8 +36,6 @@
 #define LARGURA_FAIXA_BASE_PERCENTUAL 0.45f
 #define DESLOCAMENTO_FAIXA_BASE_PERCENTUAL -0.175f
 
-// ============================================================
-// ============================================================
 #define COR_ROSA_INTERFACE (Color){255, 102, 196, 255}      // #ff66c4
 #define COR_AMARELO_INTERFACE (Color){254, 255, 153, 255}   // #feff99
 #define COR_AZUL_INTERFACE (Color){175, 218, 225, 255}      // #afdae1
@@ -50,9 +47,6 @@
 #define COR_ITEM_VEM PINK
 #define COR_ITEM_BOTAO_PARADA GOLD
 #define COR_ITEM_FONE GREEN
-
-// ============================================================
-// ESTADOS DO JOGO
 
 typedef enum {
     ESTADO_MENU = 0,
@@ -78,7 +72,6 @@ void TelaComoJogar(int *estadoJogo, int larguraTela, int alturaTela, Texture2D b
 // Ranking (persistente)
 static ListaRanking ranking;
 
-// Word wrap com altura de retorno
 static float DesenharTextoQuebrado(Font fonte, const char *texto, Vector2 posicao, float tamanhoFonte, float espacamento, float larguraQuebra, Color cor) {
     // Copia o texto para poder tokenizar
     size_t tamanho = strlen(texto);
@@ -120,7 +113,7 @@ static float DesenharTextoQuebrado(Font fonte, const char *texto, Vector2 posica
     }
 
     free(buffer);
-    return y - posicao.y; // altura ocupada
+    return y - posicao.y;
 }
 
 // Constantes de paths de assets
@@ -138,7 +131,6 @@ static float CalcularProgresso(float valor, float min, float max) {
     return progresso;
 }
 
-// desenha fundo (lanes com perspectiva)
 static void DesenharFundo(Texture2D background, int larguraTela, int alturaTela) {
     if (background.id > 0) {
         Rectangle origem = {0, 0, (float)background.width, (float)background.height};
@@ -147,7 +139,6 @@ static void DesenharFundo(Texture2D background, int larguraTela, int alturaTela)
     }
 }
 
-// Desenha botão e verifica clique
 static bool DesenharBotao(const char *text, float centerX, float y, float larguraBotao, float alturaBotao, float fontSize, Color corNormal, Color corHover, Color textoNormal, Color textoHover) {
     Font font = GetFontDefault();
     Rectangle btn = {centerX - larguraBotao / 2, y, larguraBotao, alturaBotao};
@@ -174,11 +165,10 @@ static void CarregarTexturasItens(Texture2D texturas[]) {
 }
 
 int main(void) {
-    // resolução  e init da janela
     int larguraTela = 800;
     int alturaTela = 600;
     InitWindow(larguraTela, alturaTela, "Pula-Catraca");
-    SetTraceLogLevel(LOG_WARNING); // Desabilita mensagens de INFO e DEBUG
+    SetTraceLogLevel(LOG_WARNING);
     SetTargetFPS(60);
     
     // Inicializa sistema de áudio
@@ -248,7 +238,6 @@ int main(void) {
             TelaComoJogar(&estadoJogo, larguraTela, alturaTela, background_menu);
         }
     }
-    // salva ranking completo e top5 antes de sair
     salvarRankingCompleto(&ranking, "ranking_all.txt");
     salvarTopTXT(&ranking, "ranking_top5.txt", 5);
     freeRanking(&ranking);
@@ -461,19 +450,11 @@ void TelaJogo(int *estadoJogo, int larguraTela, int alturaTela, Texture2D backgr
     static bool texturasVitoriaCarregadas = false;
     static int cenaVitoria = 0; // 0 = tela normal, 1 = scene1, 2 = scene2, 3 = voltou ao normal
     
-    // ============================================================
-    // PERSPECTIVA DAS LANES
-    // ============================================================
     float larguraTopoLane = larguraTela * LARGURA_FAIXA_TOPO_PERCENTUAL;
     float deslocTopoLane = larguraTela * DESLOCAMENTO_FAIXA_TOPO_PERCENTUAL;
     float larguraLaneFundo = larguraTela * LARGURA_FAIXA_BASE_PERCENTUAL;
     float deslocLaneFundo = larguraTela * DESLOCAMENTO_FAIXA_BASE_PERCENTUAL;
 
-    // ============================================================
-    // SEÇÃO: INICIALIZAÇÃO E CARREGAMENTO DE RECURSOS
-    // ============================================================
-
-    // Inicializa jogador e arrays (apenas na primeira vez)
     if (!inicializado) {
         float pos_x = larguraTela / 2;
         float pos_y = alturaTela - 100;
@@ -550,9 +531,6 @@ void TelaJogo(int *estadoJogo, int larguraTela, int alturaTela, Texture2D backgr
         texturasVitoriaCarregadas = true;
     }
 
-    // ============================================================
-    // SEÇÃO: LÓGICA DO JOGO (INPUT E FÍSICA)
-    // ============================================================
     static bool somInicializado = false;
     if (!fimDeJogo) {
         // Gerenciamento de áudio
@@ -588,11 +566,9 @@ void TelaJogo(int *estadoJogo, int larguraTela, int alturaTela, Texture2D backgr
         tempoDecorrido += 1.0f / FRAMES_POR_SEGUNDO;
 
         // Sistema de aceleração progressiva
-        // Verifica se deve acelerar baseado no tempo decorrido
         if (velocidadeJogo < velocidadeMaxima) {
             if (tempoDecorrido - tempoUltimaAceleracao >= intervaloAceleracao) {
                 velocidadeJogo += incrementoVelocidade;
-                // Garante que não ultrapasse a velocidade máxima
                 if (velocidadeJogo > velocidadeMaxima) {
                     velocidadeJogo = velocidadeMaxima;
                 }
@@ -668,7 +644,6 @@ void TelaJogo(int *estadoJogo, int larguraTela, int alturaTela, Texture2D backgr
 
                 // Itens BONS (ITEM_PIPOCA até ITEM_FONE)
                 if (tipo >= ITEM_PIPOCA && tipo <= ITEM_FONE) {
-                    // incrementa apenas se ainda não atingiu o limite de 5
                     if (itensColetados[tipo] < 5) {
                         itensColetados[tipo]++;
                         PlaySound(somItemBom);
@@ -774,11 +749,6 @@ void TelaJogo(int *estadoJogo, int larguraTela, int alturaTela, Texture2D backgr
         }
     }
 
-    // ============================================================
-    // SEÇÃO: PROCESSAMENTO DE INPUT (TECLAS)
-    // ============================================================
-
-    // Tecla P para voltar ao menu sem resetar progresso (pausa)
     if (IsKeyPressed(KEY_P)) {
         *estadoJogo = 0; // de volta ao menu
         StopSound(somCorrida); // Para som de corrida
@@ -793,40 +763,33 @@ void TelaJogo(int *estadoJogo, int larguraTela, int alturaTela, Texture2D backgr
         StopSound(somCorrida); // Para som de corrida
         StopSound(somMusicaVitoria); // Para música de vitória
         somInicializado = false;
-        inicializado = false; // Força reinicialização completa (reseta tempo e itens)
+        inicializado = false;
     }
 
-    // Tecla ESC para voltar ao menu e resetar tudo (incluindo nickname)
     if (IsKeyPressed(KEY_ESCAPE)) {
         *estadoJogo = 0; // de volta ao menu
         StopSound(somCorrida); // Para som de corrida
         StopSound(somMusicaVitoria); // Para música de vitória
         somInicializado = false;
-        inicializado = false; // Força reinicialização completa (reseta tempo e itens)
-        nickname[0] = '\0'; // Limpa o nickname (fim da run)
+        inicializado = false;
+        nickname[0] = '\0';
     }
 
-    // ============================================================
-    // SEÇÃO: RENDERIZAÇÃO
-    // ============================================================
-
     Color coresItens[TIPOS_ITENS] = {
-        COR_ITEM_PIPOCA,         // Tipo 0 - Pipoca (BOM)
-        COR_ITEM_MOEDA,          // Tipo 1 - Moeda (BOM)
-        COR_ITEM_VEM,            // Tipo 2 - VEM (BOM)
-        COR_ITEM_BOTAO_PARADA,   // Tipo 3 - Botão parada (BOM)
-        COR_ITEM_FONE,           // Tipo 4 - Fone (BOM)
-        PURPLE,                  // Tipo 5 - Sono (RUIM - aumenta 5 seg)
-        DARKGRAY,                // Tipo 6 - Balaclava (RUIM - perde todos)
-        ORANGE                   // Tipo 7 - Idosa (RUIM - perde 1 aleatório)
+        COR_ITEM_PIPOCA,
+        COR_ITEM_MOEDA,
+        COR_ITEM_VEM,
+        COR_ITEM_BOTAO_PARADA,
+        COR_ITEM_FONE,
+        PURPLE,
+        DARKGRAY,
+        ORANGE
     };
 
     BeginDrawing();
     ClearBackground(RAYWHITE);
     DesenharFundo(background_jogo, larguraTela, alturaTela);
 
-    // lanes com perspectiva
-    // lane esq
     DrawTriangle(
         (Vector2){deslocLaneFundo, alturaTela},
         (Vector2){deslocTopoLane, ALTURA_HORIZONTE},
@@ -867,10 +830,6 @@ void TelaJogo(int *estadoJogo, int larguraTela, int alturaTela, Texture2D backgr
         (Vector2){deslocLaneFundo + larguraLaneFundo * 3, alturaTela},  // inferior direito
         (Color){100, 100, 100, 100}
     );
-
-    // ============================================================
-    // SEÇÃO: RENDERIZAÇÃO - OBSTÁCULOS
-    // ============================================================
 
     for (int indiceObstaculo = 0; indiceObstaculo < MAX_OBSTACULOS; indiceObstaculo++) {
         if (!obstaculos[indiceObstaculo].ativo) continue;
@@ -929,9 +888,6 @@ void TelaJogo(int *estadoJogo, int larguraTela, int alturaTela, Texture2D backgr
             }
         }
     }
-
-    // ============================================================
-    // RENDERIZAÇÃO - ITENS
 
     for (int indiceItem = 0; indiceItem < MAX_ITENS; indiceItem++) {
         if (!itens[indiceItem].ativo || itens[indiceItem].coletado) continue;
@@ -1407,11 +1363,11 @@ void TelaComoJogar(int *estadoJogo, int larguraTela, int alturaTela, Texture2D b
     
     // Cores dos itens como alternativa (caso as sprites não carreguem)
     Color coresItens[5] = {
-        COR_ITEM_PIPOCA,         // Tipo 0 - Pipoca
-        COR_ITEM_MOEDA,          // Tipo 1 - Moeda
-        COR_ITEM_VEM,            // Tipo 2 - VEM
-        COR_ITEM_BOTAO_PARADA,   // Tipo 3 - Botão de parada
-        COR_ITEM_FONE            // Tipo 4 - Fone
+        COR_ITEM_PIPOCA,
+        COR_ITEM_MOEDA,
+        COR_ITEM_VEM,
+        COR_ITEM_BOTAO_PARADA,
+        COR_ITEM_FONE
     };
 
     for (int i = 0; i < 5; i++) {
