@@ -434,20 +434,46 @@ int verificarColeta(Jogador *j, ItemColetavel *item, float laneLargura, float la
     if (j->lane != item->lane) {
         return 0;
     }
-    
-    // Hitbox do jogador (posição real em Y, expandida 10px para cima)
+
+    // Calcula progresso do item (0 = horizonte, 1 = base da tela)
+    float horizonte = 50.0f; // Valor hardcoded do ALTURA_HORIZONTE
+    float alturaTela = 600.0f; // Valor hardcoded
+    float progress = calcularProgresso(item->pos_y, horizonte, alturaTela);
+    float scale = 0.3f + (progress * 0.7f); // De 0.3 a 1.0 (mesma escala dos itens)
+
+    // Calcula posição X do item com perspectiva (igual à renderização)
+    float laneLargura_top = 800.0f / 10.0f; // Usa screenWidth hardcoded (800)
+    float lane_offset_top = (800.0f - laneLargura_top * 3) / 2.0f;
+    float laneLargura_bottom = 800.0f / 2.5f;
+    float lane_offset_bottom = (800.0f - laneLargura_bottom * 3) / 2.0f;
+
+    float x_top = lane_offset_top + laneLargura_top * item->lane + laneLargura_top / 2;
+    float x_bottom = lane_offset_bottom + laneLargura_bottom * item->lane + laneLargura_bottom / 2;
+    float item_x = x_top + (x_bottom - x_top) * progress;
+
+    // Hitbox do jogador em X (largura reduzida para 30px, igual aos obstáculos)
+    float player_left = j->pos_x_real - 15;
+    float player_right = j->pos_x_real + 15;
+
+    // Hitbox do jogador em Y (expandida 10px para cima)
     float player_top = j->deslizando ? j->pos_y_real + 10 : j->pos_y_real - 10;
     float player_bottom = j->deslizando ? j->pos_y_real + 40 : j->pos_y_real + 40;
-    
+
+    // Hitbox do item em X (usando largura escalada)
+    float largura_scaled = item->largura * scale;
+    float item_left = item_x - largura_scaled / 2;
+    float item_right = item_x + largura_scaled / 2;
+
     // Hitbox do item em Y
     float item_top = item->pos_y;
     float item_bottom = item->pos_y + item->altura;
-    
-    // Verifica colisão em Y (se estão na mesma lane, basta checar Y)
-    if (player_bottom > item_top && player_top < item_bottom) {
+
+    // Verifica colisão AABB completa (X e Y)
+    if (player_right > item_left && player_left < item_right &&
+        player_bottom > item_top && player_top < item_bottom) {
         item->coletado = 1;
         return 1; // Coletou!
     }
-    
+
     return 0; // Não coletou
 }
