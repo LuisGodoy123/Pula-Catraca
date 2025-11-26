@@ -44,8 +44,6 @@ typedef struct {
 } ItemColetavel;
 
 typedef struct {
-    int x;
-    int y;
     int lane; // 0 = esquerda, 1 = centro, 2 = direita
     int pulando;
     int deslizando;
