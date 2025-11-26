@@ -12,7 +12,7 @@ Pula-Catraca é um jogo endless runner inspirado em Subway Surfers, onde o jogad
 - **P** - Pausar (volta ao menu mantendo progresso)
 - **X** - Resetar (limpa tempo e itens e volta para o menu)
 - **C** - Continuar (mantém progresso de tempo e continua a jogar)
-- **ESC** - Fechar jogo (reseta tudo)
+- **ESC** - Fechar jogo (reseta tudo e volta ao menu)
 
 ## 🎯 Objetivos e Mecânicas
 
@@ -30,15 +30,15 @@ Pula-Catraca é um jogo endless runner inspirado em Subway Surfers, onde o jogad
 - 🎭 **Balaclava** - Perde todos os itens coletados
 
 ### Obstáculos
-- 🚌 **Ônibus** - Aparece nas 3 lanes (esquerdo, centro, direito)
-- 🚪 **Catraca** - Obstáculo no chão
-- 🛞 **Cerca laranja** - Obstáculo baixo
+- 🚌 **Ônibus** - Desvie com A ou D
+- 🚪 **Catraca** - Desvie com W (pulando)
+- 🛞 **Cerca laranja** - Desvie com S (abaixando)
 
 ### Sistema de Progressão
 - Velocidade aumenta gradualmente durante o jogo
 - Frequência de obstáculos aumenta com o tempo
 - Perspectiva 3D com lanes que se estreitam ao horizonte
-- Sistema de ranking que salva os melhores tempos
+- Sistema de ranking que salva os melhores recordes de tempo até a vitória
 
 ## 🚀 Instruções de compilação e execução
 
@@ -90,9 +90,9 @@ O jogo salva automaticamente:
 - **ranking_all.txt**: Histórico completo de todas as partidas
 
 ## 👥 Equipe
-Luis Antônio Godoy 
-Louise Pessoa
-Marília Liz
+- Luis Antônio Godoy
+- Louise Pessoa
+- Marília Liz
 
 ## 📝 Licença
 Este projeto é de código aberto para fins educacionais.
