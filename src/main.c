@@ -72,7 +72,7 @@ typedef enum {
 
 // Protótipos das funções
 void TelaMenu(int *estadoJogo, int larguraTela, int alturaTela, Texture2D background, Sound somMenu);
-void TelaNickname(int *estadoJogo, int larguraTela, int alturaTela, Texture2D background, char *nickname, Sound somMenu);
+void TelaNickname(int *estadoJogo, int larguraTela, int alturaTela, Texture2D background, char *nickname);
 void TelaJogo(int *estadoJogo, int larguraTela, int alturaTela, Texture2D background_jogo, char *nickname, Sound somMenu, Sound somCorrida, Sound somItemBom, Sound somItemRuim, Sound somColisao, Sound somVitoria, Sound somMusicaVitoria);
 void TelaRanking(int *estadoJogo, int larguraTela, int alturaTela, Texture2D background);
 void TelaComoJogar(int *estadoJogo, int larguraTela, int alturaTela, Texture2D background);
@@ -241,7 +241,7 @@ int main(void) {
         if (estadoJogo == 0) {
             TelaMenu(&estadoJogo, larguraTela, alturaTela, background_menu, somMenu);
         } else if (estadoJogo == 1) {
-            TelaNickname(&estadoJogo, larguraTela, alturaTela, background_menu, nickname, somMenu);
+            TelaNickname(&estadoJogo, larguraTela, alturaTela, background_menu, nickname);
         } else if (estadoJogo == 2) {
             TelaJogo(&estadoJogo, larguraTela, alturaTela, background_jogo, nickname, somMenu, somCorrida, somItemBom, somItemRuim, somColisao, somVitoria, somMusicaVitoria);
         } else if (estadoJogo == 3) {
@@ -306,7 +306,7 @@ void TelaMenu(int *estadoJogo, int larguraTela, int alturaTela, Texture2D backgr
     EndDrawing();
 }
 
-void TelaNickname(int *estadoJogo, int larguraTela, int alturaTela, Texture2D background, char *nickname, Sound somMenu) {
+void TelaNickname(int *estadoJogo, int larguraTela, int alturaTela, Texture2D background, char *nickname) {
     Font fonteTitulo = GetFontDefault();
 
     // caixa de texto
