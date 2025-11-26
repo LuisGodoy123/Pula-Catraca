@@ -14,12 +14,10 @@ static char *duplicarString(const char *s) {
 void initRanking(ListaRanking *r) {
     if (!r) return;
     r->head = NULL;
-    r->size = 0;
 }
 
 static void removerUltimoSeNecessario(ListaRanking *r) {
     if (!r) return;
-    if (r->size <= RANKING_MAX) return;
     RankingNode *atual = r->head;
     RankingNode *anterior = NULL;
     while (atual && atual->next) {
@@ -31,7 +29,6 @@ static void removerUltimoSeNecessario(ListaRanking *r) {
         else r->head = NULL;
         free(atual->name);
         free(atual);
-        r->size--;
     }
 }
 
@@ -43,7 +40,7 @@ void insertRanking(ListaRanking *r, const char *nome, float tempo) {
     no->time = tempo;
     no->next = NULL;
 
-    // Insere ordenado de forma crescente (menor tempo primeiro = melhor colocação)
+    // Insere de forma crescente
     if (!r->head || tempo < r->head->time) {
         no->next = r->head;
         r->head = no;
@@ -53,7 +50,6 @@ void insertRanking(ListaRanking *r, const char *nome, float tempo) {
         no->next = atual->next;
         atual->next = no;
     }
-    r->size++;
 }
 
 void salvarRankingCompleto(ListaRanking *r, const char *caminhoArquivo) {
@@ -109,5 +105,4 @@ void freeRanking(ListaRanking *r) {
         atual = proximo;
     }
     r->head = NULL;
-    r->size = 0;
 }

@@ -167,7 +167,6 @@ void criarMultiplosObstaculos(Obstaculo obstaculos[], int tamanho, float alturaT
                     continue;
                 }
                 
-                // Verifica se há obstáculos MUITO PRÓXIMOS nesta lane
                 pode_criar = !verificarObstaculoProximo(obstaculos, tamanho, i, lane_tentativa, pos_y_novo, 100.0f);
                 
                 if (tentativas >= 20) break; // Evita loop infinito

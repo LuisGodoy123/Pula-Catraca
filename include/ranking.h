@@ -4,8 +4,6 @@
 
 #include <stddef.h>
 
-#define RANKING_MAX 10
-
 typedef struct RankingNode {
     char *name;
     float time; // segundos (quanto menor tempo, melhor a posição no ranking)
@@ -14,7 +12,6 @@ typedef struct RankingNode {
 
 typedef struct {
     RankingNode *head;
-    int size;
 } ListaRanking;
 
 void initRanking(ListaRanking *r);

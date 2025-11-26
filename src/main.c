@@ -61,10 +61,8 @@ static float DesenharTextoQuebrado(Font fonte, const char *texto, Vector2 posica
 
     while (palavra) {
         char candidato[2048] = {0};
-        if (linha[0] == '\0')
-            snprintf(candidato, sizeof(candidato), "%s", palavra);
-        else
-            snprintf(candidato, sizeof(candidato), "%s %s", linha, palavra);
+        if (linha[0] == '\0') snprintf(candidato, sizeof(candidato), "%s", palavra);
+        else snprintf(candidato, sizeof(candidato), "%s %s", linha, palavra);
 
         Vector2 medida = MeasureTextEx(fonte, candidato, tamanhoFonte, espacamento);
         if (medida.x <= larguraQuebra) {
