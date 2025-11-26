@@ -55,7 +55,6 @@ typedef struct {
 } Jogador;
 
 typedef struct {
-    float pos_x;
     float pos_y;
     int lane; // 0 = esquerda, 1 = centro, 2 = direita
     int ativo; // 1 = ativo, 0 = inativo

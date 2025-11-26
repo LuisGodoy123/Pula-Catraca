@@ -121,7 +121,6 @@ void atualizarFisica(Jogador *j) {
 void inicializarObstaculos(Obstaculo obstaculos[], int tamanho) {
     for (int i = 0; i < tamanho; i++) {
         obstaculos[i].ativo = 0;
-        obstaculos[i].pos_x = 0;
         obstaculos[i].pos_y = 0;
         obstaculos[i].lane = 0;
         obstaculos[i].tipo = 0;
