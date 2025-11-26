@@ -40,6 +40,9 @@ Pula-Catraca é um jogo endless runner inspirado em Subway Surfers, onde o jogad
 - Perspectiva 3D com lanes que se estreitam ao horizonte
 - Sistema de ranking que salva os melhores recordes de tempo até a vitória
 
+  ## Screencast
+  https://youtu.be/mTyMdPFysTc
+
 ## 🚀 Instruções de compilação e execução
 
 ### Pré-requisitos
