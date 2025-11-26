@@ -290,7 +290,6 @@ void TelaMenu(int *estadoJogo, int larguraTela, int alturaTela, Texture2D backgr
 
     // botão "PLAY"
     if (DesenharBotao("PLAY", larguraTela / 2.0f, alturaTela * 0.55f, larguraBotao, alturaBotao, fontSize, COR_AZUL_INTERFACE, COR_AMARELO_INTERFACE, COR_VERDE_INTERFACE, COR_ROSA_INTERFACE)) {
-        StopSound(somMenu);
         *estadoJogo = 1;
     }
 
@@ -308,10 +307,6 @@ void TelaMenu(int *estadoJogo, int larguraTela, int alturaTela, Texture2D backgr
 }
 
 void TelaNickname(int *estadoJogo, int larguraTela, int alturaTela, Texture2D background, char *nickname, Sound somMenu) {
-    if (!IsSoundPlaying(somMenu)) {
-        PlaySound(somMenu);
-    }
-
     Font fonteTitulo = GetFontDefault();
 
     // caixa de texto
@@ -364,20 +359,13 @@ void TelaNickname(int *estadoJogo, int larguraTela, int alturaTela, Texture2D ba
     BeginDrawing();
     ClearBackground(RAYWHITE);
     DesenharFundo(background, larguraTela, alturaTela);
-
-    // título
-    float fontSize = larguraTela * 0.06f;
-    const char *title = "Digite seu nickname:";
-    float titleWidth = MeasureTextEx(fonteTitulo, title, fontSize * 0.7f, 2).x;
-    DrawTextEx(fonteTitulo, title,
-               (Vector2){larguraTela / 2 - titleWidth / 2, alturaTela * 0.35f},
-               fontSize * 0.7f, 2, COR_ROSA_INTERFACE);
-
+    
     // caixa de input
     DrawRectangleRounded(caixaInput, 0.3f, 10, COR_AZUL_INTERFACE);
     DrawRectangleLinesEx(caixaInput, 3.0f, COR_VERDE_INTERFACE);
 
     // texto digitado
+    float fontSize = larguraTela * 0.06f;
     if (nicknameLen > 0) {
         float textWidth = MeasureTextEx(fonteTitulo, nickname, fontSize * 0.5f, 2).x;
         DrawTextEx(fonteTitulo, nickname,
@@ -396,20 +384,6 @@ void TelaNickname(int *estadoJogo, int larguraTela, int alturaTela, Texture2D ba
                        caixaInput.y + alturaCaixa / 2 - fontSize * 0.2f
                    },
                    fontSize * 0.4f, 2, GRAY);
-    }
-
-    // cursor piscando
-    static float cursorTimer = 0.0f;
-    cursorTimer += GetFrameTime();
-    if (((int)(cursorTimer * 2)) % 2 == 0 && nicknameLen < 20) {
-        float textWidth = MeasureTextEx(fonteTitulo, nickname, fontSize * 0.5f, 2).x;
-        DrawRectangle(
-            caixaInput.x + larguraCaixa / 2 + textWidth / 2 + 5,
-            caixaInput.y + alturaCaixa * 0.25f,
-            2,
-            alturaCaixa * 0.5f,
-            BLACK
-        );
     }
 
     // botão confirmar (só ativo se tiver texto)
@@ -589,10 +563,10 @@ void TelaJogo(int *estadoJogo, int larguraTela, int alturaTela, Texture2D backgr
     // ============================================================
     // SEÇÃO: LÓGICA DO JOGO (INPUT E FÍSICA)
     // ============================================================
-
+    static bool somInicializado = false;
     if (!fimDeJogo) {
         // Gerenciamento de áudio
-        static bool somInicializado = false;
+        
         if (!somInicializado) {
             StopSound(somMenu);
             somInicializado = true;
@@ -767,6 +741,7 @@ void TelaJogo(int *estadoJogo, int larguraTela, int alturaTela, Texture2D backgr
                 cenaVitoria = 1; // Inicia sequência de cenas de vitória
                 PlaySound(somVitoria); // Toca som de vitória
                 StopSound(somCorrida); // Para som de corrida
+                PlaySound(somMusicaVitoria); // Toca música de vitória
             }
         }
         // colisões (posição sem perspectiva p cálculo)
@@ -818,6 +793,7 @@ void TelaJogo(int *estadoJogo, int larguraTela, int alturaTela, Texture2D backgr
         *estadoJogo = 0; // de volta ao menu
         StopSound(somCorrida); // Para som de corrida
         StopSound(somMusicaVitoria); // Para música de vitória
+        somInicializado = false;
         // NÃO define inicializado = false, então mantém tempo e itens coletados
     }
 
@@ -826,6 +802,7 @@ void TelaJogo(int *estadoJogo, int larguraTela, int alturaTela, Texture2D backgr
         *estadoJogo = 0; // de volta ao menu
         StopSound(somCorrida); // Para som de corrida
         StopSound(somMusicaVitoria); // Para música de vitória
+        somInicializado = false;
         inicializado = false; // Força reinicialização completa (reseta tempo e itens)
     }
 
@@ -834,6 +811,7 @@ void TelaJogo(int *estadoJogo, int larguraTela, int alturaTela, Texture2D backgr
         *estadoJogo = 0; // de volta ao menu
         StopSound(somCorrida); // Para som de corrida
         StopSound(somMusicaVitoria); // Para música de vitória
+        somInicializado = false;
         inicializado = false; // Força reinicialização completa (reseta tempo e itens)
         nickname[0] = '\0'; // Limpa o nickname (fim da run)
     }
@@ -1477,9 +1455,6 @@ void TelaComoJogar(int *estadoJogo, int larguraTela, int alturaTela, Texture2D b
             DrawCircleLines(iconX + iconSize/2, iconsY + iconSize/2, iconSize/2 - 2, (Color){0, 0, 0, 255});
         }
     }
-    
-    // Aviso removido por pedido do usuario - nada a desenhar aqui
-    (void)0; // placeholder para manter lógica
 
     // Botão de voltar
     if (DesenharBotao("VOLTAR", larguraTela / 2.0f, boxY + alturaCaixa + 15, larguraTela * 0.2f, alturaTela * 0.08f, larguraTela * 0.04f, cyan, yellow, BLACK, pink)) {
