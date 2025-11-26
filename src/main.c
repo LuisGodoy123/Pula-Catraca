@@ -948,7 +948,7 @@ void TelaJogo(int *estadoJogo, int larguraTela, int alturaTela, Texture2D backgr
         if (!itens[indiceItem].ativo || itens[indiceItem].coletado) continue;
 
         float progresso = CalcularProgresso(itens[indiceItem].pos_y, ALTURA_HORIZONTE, alturaTela);
-        float escala = 0.3f + (progresso * 0.7f);
+        float escala = 0.3f + (progresso * 0.9f);
         float tamanho_escalado = TAMANHO_BASE_ITEM * escala;
 
         // Calcula posição X com perspectiva
