@@ -32,7 +32,7 @@ static int verificarObstaculoProximo(Obstaculo obstaculos[], int tamanho, int in
         if (j != indiceAtual && obstaculos[j].ativo && obstaculos[j].lane == lane) {
             float distancia_y = obstaculos[j].pos_y - pos_y;
             if (distancia_y >= -distanciaSeguranca && distancia_y <= distanciaSeguranca) {
-                return 1; // Há obstáculo próximo
+                return 1; // obstáculo próximo
             }
         }
     }
@@ -45,7 +45,7 @@ static int verificarItemProximo(ItemColetavel itens[], int tamanho, int indiceAt
         if (j != indiceAtual && itens[j].ativo && !itens[j].coletado && itens[j].lane == lane) {
             float distancia_y = itens[j].pos_y - pos_y;
             if (distancia_y >= -distanciaSeguranca && distancia_y <= distanciaSeguranca) {
-                return 1; // Há item próximo
+                return 1; // item próximo
             }
         }
     }
