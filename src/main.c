@@ -975,7 +975,7 @@ void TelaJogo(int *estadoJogo, int larguraTela, int alturaTela, Texture2D backgr
         // HUD do jogo - Caixa estilizada com tempo e itens (canto superior esquerdo)
         Color cyanBorder = (Color){102, 255, 255, 255};
         Color darkPink = (Color){180, 50, 120, 220};
-        Color yellow = (Color){255, 255, 100, 255};       // Amarelo para ícones
+        Color yellow = (Color){255, 255, 100, 255};
         
         float larguraCaixa = 350.0f;
         float alturaCaixa = 70.0f;
@@ -1047,14 +1047,13 @@ void TelaRanking(int *estadoJogo, int larguraTela, int alturaTela, Texture2D bac
     Color pink = (Color){215, 50, 133, 255};
     Color cyan = (Color){102, 255, 255, 255};
     Color cyanBorder = (Color){150, 255, 255, 255};
-    Color green1 = (Color){150, 255, 100, 255};    // #96FF64 - verde claro para linhas
-    Color cyan2 = (Color){120, 240, 240, 255};     // ciano para linhas alternadas
+    Color green1 = (Color){150, 255, 100, 255};
+    Color cyan2 = (Color){120, 240, 240, 255};
     Color white = (Color){255, 255, 255, 255};
     
     BeginDrawing();
-    ClearBackground(pink); // Fundo rosa/magenta
+    ClearBackground(pink);
 
-    // Desenha fundo se existir (mas com overlay rosa)
     if (background.id > 0) {
         DesenharFundo(background, larguraTela, alturaTela);
         DrawRectangle(0, 0, larguraTela, alturaTela, (Color){0, 0, 0, 155});
@@ -1079,7 +1078,6 @@ void TelaRanking(int *estadoJogo, int larguraTela, int alturaTela, Texture2D bac
     
     // Sombra do título
     DrawTextEx(GetFontDefault(), titleText, (Vector2){titleX + 4, titleY + 4}, titleSize, 4, (Color){0, 0, 0, 100});
-    // Borda rosa do título
     DrawTextEx(GetFontDefault(), titleText, (Vector2){titleX - 2, titleY}, titleSize, 4, pink);
     DrawTextEx(GetFontDefault(), titleText, (Vector2){titleX + 2, titleY}, titleSize, 4, pink);
     DrawTextEx(GetFontDefault(), titleText, (Vector2){titleX, titleY - 2}, titleSize, 4, pink);
@@ -1094,7 +1092,6 @@ void TelaRanking(int *estadoJogo, int larguraTela, int alturaTela, Texture2D bac
     float colPlayerX = tableX + tableWidth * 0.25f;
     float colScoreX = tableX + tableWidth * 0.7f;
     
-    // Cabeçalhos em branco
     DrawTextEx(GetFontDefault(), "RANK", (Vector2){colRankX, headerY}, headerSize, 2, white);
     DrawTextEx(GetFontDefault(), "PLAYER", (Vector2){colPlayerX, headerY}, headerSize, 2, white);
     DrawTextEx(GetFontDefault(), "SCORE", (Vector2){colScoreX, headerY}, headerSize, 2, white);
@@ -1112,10 +1109,8 @@ void TelaRanking(int *estadoJogo, int larguraTela, int alturaTela, Texture2D bac
     int rank = 1;
     
     while (current != NULL && rank <= 5) {
-        // Alterna cores das linhas (verde e ciano)
         Color rowColor = (rank % 2 == 1) ? green1 : cyan2;
         
-        // Fundo da linha
         DrawRectangle(tableX + 5, rowY - 5, tableWidth - 10, rowHeight - 5, rowColor);
         
         // Número do rank
@@ -1175,57 +1170,48 @@ void TelaComoJogar(int *estadoJogo, int larguraTela, int alturaTela, Texture2D b
         texturasCarregadasComoJogar = true;
     }
     
-    // Paleta de cores (mesma da imagem de referência)
-    Color pink = (Color){215, 50, 133, 255};       // #d73285 - fundo rosa/magenta
-    Color cyan = (Color){102, 255, 255, 255};      // #66FFFF - azul ciano para título
-    Color cyanLight = (Color){150, 255, 255, 255}; // ciano claro para texto
-    Color yellow = (Color){254, 255, 153, 255};    // #feff99 - amarelo para botões
+    // paleta 
+    Color pink = (Color){215, 50, 133, 255};       
+    Color cyan = (Color){102, 255, 255, 255};      
+    Color cyanLight = (Color){150, 255, 255, 255}; 
+    Color yellow = (Color){254, 255, 153, 255};    
     Color white = (Color){255, 255, 255, 255};
     
     BeginDrawing();
-    ClearBackground(pink); // Fundo rosa/magenta
+    ClearBackground(pink); 
 
-    // Fundo com overlay rosa
+
     if (background.id > 0) {
         DesenharFundo(background, larguraTela, alturaTela);
         DrawRectangle(0, 0, larguraTela, alturaTela, (Color){0, 0, 0, 155});
     }
 
-    // Box principal (ajustado: largura menor, altura maior para o texto "Para vencer")
-    float larguraCaixa = larguraTela * 0.78f; // reduzido de 0.85 -> 0.78
-    float alturaCaixa = alturaTela * 0.82f; // aumentado de 0.75 -> 0.82
+    float larguraCaixa = larguraTela * 0.78f;
+    float alturaCaixa = alturaTela * 0.82f;
     float boxX = (larguraTela - larguraCaixa) / 2;
-    float boxY = alturaTela * 0.06f; // movido mais para cima (0.06)
+    float boxY = alturaTela * 0.06f;
     
-    // Borda externa
     DrawRectangleLinesEx((Rectangle){boxX - 5, boxY - 5, larguraCaixa + 10, alturaCaixa + 10}, 4, cyanLight);
     DrawRectangleLinesEx((Rectangle){boxX - 8, boxY - 8, larguraCaixa + 16, alturaCaixa + 16}, 2, white);
     
-    // Fundo do box
     DrawRectangleRounded((Rectangle){boxX, boxY, larguraCaixa, alturaCaixa}, 0.02f, 10, pink);
     
-    // Título "COMO JOGAR" grande
     float titleSize = larguraTela * 0.08f;
     const char* titleText = "COMO JOGAR";
     Vector2 titleMeasure = MeasureTextEx(GetFontDefault(), titleText, titleSize, 4);
     float titleX = larguraTela / 2 - titleMeasure.x / 2;
     float titleY = boxY + 15;
     
-    // Sombra do título
     DrawTextEx(GetFontDefault(), titleText, (Vector2){titleX + 3, titleY + 3}, titleSize, 4, (Color){0, 0, 0, 100});
-    // Borda rosa do título
     DrawTextEx(GetFontDefault(), titleText, (Vector2){titleX - 2, titleY}, titleSize, 4, pink);
     DrawTextEx(GetFontDefault(), titleText, (Vector2){titleX + 2, titleY}, titleSize, 4, pink);
     DrawTextEx(GetFontDefault(), titleText, (Vector2){titleX, titleY - 2}, titleSize, 4, pink);
     DrawTextEx(GetFontDefault(), titleText, (Vector2){titleX, titleY + 2}, titleSize, 4, pink);
-    // Texto principal ciano
     DrawTextEx(GetFontDefault(), titleText, (Vector2){titleX, titleY}, titleSize, 4, cyan);
     
-    // Linha divisória
     float dividerY = titleY + titleSize + 20;
     DrawLine(boxX + 20, dividerY, boxX + larguraCaixa - 20, dividerY, white);
     
-    // Conteúdo dividido em duas colunas
     float contentY = dividerY + 25;
     float col1X = boxX + 40;
     float col2X = boxX + larguraCaixa / 2 - 35;
@@ -1250,40 +1236,32 @@ void TelaComoJogar(int *estadoJogo, int larguraTela, int alturaTela, Texture2D b
     ctrlY += lineHeight;
     DrawTextEx(GetFontDefault(), "ESC: SAIR", (Vector2){col1X, ctrlY}, textSize, 2, cyanLight);
 
-    // COLUNA 2: OBJETIVO — usar DrawTextRec para caber todo o conteúdo no box
+    // COLUNA 2: OBJETIVO 
     DrawTextEx(GetFontDefault(), "OBJETIVO", (Vector2){col2X, contentY}, textSize * 1.2f, 2, yellow);
 
-    // Preparar área e reservas para texto, ícones e aviso
     float iconSize = 50.0f;
     float iconSpacing = 60.0f;
     float iconsStartX = col2X - 20.0f;
 
-    float footerReserve = iconSize + 20.0f; // reduzido para dar mais espaço vertical
+    float footerReserve = iconSize + 20.0f; 
 
-    // Área do texto do objetivo (coluna da direita)
     float objTextSize = textSize * 0.9f;
-    float objBoxPadding = 12.0f; // padding interno do box de objetivo
+    float objBoxPadding = 12.0f; 
     float objBoxX = col2X - 15.0f;
     float objBoxY = contentY + lineHeight * 1.5f;
     float objlarguraCaixa = (boxX + larguraCaixa - 30) - objBoxX;
-    float objalturaCaixa = (boxY + alturaCaixa) - objBoxY - footerReserve - 5.0f;
+    float objalturaCaixa = (boxY + alturaCaixa) - objBoxY - footerReserve - 5.0f; 
     
-// Retângulo de fundo para objetivo
-    //Rectangle objBgRect = {objBoxX, objBoxY, objlarguraCaixa, objalturaCaixa };
-    //DrawRectangleRounded(objBgRect, 0.05f, 10, (Color){0, 0, 0, 60}); // fundo escuro transparente
-    //DrawRectangleLinesEx(objBgRect, 2.0f, cyanLight); // borda ciano
-    
-    // Área de texto interna (com padding)
     Rectangle objRec = {objBoxX, objBoxY, objlarguraCaixa - (objBoxPadding * 2), objalturaCaixa - (objBoxPadding * 2) };
     const char* objetivoFull = "Para fugir ds rotas do ônibus, você precisa de mais do que apenas velocidade. Você deve coletar pelo menos 1 de CADA ITEM BOM espalhado pelos ruas. Cada item coletado te deixa um passo mais perto da vitória. Se você não pegar todos, a corrida não terá fim!";
-// Texto com word wrap
+
     Vector2 objPos = {objRec.x, objRec.y };
     DesenharTextoQuebrado(GetFontDefault(), objetivoFull, objPos, objTextSize, 2, objRec.width, cyanLight);
 
 // Ícones dos itens
     float iconsY = objBoxY + objalturaCaixa + 10.0f;
     
-    // Cores dos itens como alternativa (caso as sprites não carreguem)
+    // caso as sprites não carreguem
     Color coresItens[5] = {
         COR_ITEM_PIPOCA,
         COR_ITEM_MOEDA,
@@ -1301,13 +1279,13 @@ void TelaComoJogar(int *estadoJogo, int larguraTela, int alturaTela, Texture2D b
             Rectangle destino = {iconX, iconsY, iconSize, iconSize};
             DrawTexturePro(texturasItensComoJogar[i], origem, destino, (Vector2){0, 0}, 0.0f, WHITE);
         } else {
-// Fallback: círculo se sem textura
+
             DrawCircle(iconX + iconSize/2, iconsY + iconSize/2, iconSize/2 - 2, coresItens[i]);
             DrawCircleLines(iconX + iconSize/2, iconsY + iconSize/2, iconSize/2 - 2, (Color){0, 0, 0, 255});
         }
     }
 
-    // Botão de voltar
+   
     if (DesenharBotao("VOLTAR", larguraTela / 2.0f, boxY + alturaCaixa + 15, larguraTela * 0.2f, alturaTela * 0.08f, larguraTela * 0.04f, cyan, yellow, BLACK, pink)) {
         *estadoJogo = 0;
     }
