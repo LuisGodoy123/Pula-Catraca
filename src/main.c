@@ -38,7 +38,6 @@
 #define DESLOCAMENTO_FAIXA_BASE_PERCENTUAL -0.175f
 
 // ============================================================
-// CORES DA INTERFACE
 // ============================================================
 #define COR_ROSA_INTERFACE (Color){255, 102, 196, 255}      // #ff66c4
 #define COR_AMARELO_INTERFACE (Color){254, 255, 153, 255}   // #feff99
@@ -46,7 +45,6 @@
 #define COR_VERDE_INTERFACE (Color){87, 183, 33, 255}       // #57b721
 #define COR_CIANO_INTERFACE (Color){102, 255, 255, 255}     // #66FFFF
 
-// Cores dos itens colecionáveis (fallback caso sprites não carreguem)
 #define COR_ITEM_PIPOCA YELLOW
 #define COR_ITEM_MOEDA SKYBLUE
 #define COR_ITEM_VEM PINK
@@ -80,7 +78,7 @@ void TelaComoJogar(int *estadoJogo, int larguraTela, int alturaTela, Texture2D b
 // Ranking (persistente)
 static ListaRanking ranking;
 
-// desenha texto com quebra por largura (word wrap) e retorna a altura ocupada
+// Word wrap com altura de retorno
 static float DesenharTextoQuebrado(Font fonte, const char *texto, Vector2 posicao, float tamanhoFonte, float espacamento, float larguraQuebra, Color cor) {
     // Copia o texto para poder tokenizar
     size_t tamanho = strlen(texto);
@@ -149,7 +147,7 @@ static void DesenharFundo(Texture2D background, int larguraTela, int alturaTela)
     }
 }
 
-// desenha botão centralizado e retorna se foi clicado
+// Desenha botão e verifica clique
 static bool DesenharBotao(const char *text, float centerX, float y, float larguraBotao, float alturaBotao, float fontSize, Color corNormal, Color corHover, Color textoNormal, Color textoHover) {
     Font font = GetFontDefault();
     Rectangle btn = {centerX - larguraBotao / 2, y, larguraBotao, alturaBotao};
@@ -285,20 +283,16 @@ void TelaMenu(int *estadoJogo, int larguraTela, int alturaTela, Texture2D backgr
     BeginDrawing();
     ClearBackground(RAYWHITE);
 
-    // fundo redimensionado
     DesenharFundo(background, larguraTela, alturaTela);
 
-    // botão "PLAY"
     if (DesenharBotao("PLAY", larguraTela / 2.0f, alturaTela * 0.55f, larguraBotao, alturaBotao, fontSize, COR_AZUL_INTERFACE, COR_AMARELO_INTERFACE, COR_VERDE_INTERFACE, COR_ROSA_INTERFACE)) {
         *estadoJogo = 1;
     }
 
-    // botão "RANKING"
     if (DesenharBotao("RANKING", larguraTela / 2.0f, alturaTela * 0.65f, larguraBotao, alturaBotao, fontSize, COR_AZUL_INTERFACE, COR_AMARELO_INTERFACE, COR_VERDE_INTERFACE, COR_ROSA_INTERFACE)) {
         *estadoJogo = 3;
     }
 
-    // botão "COMO JOGAR"
     if (DesenharBotao("COMO JOGAR", larguraTela / 2.0f, alturaTela * 0.75f, larguraBotao, alturaBotao, fontSize, COR_AZUL_INTERFACE, COR_AMARELO_INTERFACE, COR_VERDE_INTERFACE, COR_ROSA_INTERFACE)) {
         *estadoJogo = 4;
     }
@@ -309,7 +303,6 @@ void TelaMenu(int *estadoJogo, int larguraTela, int alturaTela, Texture2D backgr
 void TelaNickname(int *estadoJogo, int larguraTela, int alturaTela, Texture2D background, char *nickname) {
     Font fonteTitulo = GetFontDefault();
 
-    // caixa de texto
     float larguraCaixa = larguraTela * 0.4f;
     float alturaCaixa = alturaTela * 0.08f;
     Rectangle caixaInput = {
@@ -319,7 +312,6 @@ void TelaNickname(int *estadoJogo, int larguraTela, int alturaTela, Texture2D ba
         alturaCaixa
     };
 
-    // botão confirmar
     float larguraBotao = larguraTela * 0.25f;
     float alturaBotao = alturaTela * 0.08f;
     Rectangle confirmBtn = {
@@ -360,11 +352,9 @@ void TelaNickname(int *estadoJogo, int larguraTela, int alturaTela, Texture2D ba
     ClearBackground(RAYWHITE);
     DesenharFundo(background, larguraTela, alturaTela);
     
-    // caixa de input
     DrawRectangleRounded(caixaInput, 0.3f, 10, COR_AZUL_INTERFACE);
     DrawRectangleLinesEx(caixaInput, 3.0f, COR_VERDE_INTERFACE);
 
-    // texto digitado
     float fontSize = larguraTela * 0.06f;
     if (nicknameLen > 0) {
         float textWidth = MeasureTextEx(fonteTitulo, nickname, fontSize * 0.5f, 2).x;
@@ -671,7 +661,7 @@ void TelaJogo(int *estadoJogo, int larguraTela, int alturaTela, Texture2D backgr
             if (jogador.pos_x_real < x_alvo) jogador.pos_x_real = x_alvo;
         }
 
-        // verifica coleta de itens
+// Coleta itens
         for (int i = 0; i < MAX_ITENS; i++) {
             if (verificarColeta(&jogador, &itens[i], larguraLaneFundo, deslocLaneFundo)) {
                 int tipo = itens[i].tipo;
@@ -720,7 +710,7 @@ void TelaJogo(int *estadoJogo, int larguraTela, int alturaTela, Texture2D backgr
             }
         }
 
-        // verifica vitoria (pelo menos 1 item de cada tipo BOM)
+// Vitória: precisa 1 de cada tipo
         if (!vitoria) {
             bool ganhou = true;
             for (int i = ITEM_PIPOCA; i <= ITEM_FONE; i++) {
@@ -820,7 +810,6 @@ void TelaJogo(int *estadoJogo, int larguraTela, int alturaTela, Texture2D backgr
     // SEÇÃO: RENDERIZAÇÃO
     // ============================================================
 
-    // Cores dos itens (declarado aqui para uso em toda a função)
     Color coresItens[TIPOS_ITENS] = {
         COR_ITEM_PIPOCA,         // Tipo 0 - Pipoca (BOM)
         COR_ITEM_MOEDA,          // Tipo 1 - Moeda (BOM)
@@ -972,7 +961,7 @@ void TelaJogo(int *estadoJogo, int larguraTela, int alturaTela, Texture2D backgr
         }
     }
 
-    // desenha o jogador com sprites
+// Desenha o jogador
     if (jogador.deslizando) { // deslizando - usa direção do movimento
         Texture2D spriteAtual = (direcaoJogador < 0) ? spriteDeslizandoDireita : spriteDeslizandoEsquerda;
         if (spriteAtual.id > 0) {
@@ -1021,12 +1010,10 @@ void TelaJogo(int *estadoJogo, int larguraTela, int alturaTela, Texture2D backgr
         } else { // Tela normal de game over (após as cenas ou se não for vitória)
             // Overlay semi-transparente para melhorar legibilidade dos textos
             DrawRectangle(0, 0, larguraTela, alturaTela, (Color){0, 0, 0, 100});
-            // Offset de 57 pixels (aproximadamente 1.5cm considerando DPI padrão)
             int offsetY = -57;
 
-            // Desenha imagem de fundo conforme o resultado
+// Fundo conforme resultado
             if (vitoria) {
-                // Usa vitoria_scene2 como fundo da tela de vitória
                 if (texturaVitoria2.id > 0) {
                     Rectangle origem = {0, 0, (float)texturaVitoria2.width, (float)texturaVitoria2.height};
                     Rectangle destino = {0, 0, (float)larguraTela, (float)alturaTela};
@@ -1041,7 +1028,6 @@ void TelaJogo(int *estadoJogo, int larguraTela, int alturaTela, Texture2D backgr
                 
                 const char* titulo = "VOCÊ VENCEU!";
                 int tituloWidth = MeasureText(titulo, 70);
-                // Sombra do texto para melhor contraste - sobe mais 30 pixels
                 DrawText(titulo, larguraTela/2 - tituloWidth/2 + 3, alturaTela/2 - 150 + offsetY, 70, BLACK);
                 DrawText(titulo, larguraTela/2 - tituloWidth/2, alturaTela/2 - 147 + offsetY, 70, GREEN);
                 
@@ -1051,7 +1037,6 @@ void TelaJogo(int *estadoJogo, int larguraTela, int alturaTela, Texture2D backgr
                 DrawText(subtitulo, larguraTela/2 - subtituloWidth/2, alturaTela/2 - 75 + offsetY, 25, WHITE);
 
             } else {
-                // Usa gameOver.png como fundo quando perde
                 if (texturaGameOver.id > 0) {
                     Rectangle origem = {0, 0, (float)texturaGameOver.width, (float)texturaGameOver.height};
                     Rectangle destino = {0, 0, (float)larguraTela, (float)alturaTela};
@@ -1073,17 +1058,14 @@ void TelaJogo(int *estadoJogo, int larguraTela, int alturaTela, Texture2D backgr
             DrawText(textoTempo, larguraTela/2 - tempoWidth/2 + 2, alturaTela/2 + 12 + offsetY, 40, BLACK);
             DrawText(textoTempo, larguraTela/2 - tempoWidth/2, alturaTela/2 + 10 + offsetY, 40, WHITE);
             
-            // Label "Itens coletados" centralizado - desce mais 30 pixels
             const char* labelItens = "Itens coletados:";
             int labelWidth = MeasureText(labelItens, 28);
             DrawText(labelItens, larguraTela/2 - labelWidth/2 + 2, alturaTela/2 + 82 + offsetY, 28, BLACK);
             DrawText(labelItens, larguraTela/2 - labelWidth/2, alturaTela/2 + 80 + offsetY, 28, WHITE);
             
-            // Ícones dos itens centralizados - desce mais 30 pixels
-            // Cada ícone: 48px de largura, espaçamento de 60px entre centros
-            // Total: 5 ícones com 4 espaços de 60px = 240px de espaçamento + 48px/2 em cada ponta
-            int totalWidth = (TIPOS_ITENS - 1) * 60 + 48; // Largura total: 4*60 + 48 = 288px
-            int startX = larguraTela/2 - totalWidth/2 + 24; // +24 para começar no centro do primeiro ícone
+           
+            int totalWidth = (TIPOS_ITENS - 1) * 60 + 48; 
+            int startX = larguraTela/2 - totalWidth/2 + 24; 
             for (int i = 0; i < TIPOS_ITENS; i++) {
                 int icon_x = startX + (i * 60);
                 int icon_y = alturaTela/2 + 105 + offsetY;
@@ -1101,7 +1083,6 @@ void TelaJogo(int *estadoJogo, int larguraTela, int alturaTela, Texture2D backgr
                 DrawText(texto, icon_x - textWidth/2, icon_y + 55, 30, WHITE);
             }
             
-            // Instruções centralizadas - desce mais 30 pixels
             const char* instrucao1 = "Pressione C para continuar";
             int instr1Width = MeasureText(instrucao1, 25);
             DrawText(instrucao1, larguraTela/2 - instr1Width/2 + 2, alturaTela/2 + 202 + offsetY, 25, BLACK);
@@ -1114,21 +1095,18 @@ void TelaJogo(int *estadoJogo, int larguraTela, int alturaTela, Texture2D backgr
         }
     } else {
         // HUD do jogo - Caixa estilizada com tempo e itens (canto superior esquerdo)
-        // Cores da caixa
-        Color cyanBorder = (Color){102, 255, 255, 255};  // Ciano para bordas
-        Color darkPink = (Color){180, 50, 120, 220};      // Rosa escuro para fundo da caixa
+        Color cyanBorder = (Color){102, 255, 255, 255};
+        Color darkPink = (Color){180, 50, 120, 220};
         Color yellow = (Color){255, 255, 100, 255};       // Amarelo para ícones
         
-        // Dimensões da caixa (reduzidas)
-        float larguraCaixa = 350.0f;  // Largura fixa menor
-        float alturaCaixa = 70.0f;  // Altura reduzida
-        float boxX = 20.0f;  // 20px da borda esquerda
-        float boxY = 20.0f;  // 20px do topo
+        float larguraCaixa = 350.0f;
+        float alturaCaixa = 70.0f;
+        float boxX = 20.0f;
+        float boxY = 20.0f;
         
-        // Desenha caixa principal com bordas arredondadas
+// Caixa de objetivos
         DrawRectangleRounded((Rectangle){boxX, boxY, larguraCaixa, alturaCaixa}, 0.2f, 8, darkPink);
         
-        // Bordas externas (múltiplas camadas para efeito 3D)
         DrawRectangleRoundedLines((Rectangle){boxX - 3, boxY - 3, larguraCaixa + 6, alturaCaixa + 6}, 0.2f, 8, cyanBorder);
         DrawRectangleRoundedLines((Rectangle){boxX - 1, boxY - 1, larguraCaixa + 2, alturaCaixa + 2}, 0.2f, 8, (Color){80, 200, 200, 255});
         
@@ -1136,7 +1114,6 @@ void TelaJogo(int *estadoJogo, int larguraTela, int alturaTela, Texture2D backgr
         float middleX = boxX + larguraCaixa / 2;
         DrawLineEx((Vector2){middleX, boxY + 10}, (Vector2){middleX, boxY + alturaCaixa - 10}, 3, cyanBorder);
         
-        // Listras diagonais decorativas (canto superior direito da caixa)
         for (int i = 0; i < 5; i++) {
             float stripeX = boxX + larguraCaixa * 0.65f + (i * 12);
             DrawLineEx(
@@ -1146,7 +1123,6 @@ void TelaJogo(int *estadoJogo, int larguraTela, int alturaTela, Texture2D backgr
             );
         }
         
-        // SEÇÃO ESQUERDA - TEMPO
         float leftSectionX = boxX + 15;
         float leftSectionY = boxY + alturaCaixa / 2;
         
@@ -1165,17 +1141,15 @@ void TelaJogo(int *estadoJogo, int larguraTela, int alturaTela, Texture2D backgr
         DrawText(tempoTexto, leftSectionX + 42, leftSectionY - 14, 28, cyanBorder);
        
         
-        // SEÇÃO DIREITA - ITENS
         float rightSectionX = middleX + 10;
         float rightSectionY = boxY + alturaCaixa / 2;
         
-        // Ícone de mochila (representação simples)
+        // Ícone de mochila 
         float bagCenterX = rightSectionX + 15;
         float bagCenterY = rightSectionY;
         DrawRectangle(bagCenterX - 10, bagCenterY - 8, 20, 16, yellow);
         DrawRectangle(bagCenterX - 6, bagCenterY - 12, 12, 6, yellow);
         
-        // Texto "ITENS X/5" (ajustado para caber na caixa)
         int itensColetadosTotal = 0;
         for (int i = 0; i < 5; i++) {  // Conta apenas itens bons (0-4)
             if (itensColetados[i] > 0) itensColetadosTotal++;
@@ -1192,10 +1166,9 @@ void TelaJogo(int *estadoJogo, int larguraTela, int alturaTela, Texture2D backgr
 }
 
 void TelaRanking(int *estadoJogo, int larguraTela, int alturaTela, Texture2D background) {
-    // Paleta de cores
-    Color pink = (Color){215, 50, 133, 255};      // #d73285 - fundo rosa/magenta
-    Color cyan = (Color){102, 255, 255, 255};      // #66FFFF - azul ciano para título
-    Color cyanBorder = (Color){150, 255, 255, 255}; // borda do título
+    Color pink = (Color){215, 50, 133, 255};
+    Color cyan = (Color){102, 255, 255, 255};
+    Color cyanBorder = (Color){150, 255, 255, 255};
     Color green1 = (Color){150, 255, 100, 255};    // #96FF64 - verde claro para linhas
     Color cyan2 = (Color){120, 240, 240, 255};     // ciano para linhas alternadas
     Color white = (Color){255, 255, 255, 255};
@@ -1252,7 +1225,7 @@ void TelaRanking(int *estadoJogo, int larguraTela, int alturaTela, Texture2D bac
     float lineY = headerY + headerSize + 10;
     DrawRectangle(tableX, lineY, tableWidth, 3, white);
     
-    // Desenha top 10 do ranking
+// Exibe top 10
     float rowHeight = 40;
     float rowY = lineY + 15;
     float rowSize = larguraTela * 0.03f;
@@ -1334,7 +1307,7 @@ void TelaComoJogar(int *estadoJogo, int larguraTela, int alturaTela, Texture2D b
     BeginDrawing();
     ClearBackground(pink); // Fundo rosa/magenta
 
-    // Desenha fundo se existir (mas com overlay rosa)
+    // Fundo com overlay rosa
     if (background.id > 0) {
         DesenharFundo(background, larguraTela, alturaTela);
         DrawRectangle(0, 0, larguraTela, alturaTela, (Color){0, 0, 0, 155});
@@ -1417,7 +1390,7 @@ void TelaComoJogar(int *estadoJogo, int larguraTela, int alturaTela, Texture2D b
     float objlarguraCaixa = (boxX + larguraCaixa - 30) - objBoxX;
     float objalturaCaixa = (boxY + alturaCaixa) - objBoxY - footerReserve - 5.0f;
     
-    // Desenha o retângulo de fundo para o objetivo
+// Retângulo de fundo para objetivo
     //Rectangle objBgRect = {objBoxX, objBoxY, objlarguraCaixa, objalturaCaixa };
     //DrawRectangleRounded(objBgRect, 0.05f, 10, (Color){0, 0, 0, 60}); // fundo escuro transparente
     //DrawRectangleLinesEx(objBgRect, 2.0f, cyanLight); // borda ciano
@@ -1425,11 +1398,11 @@ void TelaComoJogar(int *estadoJogo, int larguraTela, int alturaTela, Texture2D b
     // Área de texto interna (com padding)
     Rectangle objRec = {objBoxX, objBoxY, objlarguraCaixa - (objBoxPadding * 2), objalturaCaixa - (objBoxPadding * 2) };
     const char* objetivoFull = "Para fugir ds rotas do ônibus, você precisa de mais do que apenas velocidade. Você deve coletar pelo menos 1 de CADA ITEM BOM espalhado pelos ruas. Cada item coletado te deixa um passo mais perto da vitória. Se você não pegar todos, a corrida não terá fim!";
-    // Desenha com quebra automática dentro de objRec
+// Texto com word wrap
     Vector2 objPos = {objRec.x, objRec.y };
     DesenharTextoQuebrado(GetFontDefault(), objetivoFull, objPos, objTextSize, 2, objRec.width, cyanLight);
 
-    // Posicao Y para desenhar icones: logo abaixo do box de objetivo
+// Ícones dos itens
     float iconsY = objBoxY + objalturaCaixa + 10.0f;
     
     // Cores dos itens como alternativa (caso as sprites não carreguem)
@@ -1450,7 +1423,7 @@ void TelaComoJogar(int *estadoJogo, int larguraTela, int alturaTela, Texture2D b
             Rectangle destino = {iconX, iconsY, iconSize, iconSize};
             DrawTexturePro(texturasItensComoJogar[i], origem, destino, (Vector2){0, 0}, 0.0f, WHITE);
         } else {
-            // Alternativa: desenha círculo colorido caso a textura não carregue
+// Fallback: círculo se sem textura
             DrawCircle(iconX + iconSize/2, iconsY + iconSize/2, iconSize/2 - 2, coresItens[i]);
             DrawCircleLines(iconX + iconSize/2, iconsY + iconSize/2, iconSize/2 - 2, (Color){0, 0, 0, 255});
         }
