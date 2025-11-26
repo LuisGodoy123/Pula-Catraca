@@ -32,7 +32,7 @@ Pula-Catraca é um jogo endless runner inspirado em Subway Surfers, onde o jogad
 ### Obstáculos
 - 🚌 **Ônibus** - Aparece nas 3 lanes (esquerdo, centro, direito)
 - 🚪 **Catraca** - Obstáculo no chão
-- 🛞 **Pneu** - Obstáculo baixo
+- 🛞 **Cerca laranja** - Obstáculo baixo
 
 ### Sistema de Progressão
 - Velocidade aumenta gradualmente durante o jogo
@@ -46,6 +46,9 @@ Pula-Catraca é um jogo endless runner inspirado em Subway Surfers, onde o jogad
 - **Raylib 5.5** instalado
 
     Como instalar:
+    1. Entre no site oficial:  https://www.raylib.com/
+    2. Clique na aba DOWNLOADS
+    3. Baixe “raylib 5.5 for Windows (MinGW GCC)” ou “Win64 MinGW”.
 
 - **GCC** (MinGW no Windows)
 
@@ -60,14 +63,12 @@ build.bat
 
 ### No Linux:
 ```bash
-# Dar permissão de execução ao script
-chmod +x build.sh
 
 # Compilar
-./build.sh
+make
 
 # Executar
-./build/pula-catraca
+./pula_catraca
 ```
 
 ## 🎨 Características Técnicas
