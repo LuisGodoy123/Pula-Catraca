@@ -887,7 +887,7 @@ void TelaJogo(int *estadoJogo, int larguraTela, int alturaTela, Texture2D backgr
         if (!obstaculos[indiceObstaculo].ativo) continue;
 
         float progresso = CalcularProgresso(obstaculos[indiceObstaculo].pos_y, ALTURA_HORIZONTE, alturaTela);
-        float escala = 0.2f + (progresso * 0.7f);
+        float escala = 0.2f + (progresso * 0.9f);
 
         float largura_escalada = obstaculos[indiceObstaculo].largura * escala;
         float altura_escalada = obstaculos[indiceObstaculo].altura * escala;
@@ -1102,7 +1102,7 @@ void TelaJogo(int *estadoJogo, int larguraTela, int alturaTela, Texture2D backgr
             }
             
             // Instruções centralizadas - desce mais 30 pixels
-            const char* instrucao1 = "Pressione C para continuar";
+            const char* instrucao1 = "Pressione R para continuar";
             int instr1Width = MeasureText(instrucao1, 25);
             DrawText(instrucao1, larguraTela/2 - instr1Width/2 + 2, alturaTela/2 + 202 + offsetY, 25, BLACK);
             DrawText(instrucao1, larguraTela/2 - instr1Width/2, alturaTela/2 + 200 + offsetY, 25, WHITE);
