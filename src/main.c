@@ -7,7 +7,6 @@
 #include <stdio.h>
 #include <stdbool.h>
 
-// ============================================================
 // CONSTANTES GLOBAIS
 // ============================================================
 
@@ -56,7 +55,7 @@
 
 // ============================================================
 // ESTADOS DO JOGO
-// ============================================================
+
 typedef enum {
     ESTADO_MENU = 0,
     ESTADO_NICKNAME = 1,
@@ -574,13 +573,13 @@ void TelaJogo(int *estadoJogo, int larguraTela, int alturaTela, Texture2D backgr
         spritesJogadorCarregadas = true;
     }
     
-    // Carrega textura de Game Over (apenas uma vez)
+    // Carrega textura de Game Over 
     if (!texturaGameOverCarregada) {
         texturaGameOver = LoadTexture("assets/images/gameOver.png");
         texturaGameOverCarregada = true;
     }
     
-    // Carrega texturas de vitória (apenas uma vez)
+    // Carrega texturas de vitória 
     if (!texturasVitoriaCarregadas) {
         texturaVitoria1 = LoadTexture("assets/images/vitoria_scene1.png");
         texturaVitoria2 = LoadTexture("assets/images/vitoria_scene2.png");
