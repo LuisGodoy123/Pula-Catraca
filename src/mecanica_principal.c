@@ -59,7 +59,7 @@ void inicializarJogador(Jogador *j, float pos_x_inicial, float pos_y_inicial) {
     j->lane = 1; // começa no centro
     j->pulando = 0;
     j->deslizando = 0;
-    j->altura_pulo = 0;
+    j->veloc_inicio_pulo = 0;
     j->tempo_deslizando = 0;
     j->pos_x_real = pos_x_inicial;
     j->pos_y_real = pos_y_inicial;
@@ -81,7 +81,7 @@ void moverDireita(Jogador *j) {
 void pular(Jogador *j) {
     if (!j->pulando && !j->deslizando) {
         j->pulando = 1;
-        j->altura_pulo = 20; // Velocidade inicial (mesma de antes)
+        j->veloc_inicio_pulo = 20; // Velocidade inicial (mesma de antes)
     }
 }
 
@@ -95,14 +95,14 @@ void deslizar(Jogador *j) {
 void atualizarFisica(Jogador *j) {
     // Física do pulo (gravidade)
     if (j->pulando) {
-        j->pos_y_real -= j->altura_pulo;
-        j->altura_pulo -= 1; // gravidade
+        j->pos_y_real -= j->veloc_inicio_pulo;
+        j->veloc_inicio_pulo -= 1; // gravidade
 
         // Volta ao chão
         if (j->pos_y_real >= j->chao_y) {
             j->pos_y_real = j->chao_y;
             j->pulando = 0;
-            j->altura_pulo = 0;
+            j->veloc_inicio_pulo = 0;
         }
     }
     

@@ -47,10 +47,10 @@ typedef struct {
     int lane; // 0 = esquerda, 1 = centro, 2 = direita
     int pulando;
     int deslizando;
-    int altura_pulo;
+    int veloc_inicio_pulo;
     int tempo_deslizando;
-    float pos_x_real; // posição real em pixels
-    float pos_y_real; // posição real em pixels
+    float pos_x_real; // posição em pixels
+    float pos_y_real; // posição em pixels
     float chao_y; // posição do chão
 } Jogador;
 

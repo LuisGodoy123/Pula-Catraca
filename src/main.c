@@ -652,8 +652,10 @@ void TelaJogo(int *estadoJogo, int larguraTela, int alturaTela, Texture2D backgr
         // posição X baseada na lane com perspectiva
         // O jogador está em uma posição Y específica, então precisa interpolar igual aos obstáculos/itens
 
-        // Calcula progresso baseado na posição Y do jogador (mesma lógica dos obstáculos)
-        float progresso_jogador = (jogador.pos_y_real - ALTURA_HORIZONTE) / (alturaTela - ALTURA_HORIZONTE);
+        // Calcula progresso baseado na posição Y do jogador
+        // Durante o pulo, usa a posição do chão para manter X fixo (pulo reto para cima)
+        float pos_y_para_perspectiva = jogador.pulando ? jogador.chao_y : jogador.pos_y_real;
+        float progresso_jogador = (pos_y_para_perspectiva - ALTURA_HORIZONTE) / (alturaTela - ALTURA_HORIZONTE);
         if (progresso_jogador < 0) progresso_jogador = 0;
         if (progresso_jogador > 1) progresso_jogador = 1;
 
