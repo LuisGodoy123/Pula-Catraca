@@ -12,7 +12,7 @@
 
 // Constantes de renderização
 #define TAMANHO_BASE_ITEM 120.0f
-#define ALTURA_HORIZONTE 130.0f
+#define ALTURA_HORIZONTE 150.0f
 
 // Constantes de tempo e animação
 #define FRAMES_POR_SEGUNDO 60
@@ -32,8 +32,8 @@
 #define FRAMES_ENTRE_ITENS 120
 
 // Constantes de perspectiva (baseadas em tela 800x600)
-#define LARGURA_FAIXA_TOPO_PERCENTUAL 0.083f
-#define DESLOCAMENTO_FAIXA_TOPO_PERCENTUAL 0.385f
+#define LARGURA_FAIXA_TOPO_PERCENTUAL 0.06f
+#define DESLOCAMENTO_FAIXA_TOPO_PERCENTUAL 0.42f
 #define LARGURA_FAIXA_BASE_PERCENTUAL 0.45f
 #define DESLOCAMENTO_FAIXA_BASE_PERCENTUAL -0.175f
 
@@ -909,7 +909,7 @@ void TelaJogo(int *estadoJogo, int larguraTela, int alturaTela, Texture2D backgr
         if (!obstaculos[indiceObstaculo].ativo) continue;
 
         float progresso = CalcularProgresso(obstaculos[indiceObstaculo].pos_y, ALTURA_HORIZONTE, alturaTela);
-        float escala = 0.3f + (progresso * 0.7f);
+        float escala = 0.2f + (progresso * 0.7f);
 
         float largura_escalada = obstaculos[indiceObstaculo].largura * escala;
         float altura_escalada = obstaculos[indiceObstaculo].altura * escala;
@@ -941,7 +941,7 @@ void TelaJogo(int *estadoJogo, int larguraTela, int alturaTela, Texture2D backgr
                 float sprite_largura_catraca = 100.0f * escala;
                 float sprite_altura_catraca = 95.0f * escala;
                 Rectangle origem = {0, 0, (float)spriteCatraca.width, (float)spriteCatraca.height};
-                Rectangle destino = {posicaoXObstaculo - sprite_largura_catraca / 2, obstaculos[indiceObstaculo].pos_y + 60, sprite_largura_catraca, sprite_altura_catraca};
+                Rectangle destino = {posicaoXObstaculo - sprite_largura_catraca / 2, obstaculos[indiceObstaculo].pos_y, sprite_largura_catraca, sprite_altura_catraca};
                 DrawTexturePro(spriteCatraca, origem, destino, (Vector2){0, 0}, 0.0f, WHITE);
             } else {
                 DrawRectangle(posicaoXObstaculo - largura_escalada / 2, obstaculos[indiceObstaculo].pos_y, largura_escalada, altura_escalada, GREEN);
