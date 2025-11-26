@@ -48,7 +48,8 @@ Pula-Catraca é um jogo endless runner inspirado em Subway Surfers, onde o jogad
     Como instalar:
     1. Entre no site oficial:  https://www.raylib.com/
     2. Clique na aba DOWNLOADS
-    3. Baixe “raylib 5.5 for Windows (MinGW GCC)” ou “Win64 MinGW”.
+    3. Baixe “raylib 5.5 for Windows (MinGW GCC)” ou “Win64 MinGW” 
+    4. Extraia o .zip e coloque a pasta em um local permanente (ex.: C:\raylib).
 
 - **GCC** (MinGW no Windows)
 
