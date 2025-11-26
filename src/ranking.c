@@ -62,7 +62,7 @@ void salvarRankingCompleto(ListaRanking *r, const char *caminhoArquivo) {
     if (!arquivo) return;
     RankingNode *atual = r->head;
     while (atual) {
-        fprintf(arquivo, "%s,%.3f\n", atual->name ? atual->name : "", atual->time);
+        fprintf(arquivo, "%s %.3f\n", atual->name ? atual->name : "", atual->time);
         atual = atual->next;
     }
     fclose(arquivo);
@@ -75,24 +75,24 @@ void salvarTopTXT(ListaRanking *r, const char *caminhoArquivo, int topN) {
     RankingNode *atual = r->head;
     int i = 0;
     while (atual && i < topN) {
-        fprintf(arquivo, "%s,%.3f\n", atual->name ? atual->name : "", atual->time);
+        fprintf(arquivo, "%s %.3f\n", atual->name ? atual->name : "", atual->time);
         atual = atual->next; i++;
     }
     fclose(arquivo);
 }
 
-void loadRankingAll(ListaRanking *r, const char *caminhoArquivo) {
+void carregarTodosRanking(ListaRanking *r, const char *caminhoArquivo) {
     if (!r || !caminhoArquivo) return;
     FILE *arquivo = fopen(caminhoArquivo, "r");
     if (!arquivo) return;
     char linha[512];
     while (fgets(linha, sizeof(linha), arquivo)) {
         char *novaLinha = strchr(linha, '\n'); if (novaLinha) *novaLinha = '\0';
-        char *virgula = strchr(linha, ',');
-        if (!virgula) continue;
-        *virgula = '\0';
+        char *espaco = strchr(linha, ' ');
+        if (!espaco) continue;
+        *espaco = '\0';
         char *nome = linha;
-        char *tempoString = virgula + 1;
+        char *tempoString = espaco + 1;
         float tempo = (float)atof(tempoString);
         insertRanking(r, nome, tempo);
     }

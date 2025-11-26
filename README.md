@@ -8,11 +8,11 @@ Pula-Catraca é um jogo endless runner inspirado em Subway Surfers, onde o jogad
 - **W** - Pular
 - **A** - Mover para esquerda
 - **D** - Mover para direita
-- **S** - Deslizar (abaixar temporário)
+- **S** - Abaixar
 - **P** - Pausar (volta ao menu mantendo progresso)
-- **X** - Resetar (limpa tempo e itens)
-- **R** - Reiniciar (após game over, mantém progresso)
-- **ESC** - Fechar jogo / Voltar ao menu (reseta tudo)
+- **X** - Resetar (limpa tempo e itens e volta para o menu)
+- **C** - Continuar (mantém progresso de tempo e continua a jogar)
+- **ESC** - Fechar jogo (reseta tudo)
 
 ## 🎯 Objetivos e Mecânicas
 
@@ -26,8 +26,8 @@ Pula-Catraca é um jogo endless runner inspirado em Subway Surfers, onde o jogad
 
 **Itens Ruins (evite!):**
 - 😴 **Sono** - Adiciona 5 segundos ao tempo
-- 🎭 **Balaclava** - Perde todos os itens coletados
 - 👵 **Idosa** - Perde 1 item aleatório
+- 🎭 **Balaclava** - Perde todos os itens coletados
 
 ### Obstáculos
 - 🚌 **Ônibus** - Aparece nas 3 lanes (esquerdo, centro, direito)
@@ -40,10 +40,13 @@ Pula-Catraca é um jogo endless runner inspirado em Subway Surfers, onde o jogad
 - Perspectiva 3D com lanes que se estreitam ao horizonte
 - Sistema de ranking que salva os melhores tempos
 
-## 🚀 Como compilar e executar
+## 🚀 Instruções de compilação e execução
 
 ### Pré-requisitos
 - **Raylib 5.5** instalado
+
+    Como instalar:
+
 - **GCC** (MinGW no Windows)
 
 ### No Windows:
@@ -67,68 +70,25 @@ chmod +x build.sh
 ./build/pula-catraca
 ```
 
-## 📁 Estrutura do Projeto
-```
-Pula-Catraca/
-├── src/
-│   ├── main.c                  # Loop principal, menu e telas
-│   ├── mecanica_principal.c    # Mecânica de movimentação e física
-│   └── ranking.c               # Sistema de ranking e CSV
-├── include/
-│   ├── mecanica_principal.h    # Header da mecânica
-│   └── ranking.h               # Header do sistema de ranking
-├── assets/
-│   ├── images/                 # Sprites e backgrounds
-│   │   ├── fundo_menu.png
-│   │   ├── fundo_do_jogo.png
-│   │   ├── gameOver.png
-│   │   ├── vitoria_scene1.png
-│   │   ├── vitoria_scene2.png
-│   │   ├── correndo_*.png
-│   │   ├── pulando_*.png
-│   │   ├── deslizando_*.png
-│   │   ├── onibus*.png
-│   │   ├── catraca.png
-│   │   ├── pneu.png
-│   │   └── [itens].png
-│   └── sound/                  # Efeitos sonoros e músicas
-│       ├── scene_inicial.wav
-│       ├── corrida.wav
-│       ├── vitoria.wav
-│       ├── musica_vitoria.wav
-│       ├── item_bom.wav
-│       ├── item_ruim.wav
-│       └── ouch.wav
-├── build/                      # Arquivos compilados
-├── ranking_top10.csv          # Top 10 melhores tempos
-├── ranking_all.csv            # Histórico completo
-├── build.bat                  # Script de build (Windows)
-├── build.sh                   # Script de build (Linux)
-├── run.bat                    # Script para executar (Windows)
-└── README.md
-```
-
 ## 🎨 Características Técnicas
 - **Engine**: Raylib 5.5
 - **Linguagem**: C
-- **Gráficos**: OpenGL 3.3
-- **Resolução**: 800x600 (HiDPI suportado)
-- **Sistema de 3 lanes** com perspectiva 3D
+- **Resolução**: 800x600
+- **Sistema de 3 lanes** com perspectiva de movimento em 3D
 - **Física realista** de pulo com gravidade
 - **Sistema de animações** para sprites do jogador
-- **Colisão precisa** entre jogador e obstáculos
+- **Colisão precisa** entre jogador, obstáculos e itens
 - **Sistema de áudio** com músicas e efeitos sonoros
-- **Ranking persistente** em arquivos CSV
-- **Telas de vitória** com sequência de imagens
+- **Ranking persistente** em arquivos TXT
 - **Game over screen** com backgrounds customizados
 
 ## 🏆 Sistema de Ranking
 O jogo salva automaticamente:
-- **ranking_top5.csv**: Os 5 melhores tempos
-- **ranking_all.csv**: Histórico completo de todas as partidas
+- **ranking_top5.txt**: Os 5 melhores tempos
+- **ranking_all.txt**: Histórico completo de todas as partidas
 
 ## 👥 Equipe
-Luis Antonio Godoy 
+Luis Antônio Godoy 
 Louise Pessoa
 Marília Liz
 

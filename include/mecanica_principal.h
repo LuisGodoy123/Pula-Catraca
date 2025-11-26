@@ -3,7 +3,6 @@
 
 // ============================================================
 // CONSTANTES DO JOGO
-// ============================================================
 #define MAX_OBSTACULOS 10
 #define MAX_ITENS 25
 #define TIPOS_ITENS 8  // 5 itens bons + 3 itens ruins
@@ -11,7 +10,6 @@
 
 // ============================================================
 // TIPOS DE OBSTÁCULOS
-// ============================================================
 typedef enum {
     OBSTACULO_ONIBUS = 0,        // Obstáculo alto (desviar com A/D)
     OBSTACULO_CATRACA = 1,       // Obstáculo baixo (pular com W)
@@ -20,7 +18,6 @@ typedef enum {
 
 // ============================================================
 // TIPOS DE ITENS COLECIONÁVEIS
-// ============================================================
 typedef enum {
     // Itens BONS (necessários para a vitória)
     ITEM_PIPOCA = 0,
@@ -77,15 +74,15 @@ void deslizar(Jogador *j);
 void atualizarFisica(Jogador *j);
 
 void inicializarObstaculos(Obstaculo obstaculos[], int tamanho);
-void criarObstaculo(Obstaculo obstaculos[], int tamanho, float screenHeight, float horizon_y);
-void criarMultiplosObstaculos(Obstaculo obstaculos[], int tamanho, float screenHeight, int quantidade, float horizon_y);
-void atualizarObstaculos(Obstaculo obstaculos[], int tamanho, float velocidade, float horizon_y, int screenHeight, float delta);
-int verificarColisao(Jogador *j, Obstaculo *obs, float lane_width, float lane_offset, float horizon_y, float screenHeight);
+void criarObstaculo(Obstaculo obstaculos[], int tamanho, float alturaTela, float horizonte);
+void criarMultiplosObstaculos(Obstaculo obstaculos[], int tamanho, float alturaTela, int quantidade, float horizonte);
+void atualizarObstaculos(Obstaculo obstaculos[], int tamanho, float velocidade, float horizonte, int alturaTela, float delta);
+int verificarColisao(Jogador *j, Obstaculo *obs, float lane_width, float lane_offset, float horizonte, float alturaTela);
 
 // funções para itens colecionáveis
 void inicializarItens(ItemColetavel itens[], int tamanho);
-void criarItem(ItemColetavel itens[], int tamanho, float screenHeight, Obstaculo obstaculos[], int tamanhoObstaculos, float horizon_y, int itensColetados[]);
-void atualizarItens(ItemColetavel itens[], int tamanho, float velocidade, float horizon_y, int screenHeight, float delta);
+void criarItem(ItemColetavel itens[], int tamanho, float alturaTela, Obstaculo obstaculos[], int tamanhoObstaculos, float horizonte, int itensColetados[]);
+void atualizarItens(ItemColetavel itens[], int tamanho, float velocidade, float horizonte, int alturaTela, float delta);
 int verificarColeta(Jogador *j, ItemColetavel *item, float lane_width, float lane_offset);
 
 #endif

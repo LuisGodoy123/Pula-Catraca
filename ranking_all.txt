@@ -1,12 +1,14 @@
-helio,10.000
-louR,21.867
-lou,25.600
-louise,25.600
-loulinux2,27.566
-loulinux,31.183
-louS,33.400
-louN,36.466
-lixx,37.600
-lou,43.200
-liiiiiiz,44.199
-louT,67.117
+helio 10.000
+louR 21.867
+lou 25.600
+louise 25.600
+loulinux2 27.566
+loulinux 31.183
+abigobal 31.400
+louS 33.400
+louN 36.466
+jubiscleison 37.400
+lixx 37.600
+lou 43.200
+liiiiiiz 44.199
+louT 67.117

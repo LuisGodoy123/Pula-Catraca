@@ -1,5 +1,5 @@
-helio,10.000
-louR,21.867
-lou,25.600
-louise,25.600
-loulinux2,27.566
+helio 10.000
+louR 21.867
+lou 25.600
+louise 25.600
+loulinux2 27.566

@@ -25,7 +25,7 @@ void insertRanking(ListaRanking *r, const char *name, float time);
 
 // Persistência: carrega/salva a lista completa (todas as entradas) em formato TXT (nome,tempo)
 // e exporta o top N para um arquivo TXT separado
-void loadRankingAll(ListaRanking *r, const char *filepath);
+void carregarTodosRanking(ListaRanking *r, const char *filepath);
 void salvarRankingCompleto(ListaRanking *r, const char *filepath);
 void salvarTopTXT(ListaRanking *r, const char *filepath, int topN);
 

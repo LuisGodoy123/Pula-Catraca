@@ -2,28 +2,25 @@
 #include <stdlib.h>
 #include <time.h>
 
-// ========== FUNÇÕES AUXILIARES ==========
+// FUNÇÕES AUXILIARES ==========
 
 // calcula progresso normalizado entre 0 e 1
 static float calcularProgresso(float valor, float min, float max) {
-    float progress = (valor - min) / (max - min);
-    if (progress < 0) progress = 0;
-    if (progress > 1) progress = 1;
-    return progress;
+    float progresso = (valor - min) / (max - min);
+    if (progresso < 0) progresso = 0;
+    if (progresso > 1) progresso = 1;
+    return progresso;
 }
 
 // define dimensões do obstáculo por tipo
 static void definirDimensoesObstaculo(Obstaculo *obs) {
-    if (obs->tipo == OBSTACULO_ONIBUS) {
-        // Ônibus alto (precisa desviar)
+    if (obs->tipo == OBSTACULO_ONIBUS) { // Ônibus alto (precisa desviar)
         obs->largura = 60;
         obs->altura = 80;
-    } else if (obs->tipo == OBSTACULO_CATRACA) {
-        // Obstáculo baixo no chão = catraca (precisa pular)
+    } else if (obs->tipo == OBSTACULO_CATRACA) { // Obstáculo baixo no chão = catraca (precisa pular)
         obs->largura = 60;
         obs->altura = 30;
-    } else {
-        // Obstáculo alto vazado = cerca laranja (precisa deslizar)
+    } else { // Obstáculo alto vazado = cerca laranja (precisa deslizar)
         obs->largura = 60;
         obs->altura = 50;
     }
@@ -134,13 +131,13 @@ void inicializarObstaculos(Obstaculo obstaculos[], int tamanho) {
     srand(time(NULL)); // Inicializa gerador aleatório
 }
 
-void criarObstaculo(Obstaculo obstaculos[], int tamanho, float screenHeight, float horizon_y) {
+void criarObstaculo(Obstaculo obstaculos[], int tamanho, float alturaTela, float horizonte) {
     // Procura um slot inativo
     for (int i = 0; i < tamanho; i++) {
         if (!obstaculos[i].ativo) {
             obstaculos[i].ativo = 1;
             obstaculos[i].lane = rand() % 3; // Lane aleatória (0, 1 ou 2)
-            obstaculos[i].pos_y = horizon_y + 10; // Começa no horizonte
+            obstaculos[i].pos_y = horizonte + 10; // Começa no horizonte
             obstaculos[i].tipo = rand() % 3; // 0 = ônibus, 1 = catraca, 2 = parada
 
             definirDimensoesObstaculo(&obstaculos[i]);
@@ -149,11 +146,11 @@ void criarObstaculo(Obstaculo obstaculos[], int tamanho, float screenHeight, flo
     }
 }
 
-void criarMultiplosObstaculos(Obstaculo obstaculos[], int tamanho, float screenHeight, int quantidade, float horizon_y) {
+void criarMultiplosObstaculos(Obstaculo obstaculos[], int tamanho, float alturaTela, int quantidade, float horizonte) {
     int criados = 0;
     int lanes_usadas[3] = {0, 0, 0};   // Controla quais lanes já têm obstáculo
     int tipos_criados[3] = {0, 0, 0};  // Conta quantos de cada tipo: [laranja, verde, roxo]
-    float pos_y_novo = horizon_y + 10; // Mesma posição inicial dos obstáculos
+    float pos_y_novo = horizonte + 10; // Mesma posição inicial dos obstáculos
     
     for (int i = 0; i < tamanho && criados < quantidade; i++) {
         if (!obstaculos[i].ativo) {
@@ -206,30 +203,30 @@ void criarMultiplosObstaculos(Obstaculo obstaculos[], int tamanho, float screenH
     }
 }
 
-void atualizarObstaculos(Obstaculo obstaculos[], int tamanho, float velocidade, float horizon_y, int screenHeight, float delta) {
+void atualizarObstaculos(Obstaculo obstaculos[], int tamanho, float velocidade, float horizonte, int alturaTela, float delta) {
     // Tunáveis para sensação de velocidade realista
-    const float baseFactor = 0.5f;   // velocidade mínima no horizonte (50%)
-    const float extraFactor = 1.5f;  // incremento adicional até chegar perto (total 200%)
+    const float fatorBase = 0.5f;   // velocidade mínima no horizonte (50%)
+    const float fatorExtra = 1.5f;  // incremento adicional até chegar perto (total 200%)
 
     for (int i = 0; i < tamanho; i++) {
         if (!obstaculos[i].ativo) continue;
 
         // Calcula progress (0 = no horizonte, 1 = na base da tela)
-        float progress = calcularProgresso(obstaculos[i].pos_y, horizon_y, screenHeight);
+        float progresso = calcularProgresso(obstaculos[i].pos_y, horizonte, alturaTela);
 
         // Fator de velocidade aumenta conforme se aproxima (objetos próximos parecem mais rápidos)
-        float speedFactor = baseFactor + progress * extraFactor;
+        float fatorVelocidade = fatorBase + progresso * fatorExtra;
         
-        obstaculos[i].pos_y += velocidade * speedFactor * delta * 60.0f;
+        obstaculos[i].pos_y += velocidade * fatorVelocidade* delta * 60.0f;
         
         // Desativa quando sai da tela
-        if (obstaculos[i].pos_y > screenHeight + 200) {
+        if (obstaculos[i].pos_y > alturaTela + 200) {
             obstaculos[i].ativo = 0;
         }
     }
 }
 
-int verificarColisao(Jogador *j, Obstaculo *obs, float lane_width, float lane_offset, float horizon_y, float screenHeight) {
+int verificarColisao(Jogador *j, Obstaculo *obs, float laneLargura, float lane_offset, float horizonte, float alturaTela) {
     if (!obs->ativo) return 0;
 
     // Se é catraca (baixo) e o jogador está pulando, não colide
@@ -242,17 +239,17 @@ int verificarColisao(Jogador *j, Obstaculo *obs, float lane_width, float lane_of
     }
     
     // Calcula o scale do obstáculo baseado na perspectiva
-    float progress = calcularProgresso(obs->pos_y, horizon_y, screenHeight);
+    float progress = calcularProgresso(obs->pos_y, horizonte, alturaTela);
     float scale = 0.3f + (progress * 0.7f); // De 0.3 a 1.0
     
     // Calcula posição X do obstáculo com perspectiva (igual ao renderização)
-    float lane_width_top = 800.0f / 10.0f; // Usa screenWidth hardcoded (800)
-    float lane_offset_top = (800.0f - lane_width_top * 3) / 2.0f;
-    float lane_width_bottom = 800.0f / 2.5f;
-    float lane_offset_bottom = (800.0f - lane_width_bottom * 3) / 2.0f;
+    float laneLargura_top = 800.0f / 10.0f; // Usa screenWidth hardcoded (800)
+    float lane_offset_top = (800.0f - laneLargura_top * 3) / 2.0f;
+    float laneLargura_bottom = 800.0f / 2.5f;
+    float lane_offset_bottom = (800.0f - laneLargura_bottom * 3) / 2.0f;
     
-    float x_top = lane_offset_top + lane_width_top * obs->lane + lane_width_top / 2;
-    float x_bottom = lane_offset_bottom + lane_width_bottom * obs->lane + lane_width_bottom / 2;
+    float x_top = lane_offset_top + laneLargura_top * obs->lane + laneLargura_top / 2;
+    float x_bottom = lane_offset_bottom + laneLargura_bottom * obs->lane + laneLargura_bottom / 2;
     float obs_x = x_top + (x_bottom - x_top) * progress;
     
     // Hitbox do jogador em X (largura reduzida para 30px ao invés de 40px)
@@ -307,7 +304,7 @@ void inicializarItens(ItemColetavel itens[], int tamanho) {
     }
 }
 
-void criarItem(ItemColetavel itens[], int tamanho, float screenHeight, Obstaculo obstaculos[], int tamanhoObstaculos, float horizon_y, int itensColetados[]) {
+void criarItem(ItemColetavel itens[], int tamanho, float alturaTela, Obstaculo obstaculos[], int tamanhoObstaculos, float horizonte, int itensColetados[]) {
     // Procura um slot vazio
     for (int i = 0; i < tamanho; i++) {
         if (!itens[i].ativo) {
@@ -315,7 +312,7 @@ void criarItem(ItemColetavel itens[], int tamanho, float screenHeight, Obstaculo
             int tentativas = 0;
             int lane_escolhida;
             int lane_valida = 0;
-            float pos_y_item = horizon_y + 10; // Mesma posição inicial dos obstáculos
+            float pos_y_item = horizonte + 10; // Mesma posição inicial dos obstáculos
             
             // Tenta até 15 vezes encontrar uma posição válida
             while (tentativas < 15 && !lane_valida) {
@@ -399,7 +396,7 @@ void criarItem(ItemColetavel itens[], int tamanho, float screenHeight, Obstaculo
     }
 }
 
-void atualizarItens(ItemColetavel itens[], int tamanho, float velocidade, float horizon_y, int screenHeight, float delta) {
+void atualizarItens(ItemColetavel itens[], int tamanho, float velocidade, float horizonte, int alturaTela, float delta) {
     // Tunáveis para sensação de velocidade realista (mesmos valores dos obstáculos)
     const float baseFactor = 0.5f;   // velocidade mínima no horizonte (50%)
     const float extraFactor = 1.5f;  // incremento adicional até chegar perto (total 200%)
@@ -408,7 +405,7 @@ void atualizarItens(ItemColetavel itens[], int tamanho, float velocidade, float 
         if (!itens[i].ativo || itens[i].coletado) continue;
 
         // Calcula progress (0 = no horizonte, 1 = na base da tela)
-        float progress = calcularProgresso(itens[i].pos_y, horizon_y, screenHeight);
+        float progress = calcularProgresso(itens[i].pos_y, horizonte, alturaTela);
 
         // Fator de velocidade aumenta conforme se aproxima (mesma física dos obstáculos)
         float speedFactor = baseFactor + progress * extraFactor;
@@ -416,13 +413,13 @@ void atualizarItens(ItemColetavel itens[], int tamanho, float velocidade, float 
         itens[i].pos_y += velocidade * speedFactor * delta * 60.0f;
         
         // Desativa quando sai da tela
-        if (itens[i].pos_y > screenHeight + 200) {
+        if (itens[i].pos_y > alturaTela + 200) {
             itens[i].ativo = 0;
         }
     }
 }
 
-int verificarColeta(Jogador *j, ItemColetavel *item, float lane_width, float lane_offset) {
+int verificarColeta(Jogador *j, ItemColetavel *item, float laneLargura, float lane_offset) {
     // Se item já foi coletado ou não está ativo, ignora
     if (item->coletado || !item->ativo) {
         return 0;
