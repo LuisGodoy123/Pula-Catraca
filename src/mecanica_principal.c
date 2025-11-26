@@ -149,7 +149,7 @@ void criarObstaculo(Obstaculo obstaculos[], int tamanho, float alturaTela, float
 void criarMultiplosObstaculos(Obstaculo obstaculos[], int tamanho, float alturaTela, int quantidade, float horizonte) {
     int criados = 0;
     int lanes_usadas[3] = {0, 0, 0};   // Controla quais lanes já têm obstáculo
-    int tipos_criados[3] = {0, 0, 0};  // Conta quantos de cada tipo: [laranja, verde, roxo]
+    int tipos_criados[3] = {0, 0, 0};  // Conta quantos de cada tipo
     float pos_y_novo = horizonte + 10; // Mesma posição inicial dos obstáculos
     
     for (int i = 0; i < tamanho && criados < quantidade; i++) {
